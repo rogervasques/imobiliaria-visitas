@@ -245,6 +245,36 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     carregarDados();
+
+    // Supabase Realtime: sincronização em tempo real entre todos os usuários conectados
+    const channel = supabase
+      .channel('easymob-realtime-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'visitas' },
+        () => {
+          carregarDados();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'imoveis' },
+        () => {
+          carregarDados();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'clientes' },
+        () => {
+          carregarDados();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [carregarDados]);
 
   // Persistência local auxiliar
