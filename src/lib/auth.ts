@@ -8,9 +8,9 @@ export { generateInstanceName };
 
 export const SESSION_COOKIE_NAME = 'easymob_session';
 
-// Chave secreta para assinatura dos tokens de sessão
+// Chave secreta para assinatura dos tokens de sessão (Rotacionada para revogar todas as sessões anteriores)
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || 'easymob_jwt_super_secret_key_2026_production'
+  process.env.AUTH_SECRET || 'easymob_jwt_super_secret_v2_2026_clean_all_sessions'
 );
 
 export interface UserSession {
