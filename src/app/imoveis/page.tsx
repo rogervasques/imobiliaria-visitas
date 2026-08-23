@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
-import { Imovel } from '@/types';
+import { Imovel, Visita } from '@/types';
 import { ImovelCard } from '@/components/imoveis/ImovelCard';
 import { NovoImovelModal } from '@/components/imoveis/NovoImovelModal';
 import { ImovelDetalhesModal } from '@/components/imoveis/ImovelDetalhesModal';
 import { NovaVisitaModal } from '@/components/visitas/NovaVisitaModal';
+import { VisitaDetalhesModal } from '@/components/visitas/VisitaDetalhesModal';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +19,8 @@ export default function ImoveisPage() {
   const [tipoFilter, setTipoFilter] = useState('todos');
   const [isNovoImovelOpen, setIsNovoImovelOpen] = useState(false);
   const [imovelDetalhes, setImovelDetalhes] = useState<Imovel | null>(null);
+  const [imovelParaVisita, setImovelParaVisita] = useState<Imovel | null>(null);
+  const [visitaDetalhes, setVisitaDetalhes] = useState<Visita | null>(null);
   const [isNovaVisitaOpen, setIsNovaVisitaOpen] = useState(false);
 
   const filteredImoveis = imoveis
@@ -35,6 +38,12 @@ export default function ImoveisPage() {
       return matchSearch && matchTipo;
     })
     .sort((a, b) => (a.titulo || '').localeCompare(b.titulo || '', 'pt-BR', { sensitivity: 'base' }));
+
+  const handleAgendarVisita = (imovel: Imovel) => {
+    setImovelParaVisita(imovel);
+    setImovelDetalhes(null);
+    setIsNovaVisitaOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -114,6 +123,7 @@ export default function ImoveisPage() {
               key={imovel.id}
               imovel={imovel}
               onClick={(im) => setImovelDetalhes(im)}
+              onAgendarVisita={handleAgendarVisita}
             />
           ))}
         </div>
@@ -124,7 +134,18 @@ export default function ImoveisPage() {
         imovel={imovelDetalhes}
         isOpen={!!imovelDetalhes}
         onClose={() => setImovelDetalhes(null)}
-        onAgendarVisita={() => setIsNovaVisitaOpen(true)}
+        onAgendarVisita={handleAgendarVisita}
+        onSelectVisita={(visita) => {
+          setImovelDetalhes(null);
+          setVisitaDetalhes(visita);
+        }}
+      />
+
+      {/* Modal de Detalhes da Visita */}
+      <VisitaDetalhesModal
+        visita={visitaDetalhes}
+        isOpen={!!visitaDetalhes}
+        onClose={() => setVisitaDetalhes(null)}
       />
 
       {/* Modal de Novo Imóvel */}
@@ -133,11 +154,14 @@ export default function ImoveisPage() {
         onClose={() => setIsNovoImovelOpen(false)}
       />
 
-      {/* Modal de Nova Visita */}
+      {/* Modal de Nova Visita com Imóvel Pré-selecionado */}
       <NovaVisitaModal
         isOpen={isNovaVisitaOpen}
-        onClose={() => setIsNovaVisitaOpen(false)}
-        imovelPreSelecionado={imovelDetalhes || undefined}
+        onClose={() => {
+          setIsNovaVisitaOpen(false);
+          setImovelParaVisita(null);
+        }}
+        imovelPreSelecionado={imovelParaVisita || undefined}
       />
     </div>
   );

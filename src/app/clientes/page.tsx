@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
-import { Cliente } from '@/types';
+import { Cliente, Visita } from '@/types';
 import { ClienteCard } from '@/components/clientes/ClienteCard';
 import { NovoClienteModal } from '@/components/clientes/NovoClienteModal';
 import { ClienteDetalhesModal } from '@/components/clientes/ClienteDetalhesModal';
 import { NovaVisitaModal } from '@/components/visitas/NovaVisitaModal';
+import { VisitaDetalhesModal } from '@/components/visitas/VisitaDetalhesModal';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +19,8 @@ export default function ClientesPage() {
   const [statusFilter, setStatusFilter] = useState('todos');
   const [isNovoClienteOpen, setIsNovoClienteOpen] = useState(false);
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
+  const [clienteParaVisita, setClienteParaVisita] = useState<Cliente | null>(null);
+  const [visitaDetalhes, setVisitaDetalhes] = useState<Visita | null>(null);
   const [isNovaVisitaOpen, setIsNovaVisitaOpen] = useState(false);
 
   const filteredClientes = clientes
@@ -34,6 +37,12 @@ export default function ClientesPage() {
       return matchSearch && matchStatus;
     })
     .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
+
+  const handleAgendarVisitaCliente = (cliente: Cliente) => {
+    setClienteParaVisita(cliente);
+    setClienteSelecionado(null);
+    setIsNovaVisitaOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -127,14 +136,28 @@ export default function ClientesPage() {
         cliente={clienteSelecionado}
         isOpen={!!clienteSelecionado}
         onClose={() => setClienteSelecionado(null)}
-        onAgendarVisita={() => setIsNovaVisitaOpen(true)}
+        onAgendarVisita={handleAgendarVisitaCliente}
+        onSelectVisita={(visita) => {
+          setClienteSelecionado(null);
+          setVisitaDetalhes(visita);
+        }}
+      />
+
+      {/* Modal de Detalhes da Visita (Aberto ao clicar no card de visita) */}
+      <VisitaDetalhesModal
+        visita={visitaDetalhes}
+        isOpen={!!visitaDetalhes}
+        onClose={() => setVisitaDetalhes(null)}
       />
 
       {/* Modal de Nova Visita com Cliente Pré-selecionado */}
       <NovaVisitaModal
         isOpen={isNovaVisitaOpen}
-        onClose={() => setIsNovaVisitaOpen(false)}
-        clientePreSelecionado={clienteSelecionado || undefined}
+        onClose={() => {
+          setIsNovaVisitaOpen(false);
+          setClienteParaVisita(null);
+        }}
+        clientePreSelecionado={clienteParaVisita || undefined}
       />
     </div>
   );

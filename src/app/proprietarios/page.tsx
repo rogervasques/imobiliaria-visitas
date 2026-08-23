@@ -29,6 +29,7 @@ export default function ProprietariosPage() {
   const [search, setSearch] = useState('');
   const [expandedPropId, setExpandedPropId] = useState<string | null>(null);
   const [imovelDetalhes, setImovelDetalhes] = useState<Imovel | null>(null);
+  const [imovelParaVisita, setImovelParaVisita] = useState<Imovel | null>(null);
   const [isNovaVisitaOpen, setIsNovaVisitaOpen] = useState(false);
 
   // Filtra proprietários pela busca (nome, telefone ou email) e ordena alfabeticamente
@@ -261,14 +262,21 @@ export default function ProprietariosPage() {
         imovel={imovelDetalhes}
         isOpen={!!imovelDetalhes}
         onClose={() => setImovelDetalhes(null)}
-        onAgendarVisita={() => setIsNovaVisitaOpen(true)}
+        onAgendarVisita={(im) => {
+          setImovelParaVisita(im);
+          setImovelDetalhes(null);
+          setIsNovaVisitaOpen(true);
+        }}
       />
 
       {/* Modal de Nova Visita com Imóvel Pré-selecionado */}
       <NovaVisitaModal
         isOpen={isNovaVisitaOpen}
-        onClose={() => setIsNovaVisitaOpen(false)}
-        imovelPreSelecionado={imovelDetalhes || undefined}
+        onClose={() => {
+          setIsNovaVisitaOpen(false);
+          setImovelParaVisita(null);
+        }}
+        imovelPreSelecionado={imovelParaVisita || undefined}
       />
     </div>
   );

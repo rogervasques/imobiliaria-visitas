@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Cliente, StatusCliente, StatusVisita } from '@/types';
+import { Cliente, StatusCliente, StatusVisita, Visita } from '@/types';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -27,6 +27,7 @@ import {
   History,
   FileText,
   Sparkles,
+  ChevronRight,
 } from 'lucide-react';
 import { formatCurrency, formatPhone, formatDateTime, getInitials, getWhatsAppDirectLink } from '@/lib/utils';
 
@@ -35,6 +36,7 @@ interface ClienteDetalhesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAgendarVisita?: (cliente: Cliente) => void;
+  onSelectVisita?: (visita: Visita) => void;
 }
 
 export function ClienteDetalhesModal({
@@ -42,6 +44,7 @@ export function ClienteDetalhesModal({
   isOpen,
   onClose,
   onAgendarVisita,
+  onSelectVisita,
 }: ClienteDetalhesModalProps) {
   const { atualizarCliente, removerCliente, visitas } = useData();
 
@@ -414,16 +417,26 @@ export function ClienteDetalhesModal({
                   {historicoVisitas.map((v) => (
                     <div
                       key={v.id}
-                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/40 transition-all space-y-2"
+                      onClick={() => onSelectVisita?.(v)}
+                      className={`p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all space-y-2 ${
+                        onSelectVisita ? 'cursor-pointer hover:border-emerald-500 hover:shadow-md group' : ''
+                      }`}
                     >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-2">
                           <Clock className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                          <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                          <span className="font-bold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
                             {formatDateTime(v.data_hora_visita)}
                           </span>
                         </div>
-                        {statusVisitaBadge(v.status)}
+                        <div className="flex items-center gap-2">
+                          {statusVisitaBadge(v.status)}
+                          {onSelectVisita && (
+                            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                              Abrir <ChevronRight className="w-3 h-3" />
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Imóvel ou Roteiro Visitado */}

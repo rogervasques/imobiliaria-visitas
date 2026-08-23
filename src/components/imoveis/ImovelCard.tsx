@@ -16,6 +16,7 @@ import {
   Sparkles,
   Maximize2,
   Tag,
+  Calendar,
 } from 'lucide-react';
 import { formatCurrency, formatPhone, getWhatsAppDirectLink } from '@/lib/utils';
 
@@ -23,9 +24,10 @@ interface ImovelCardProps {
   imovel: Imovel;
   onClick?: (imovel: Imovel) => void;
   onEdit?: (imovel: Imovel) => void;
+  onAgendarVisita?: (imovel: Imovel) => void;
 }
 
-export function ImovelCard({ imovel, onClick, onEdit }: ImovelCardProps) {
+export function ImovelCard({ imovel, onClick, onEdit, onAgendarVisita }: ImovelCardProps) {
   const statusColors = {
     disponivel: 'success' as const,
     reservado: 'warning' as const,
@@ -169,6 +171,21 @@ export function ImovelCard({ imovel, onClick, onEdit }: ImovelCardProps) {
               </div>
             )}
           </div>
+
+          {/* Botão Rápido de Agendar Visita */}
+          {onAgendarVisita && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAgendarVisita(imovel);
+              }}
+              className="w-full mt-2 py-2 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Agendar Visita
+            </button>
+          )}
         </div>
       </CardContent>
     </Card>

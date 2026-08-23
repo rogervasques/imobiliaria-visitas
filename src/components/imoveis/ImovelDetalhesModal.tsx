@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Imovel, TipoImovel, FinalidadeImovel, StatusImovel, StatusVisita } from '@/types';
+import { Imovel, TipoImovel, FinalidadeImovel, StatusImovel, StatusVisita, Visita } from '@/types';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -49,6 +49,7 @@ interface ImovelDetalhesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAgendarVisita?: (imovel: Imovel) => void;
+  onSelectVisita?: (visita: Visita) => void;
 }
 
 const CARACTERISTICAS_OPCOES = [
@@ -75,6 +76,7 @@ export function ImovelDetalhesModal({
   isOpen,
   onClose,
   onAgendarVisita,
+  onSelectVisita,
 }: ImovelDetalhesModalProps) {
   const { atualizarImovel, removerImovel, proprietarios, visitas } = useData();
 
@@ -700,8 +702,20 @@ export function ImovelDetalhesModal({
                 </button>
               </div>
 
-              {/* Botões de Ação do Imóvel: [ ✏️ Editar ] e [ 🗑️ Excluir ] */}
-              <div className="flex items-center gap-1.5">
+              {/* Botões de Ação do Imóvel: [ 📅 Agendar Visita ] [ ✏️ Editar ] e [ 🗑️ Excluir ] */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {onAgendarVisita && (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={() => onAgendarVisita(imovel)}
+                    className="font-bold text-xs shadow-xs"
+                  >
+                    <Calendar className="w-3.5 h-3.5 mr-1" />
+                    Agendar Visita
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -995,10 +1009,7 @@ export function ImovelDetalhesModal({
                       type="button"
                       variant="primary"
                       size="sm"
-                      onClick={() => {
-                        onClose();
-                        onAgendarVisita(imovel);
-                      }}
+                      onClick={() => onAgendarVisita(imovel)}
                       className="shadow-sm font-bold text-xs"
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" />
@@ -1024,10 +1035,7 @@ export function ImovelDetalhesModal({
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          onClose();
-                          onAgendarVisita(imovel);
-                        }}
+                        onClick={() => onAgendarVisita(imovel)}
                         className="font-bold text-xs mt-2"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
@@ -1048,7 +1056,10 @@ export function ImovelDetalhesModal({
                       return (
                         <div
                           key={v.id}
-                          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-emerald-500/40 transition-all space-y-3"
+                          onClick={() => onSelectVisita?.(v)}
+                          className={`p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs transition-all space-y-3 ${
+                            onSelectVisita ? 'cursor-pointer hover:border-emerald-500 hover:shadow-md group' : ''
+                          }`}
                         >
                           {/* Cabeçalho do Card de Visita: Data, Horário e Status */}
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
@@ -1057,7 +1068,7 @@ export function ImovelDetalhesModal({
                                 <Clock className="w-4 h-4 text-emerald-500" />
                               </div>
                               <div>
-                                <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-slate-100">
+                                <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
                                   {formatDateTime(v.data_hora_visita)}
                                 </span>
                                 <span className="text-[11px] text-slate-400 block">
