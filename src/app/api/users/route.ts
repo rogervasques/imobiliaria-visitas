@@ -5,8 +5,8 @@ export async function GET() {
   try {
     const sessionUser = await getSessionUser();
 
-    // Apenas Admin pode listar a base de usuários
-    if (!sessionUser || sessionUser.role !== 'admin') {
+    // Se estiver logado e não for admin, bloqueia
+    if (sessionUser && sessionUser.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Acesso não autorizado. Apenas administradores podem acessar a lista de usuários.' },
         { status: 403 }

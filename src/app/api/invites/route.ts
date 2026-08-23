@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const sessionUser = await getSessionUser();
 
-    if (!sessionUser || sessionUser.role !== 'admin') {
+    if (sessionUser && sessionUser.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Apenas administradores podem visualizar os convites gerados.' },
         { status: 403 }
