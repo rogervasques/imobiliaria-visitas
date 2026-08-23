@@ -28,7 +28,7 @@ export const INITIAL_ADMIN_EMAIL = 'rogervasques@gmail.com';
 export const INITIAL_ADMIN_PASSWORD_RAW = '@Asenha12';
 export const INITIAL_ADMIN_PASSWORD_HASH = bcrypt.hashSync('@Asenha12', 10);
 
-// Usuários iniciais do sistema
+// Usuários iniciais do sistema (Apenas o Administrador por padrão)
 export const INITIAL_USERS: Usuario[] = [
   {
     id: 'user-admin-master',
@@ -39,54 +39,6 @@ export const INITIAL_USERS: Usuario[] = [
     role: 'admin',
     imobiliaria: 'Administração',
     instance_name: 'easymob_user_admin_master',
-    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'user-corretor-1',
-    nome: 'Carlos Eduardo Corretor',
-    email: 'carlos.corretor@easymob.com.br',
-    telefone: '11988887777',
-    senha_hash: INITIAL_ADMIN_PASSWORD_HASH,
-    role: 'corretor',
-    imobiliaria: 'EasyMob Imóveis',
-    instance_name: 'easymob_user_carlos',
-    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'user-corretor-2',
-    nome: 'Mariana Santos',
-    email: 'mariana.santos@easymob.com.br',
-    telefone: '11977776666',
-    senha_hash: INITIAL_ADMIN_PASSWORD_HASH,
-    role: 'corretor',
-    imobiliaria: 'EasyMob Imóveis',
-    instance_name: 'easymob_user_mariana',
-    avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'user-corretor-3',
-    nome: 'Lucas Oliveira',
-    email: 'lucas.oliveira@easymob.com.br',
-    telefone: '11966665555',
-    senha_hash: INITIAL_ADMIN_PASSWORD_HASH,
-    role: 'corretor',
-    imobiliaria: 'EasyMob Imóveis',
-    instance_name: 'easymob_user_lucas',
-    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'user-corretor-4',
-    nome: 'Ana Paula Costa',
-    email: 'anapaula.costa@easymob.com.br',
-    telefone: '11955554444',
-    senha_hash: INITIAL_ADMIN_PASSWORD_HASH,
-    role: 'corretor',
-    imobiliaria: 'EasyMob Imóveis',
-    instance_name: 'easymob_user_anapaula',
     avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     created_at: new Date().toISOString(),
   },
@@ -689,9 +641,49 @@ export async function verifySessionToken(token: string): Promise<UserSession | n
 }
 
 /**
+ * Verifica se o usuário ainda existe e está ativo no sistema
+ */
+export async function verifyUserExists(id: string, email?: string): Promise<boolean> {
+  const adminEmail = INITIAL_ADMIN_EMAIL.toLowerCase().trim();
+  if (email && email.toLowerCase().trim() === adminEmail) {
+    return true;
+  }
+
+  // 1. Consulta no Supabase
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (!error && data) {
+      return true;
+    }
+
+    if (email) {
+      const { data: dataEmail, error: errEmail } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (!errEmail && dataEmail) {
+        return true;
+      }
+    }
+  } catch {
+    // Fallback
+  }
+
+  // 2. Consulta no store local
+  return globalUsersStore.some((u) => u.id === id || (email && u.email.toLowerCase().trim() === email.toLowerCase().trim()));
+}
+
+/**
  * Obtém a sessão do usuário atual a partir dos cookies do servidor
  */
-export async function getSessionUser(): Promise<UserSession | null> {
+export async function getSessionUser(validateInDb: boolean = false): Promise<UserSession | null> {
   try {
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
@@ -701,7 +693,15 @@ export async function getSessionUser(): Promise<UserSession | null> {
       return null;
     }
 
-    return verifySessionToken(sessionCookie.value);
+    const session = await verifySessionToken(sessionCookie.value);
+    if (!session) return null;
+
+    if (validateInDb) {
+      const exists = await verifyUserExists(session.id, session.email);
+      if (!exists) return null;
+    }
+
+    return session;
   } catch {
     return null;
   }

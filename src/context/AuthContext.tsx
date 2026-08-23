@@ -27,7 +27,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       if (res.ok) {
         const data = await res.json();
-        setUser(data.user);
+        if (data.authenticated && data.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
@@ -40,6 +44,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshUser();
+
+    // Verificação de sessão ao focar na janela e a cada 20 segundos
+    const handleFocus = () => refreshUser();
+    window.addEventListener('focus', handleFocus);
+    const interval = setInterval(() => {
+      refreshUser();
+    }, 20000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
   }, [refreshUser]);
 
   const login = async (email: string, pass: string, rememberMe: boolean = true) => {

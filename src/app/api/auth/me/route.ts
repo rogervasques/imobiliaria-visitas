@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, SESSION_COOKIE_NAME } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const user = await getSessionUser();
+    // Valida no banco de dados se o usuário ainda existe e está ativo
+    const user = await getSessionUser(true);
 
     if (!user) {
-      return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
+      const res = NextResponse.json({ authenticated: false, user: null }, { status: 401 });
+      res.cookies.delete(SESSION_COOKIE_NAME);
+      return res;
     }
 
     return NextResponse.json({ authenticated: true, user });
