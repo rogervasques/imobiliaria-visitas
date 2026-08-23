@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS instance_name TEXT;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total users" ON public.users;
-CREATE POLICY "Acesso total users" ON public.users FOR ALL USING (true);
+CREATE POLICY "Acesso total users" ON public.users FOR ALL USING (true) WITH CHECK (true);
 
 -- 2. TABELA DE CONVITES POR TOKEN
 CREATE TABLE IF NOT EXISTS public.invites (
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS public.invites (
 
 ALTER TABLE public.invites ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total invites" ON public.invites;
-CREATE POLICY "Acesso total invites" ON public.invites FOR ALL USING (true);
+CREATE POLICY "Acesso total invites" ON public.invites FOR ALL USING (true) WITH CHECK (true);
 
 -- 3. TABELA DE PROPRIETÁRIOS
 CREATE TABLE IF NOT EXISTS public.proprietarios (
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS public.proprietarios (
 
 ALTER TABLE public.proprietarios ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total proprietarios" ON public.proprietarios;
-CREATE POLICY "Acesso total proprietarios" ON public.proprietarios FOR ALL USING (true);
+CREATE POLICY "Acesso total proprietarios" ON public.proprietarios FOR ALL USING (true) WITH CHECK (true);
 
 -- 4. TABELA DE IMÓVEIS
 CREATE TABLE IF NOT EXISTS public.imoveis (
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS public.imoveis (
 ALTER TABLE public.imoveis ADD COLUMN IF NOT EXISTS proprietario_id UUID;
 ALTER TABLE public.imoveis ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total imoveis" ON public.imoveis;
-CREATE POLICY "Acesso total imoveis" ON public.imoveis FOR ALL USING (true);
+CREATE POLICY "Acesso total imoveis" ON public.imoveis FOR ALL USING (true) WITH CHECK (true);
 
 -- 5. TABELA DE CLIENTES
 CREATE TABLE IF NOT EXISTS public.clientes (
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS public.clientes (
 
 ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total clientes" ON public.clientes;
-CREATE POLICY "Acesso total clientes" ON public.clientes FOR ALL USING (true);
+CREATE POLICY "Acesso total clientes" ON public.clientes FOR ALL USING (true) WITH CHECK (true);
 
 -- 6. TABELA DE VISITAS & AUTOMAÇÕES
 CREATE TABLE IF NOT EXISTS public.visitas (
@@ -152,7 +152,7 @@ ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS template_pos_
 
 ALTER TABLE public.visitas ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total visitas" ON public.visitas;
-CREATE POLICY "Acesso total visitas" ON public.visitas FOR ALL USING (true);
+CREATE POLICY "Acesso total visitas" ON public.visitas FOR ALL USING (true) WITH CHECK (true);
 
 -- 7. TABELA DE CONFIGURAÇÕES WHATSAPP
 CREATE TABLE IF NOT EXISTS public.configuracoes_whatsapp (
@@ -173,7 +173,7 @@ CREATE TABLE IF NOT EXISTS public.configuracoes_whatsapp (
 
 ALTER TABLE public.configuracoes_whatsapp ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total configuracoes_whatsapp" ON public.configuracoes_whatsapp;
-CREATE POLICY "Acesso total configuracoes_whatsapp" ON public.configuracoes_whatsapp FOR ALL USING (true);
+CREATE POLICY "Acesso total configuracoes_whatsapp" ON public.configuracoes_whatsapp FOR ALL USING (true) WITH CHECK (true);
 
 -- 8. TABELA DE LOGS WHATSAPP
 CREATE TABLE IF NOT EXISTS public.whatsapp_logs (
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS public.whatsapp_logs (
 
 ALTER TABLE public.whatsapp_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total whatsapp_logs" ON public.whatsapp_logs;
-CREATE POLICY "Acesso total whatsapp_logs" ON public.whatsapp_logs FOR ALL USING (true);
+CREATE POLICY "Acesso total whatsapp_logs" ON public.whatsapp_logs FOR ALL USING (true) WITH CHECK (true);
 
 -- 9. SEED DO ADMINISTRADOR (Senha: @Asenha12)
 -- Hash Bcrypt oficial gerado com 10 rounds para "@Asenha12"
