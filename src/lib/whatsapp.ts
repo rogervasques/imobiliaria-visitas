@@ -122,8 +122,35 @@ export async function sendWhatsAppMessage({
     return { success: false, error: 'Telefone inválido ou não informado' };
   }
 
-  // Se não houver configuração ativa ou URLs de mock, operamos em modo simulado
-  if (!config || !config.ativo || !config.api_url || config.api_url.includes('exemplo-evolution')) {
+  // Quando executado no navegador (client-side), roteia via endpoint do Next.js para evitar Mixed Content (HTTP/HTTPS) e CORS
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toPhone: formattedNumber,
+          message,
+          instanceName,
+          visitaId: logInfo?.visitaId,
+          tipoMensagem: logInfo?.tipoMensagem,
+          destinatarioNome: logInfo?.destinatarioNome,
+          tipoDestinatario: logInfo?.tipoDestinatario,
+        }),
+      });
+      const resData = await res.json();
+      return resData;
+    } catch (err: unknown) {
+      console.warn('Erro ao disparar via /api/whatsapp/send no navegador:', err);
+    }
+  }
+
+  const effectiveApiUrl = config?.api_url || process.env.EVOLUTION_API_URL || process.env.WHATSAPP_API_URL || 'http://147.93.9.74:8080';
+  const effectiveApiKey = config?.api_key || process.env.EVOLUTION_API_KEY || process.env.WHATSAPP_API_KEY || 'easymob_secret_token_2026';
+  const isSimulated = !config?.ativo && !process.env.EVOLUTION_API_URL;
+
+  // Se não houver configuração ativa nem servidor Evolution configurado
+  if (isSimulated || effectiveApiUrl.includes('exemplo-evolution')) {
     console.log(`[WHATSAPP SIMULADO] Para: ${formattedNumber} (${logInfo?.destinatarioNome}) via Instância: ${instanceName || config?.instancia_nome || 'easymob'}`);
     console.log(`[CONTEÚDO]:\n${message}`);
 
@@ -153,18 +180,18 @@ export async function sendWhatsAppMessage({
 
   try {
     let response;
-    let url = config.api_url.trim().replace(/\/$/, '');
+    let url = effectiveApiUrl.trim().replace(/\/$/, '');
 
     // 1. Evolution API (v1 / v2)
-    if (config.provedor === 'evolution_api') {
-      const instance = instanceName || config.instancia_nome || 'easymob';
+    if (!config?.provedor || config?.provedor === 'evolution_api') {
+      const instance = instanceName || config?.instancia_nome || process.env.EVOLUTION_INSTANCE || 'easymob_user_admin_master';
       url = `${url}/message/sendText/${instance}`;
 
       response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: config.api_key,
+          apikey: effectiveApiKey,
         },
         body: JSON.stringify({
           number: formattedNumber,

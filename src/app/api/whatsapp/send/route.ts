@@ -60,15 +60,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Fallback final: instância geral configurada
+    // Fallback final: instância configurada ou admin master
     if (!resolvedInstanceName) {
-      resolvedInstanceName = config?.instancia_nome || 'easymob';
+      resolvedInstanceName = config?.instancia_nome || process.env.EVOLUTION_INSTANCE || 'easymob_user_admin_master';
     }
+
+    const effectiveConfig = {
+      provedor: config?.provedor || 'evolution_api',
+      api_url: config?.api_url || process.env.EVOLUTION_API_URL || process.env.WHATSAPP_API_URL || 'http://147.93.9.74:8080',
+      api_key: config?.api_key || process.env.EVOLUTION_API_KEY || process.env.WHATSAPP_API_KEY || 'easymob_secret_token_2026',
+      instancia_nome: resolvedInstanceName,
+      ativo: config?.ativo !== undefined ? config.ativo : true,
+    };
 
     const result = await sendWhatsAppMessage({
       toPhone,
       message,
-      config: config || undefined,
+      config: effectiveConfig as any,
       instanceName: resolvedInstanceName,
       logInfo: visitaId
         ? {

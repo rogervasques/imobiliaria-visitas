@@ -139,11 +139,16 @@ CREATE TABLE IF NOT EXISTS public.visitas (
 
 -- Migrações/Colunas da tabela visitas
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS imoveis_ids UUID[] DEFAULT '{}';
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS pos_visita_agendado_para TIMESTAMPTZ;
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS notificar_confirmacao BOOLEAN DEFAULT true;
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS notificar_lembrete BOOLEAN DEFAULT true;
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS notificar_pos_visita BOOLEAN DEFAULT true;
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS whatsapp_pos_visita_cliente VARCHAR(50) DEFAULT 'pendente';
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS created_by_user_id TEXT;
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS created_by_user_nome TEXT;
+
+-- Migrações da tabela configuracoes_whatsapp
+ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS template_pos_visita_cliente TEXT;
 
 ALTER TABLE public.visitas ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total visitas" ON public.visitas;

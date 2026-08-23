@@ -36,6 +36,8 @@ import Link from 'next/link';
 type ViewMode = 'semana' | 'mes' | 'lista';
 
 const HOURS = [
+  '06:00',
+  '07:00',
   '08:00',
   '09:00',
   '10:00',
@@ -49,6 +51,9 @@ const HOURS = [
   '18:00',
   '19:00',
   '20:00',
+  '21:00',
+  '22:00',
+  '23:00',
 ];
 
 const pad = (n: number) => String(n).padStart(2, '0');

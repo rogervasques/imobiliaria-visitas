@@ -623,7 +623,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       const { imovel: _im, imoveis: _ims, cliente: _cl, ...visitaDataOnly } = novaVisita;
       void _im; void _ims; void _cl;
-      await supabase.from('visitas').insert(visitaDataOnly);
+      const { error: insertErr } = await supabase.from('visitas').insert(visitaDataOnly);
+      if (insertErr) {
+        console.error('Erro ao inserir visita no Supabase:', insertErr);
+        showToast(`Aviso: Visita salva localmente (${insertErr.message})`, 'error');
+      }
     } catch (err) {
       console.warn('Supabase insert visita offline:', err);
     }
