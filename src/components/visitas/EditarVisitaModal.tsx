@@ -40,6 +40,7 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
   const [notificarConfirmacao, setNotificarConfirmacao] = useState(visita.notificar_confirmacao !== false);
   const [notificarLembrete, setNotificarLembrete] = useState(visita.notificar_lembrete !== false);
   const [notificarPosVisita, setNotificarPosVisita] = useState(visita.notificar_pos_visita !== false);
+  const [gravarLogs, setGravarLogs] = useState(visita.gravar_logs !== false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -56,6 +57,7 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
       setNotificarConfirmacao(visita.notificar_confirmacao !== false);
       setNotificarLembrete(visita.notificar_lembrete !== false);
       setNotificarPosVisita(visita.notificar_pos_visita !== false);
+      setGravarLogs(visita.gravar_logs !== false);
 
       if (visita.data_hora_visita) {
         const d = new Date(visita.data_hora_visita);
@@ -108,6 +110,7 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
         notificar_confirmacao: notificarConfirmacao,
         notificar_lembrete: notificarLembrete,
         notificar_pos_visita: notificarPosVisita,
+        gravar_logs: gravarLogs,
       });
       onClose();
     } catch (err) {
@@ -143,13 +146,13 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
               {imoveisSelecionados.map((im, index) => (
                 <div
                   key={im.id}
-                  className="inline-flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700/60 shadow-xs"
+                  className="inline-flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 shadow-xs"
                 >
-                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold flex items-center justify-center shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-extrabold flex items-center justify-center shrink-0">
                     {index + 1}
                   </span>
                   <div className="text-xs leading-tight">
-                    <span className="font-mono text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mr-1">
+                    <span className="font-mono text-[10px] font-bold text-blue-700 dark:text-blue-400 mr-1">
                       [{im.codigo || 'S/C'}]
                     </span>
                     <strong className="text-slate-800 dark:text-slate-200">{im.titulo}</strong>
@@ -326,6 +329,22 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
               />
               <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Pedir feedback pós-visita via WhatsApp (2h depois)</span>
             </label>
+            <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={gravarLogs}
+                  onChange={(e) => setGravarLogs(e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 rounded"
+                />
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  Gravar Log de Mensagens do Atendimento
+                  <span className="text-[9px] font-black uppercase tracking-wider px-1 py-0.2 rounded bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200">
+                    Jurídico
+                  </span>
+                </span>
+              </label>
+            </div>
           </div>
         </div>
 

@@ -20,8 +20,9 @@ import {
   mockVisitas,
 } from '@/lib/mockData';
 import { supabase } from '@/lib/supabase';
-import { buildTemplateContext, compileTemplate, sendWhatsAppMessage, TemplateContext } from '@/lib/whatsapp';
+import { buildTemplateContext, buildTemplateContextAsync, compileTemplate, sendWhatsAppMessage, TemplateContext } from '@/lib/whatsapp';
 import { useAuth } from './AuthContext';
+import { useTenant } from './TenantContext';
 import { generateInstanceName } from '@/lib/auth';
 
 interface DataContextType {
@@ -29,6 +30,10 @@ interface DataContextType {
   proprietarios: Proprietario[];
   clientes: Cliente[];
   visitas: Visita[];
+  allImoveis: Imovel[];
+  allProprietarios: Proprietario[];
+  allClientes: Cliente[];
+  allVisitas: Visita[];
   configWhatsApp: ConfiguracaoWhatsApp;
   logs: WhatsAppLog[];
   metrics: DashboardMetrics;
@@ -59,6 +64,9 @@ interface DataContextType {
   dispararWhatsAppManual: (visitaId: string, tipo: 'confirmacao' | 'lembrete' | 'pos_visita', destinatario: 'cliente' | 'proprietario' | 'ambos') => Promise<{ success: boolean; message: string }>;
   executarRotinaLembretes30m: () => Promise<{ processadas: number; enviadas: number; logs: string[] }>;
   
+  // Multi-tenancy
+  renomearImobiliariaCascade: (antigoNome: string, novoNome: string) => Promise<void>;
+
   // Feedback
   toastMessage: { text: string; type: 'success' | 'error' | 'info' } | null;
   showToast: (text: string, type?: 'success' | 'error' | 'info') => void;
@@ -81,10 +89,11 @@ const sortClientesAlphabetically = (list: Cliente[]): Cliente[] =>
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [imoveis, setImoveis] = useState<Imovel[]>([]);
-  const [proprietarios, setProprietarios] = useState<Proprietario[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [visitas, setVisitas] = useState<Visita[]>([]);
+  const { currentTenant, imobiliarias } = useTenant();
+  const [allImoveis, setAllImoveis] = useState<Imovel[]>([]);
+  const [allProprietarios, setAllProprietarios] = useState<Proprietario[]>([]);
+  const [allClientes, setAllClientes] = useState<Cliente[]>([]);
+  const [allVisitas, setAllVisitas] = useState<Visita[]>([]);
   const [configWhatsApp, setConfigWhatsApp] = useState<ConfiguracaoWhatsApp>(mockConfigWhatsApp);
   const [logs, setLogs] = useState<WhatsAppLog[]>(mockLogs);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -100,6 +109,35 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const clearToast = useCallback(() => {
     setToastMessage(null);
   }, []);
+
+  // Filtro de multi-tenant: filtra os dados para exibir exclusivamente os registros da imobiliária selecionada
+  const matchesTenant = useCallback(
+    (itemImobiliaria?: string) => {
+      const activeTenantName = (currentTenant?.nome || user?.imobiliaria || '').trim().toLowerCase();
+
+      // Se a imobiliária selecionada for 'todas' ou 'administração' geral
+      if (activeTenantName === 'administração' || activeTenantName === 'todas' || activeTenantName === '') {
+        return true;
+      }
+
+      const itemTenant = (itemImobiliaria || '').trim().toLowerCase();
+
+      // 1. Se o registro tiver a mesma imobiliária selecionada
+      if (itemTenant === activeTenantName) {
+        return true;
+      }
+
+      // 2. Se o registro não tiver imobiliária explícita (dados base legados) ou for 'easymob imóveis':
+      // Ele pertence à imobiliária principal cadastrada
+      const primaryTenantName = (imobiliarias[0]?.nome || 'Lagom Imóveis').trim().toLowerCase();
+      if (!itemTenant || itemTenant === 'easymob imóveis' || itemTenant === 'easymob') {
+        return activeTenantName === primaryTenantName || activeTenantName === 'lagom imóveis';
+      }
+
+      return false;
+    },
+    [currentTenant, user, imobiliarias]
+  );
 
   // 1. Carregamento inicial (Supabase com fallback para LocalStorage e Mocks)
   const carregarDados = useCallback(async () => {
@@ -124,7 +162,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         loadedImoveis = local ? JSON.parse(local) : mockImoveis;
       }
       const sortedImoveis = sortImoveisAlphabetically(loadedImoveis);
-      setImoveis(sortedImoveis);
+      setAllImoveis(sortedImoveis);
 
       // Proprietários
       let loadedProprietarios: Proprietario[] = [];
@@ -145,6 +183,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 nome: im.proprietario_nome,
                 telefone: im.proprietario_telefone,
                 email: im.proprietario_email,
+                imobiliaria: im.imobiliaria || 'EasyMob Imóveis',
+                imobiliaria_id: im.imobiliaria_id,
                 criado_em: im.criado_em || new Date().toISOString(),
               });
             }
@@ -153,7 +193,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
       }
       const sortedProprietarios = sortProprietariosAlphabetically(loadedProprietarios);
-      setProprietarios(sortedProprietarios);
+      setAllProprietarios(sortedProprietarios);
 
       let loadedClientes: Cliente[] = [];
       if (!errClientes && dbClientes && dbClientes.length > 0) {
@@ -163,7 +203,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         loadedClientes = local ? JSON.parse(local) : mockClientes;
       }
       const sortedClientes = sortClientesAlphabetically(loadedClientes);
-      setClientes(sortedClientes);
+      setAllClientes(sortedClientes);
 
       if (!errConfig && dbConfig && dbConfig.api_url && !dbConfig.api_url.includes('exemplo-evolution')) {
         setConfigWhatsApp(dbConfig);
@@ -221,6 +261,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         return {
           ...v,
+          imobiliaria: v.imobiliaria || imovelPrincipal?.imobiliaria || 'EasyMob Imóveis',
+          imobiliaria_id: v.imobiliaria_id || imovelPrincipal?.imobiliaria_id,
           imovel_id: imovelPrincipal?.id || v.imovel_id,
           imoveis_ids: imoveisRoteiro.map((i) => i.id),
           cliente_id: clienteRef?.id || v.cliente_id,
@@ -230,13 +272,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         };
       });
 
-      setVisitas(populatedVisitas);
+      setAllVisitas(populatedVisitas);
     } catch (e) {
       console.warn('Usando armazenamento local/mock:', e);
-      setImoveis(sortImoveisAlphabetically(mockImoveis));
-      setProprietarios(sortProprietariosAlphabetically(mockProprietarios));
-      setClientes(sortClientesAlphabetically(mockClientes));
-      setVisitas(mockVisitas);
+      setAllImoveis(sortImoveisAlphabetically(mockImoveis));
+      setAllProprietarios(sortProprietariosAlphabetically(mockProprietarios));
+      setAllClientes(sortClientesAlphabetically(mockClientes));
+      setAllVisitas(mockVisitas);
       setConfigWhatsApp(mockConfigWhatsApp);
     } finally {
       setIsLoading(false);
@@ -282,9 +324,34 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${key}`, JSON.stringify(data));
     } catch {
-      // no-op
+      // Ignora erro de cota
     }
   };
+
+  // Coleções filtradas para a imobiliária ativa (Multi-tenancy)
+  const imoveis = React.useMemo(() => allImoveis.filter((i) => matchesTenant(i.imobiliaria)), [allImoveis, matchesTenant]);
+  const proprietarios = React.useMemo(() => allProprietarios.filter((p) => matchesTenant(p.imobiliaria)), [allProprietarios, matchesTenant]);
+  const clientes = React.useMemo(() => allClientes.filter((c) => matchesTenant(c.imobiliaria)), [allClientes, matchesTenant]);
+  
+  // Regra de Acesso à Agenda e Visitas:
+  // - Perfil Corretor: visualiza estritamente as visitas que ele mesmo criou (created_by_user_id === user.id)
+  // - Perfil Gestor: visualiza todas as visitas de toda a sua imobiliária
+  // - Perfil Administrador: acesso global com alternância entre imobiliárias
+  const visitas = React.useMemo(() => {
+    return allVisitas.filter((v) => {
+      const matchesTenantFilter = matchesTenant(v.imobiliaria);
+      if (!matchesTenantFilter) return false;
+
+      // Se o usuário for Corretor, restringe a agenda apenas para suas próprias visitas
+      if (user?.role === 'corretor') {
+        if (!user.id) return false;
+        return v.created_by_user_id === user.id;
+      }
+
+      // Gestores e Administradores visualizam todas as visitas da imobiliária
+      return true;
+    });
+  }, [allVisitas, matchesTenant, user]);
 
   // -------------------------------------------------------------
   // CRUD PROPRIETÁRIOS
@@ -292,8 +359,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const adicionarProprietario = async (
     dados: Omit<Proprietario, 'id' | 'criado_em'>
   ): Promise<Proprietario> => {
+    const activeTenantName = currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis';
+    const activeTenantId = currentTenant?.id;
+
     const novoProp: Proprietario = {
       ...dados,
+      imobiliaria: dados.imobiliaria || activeTenantName,
+      imobiliaria_id: dados.imobiliaria_id || activeTenantId,
       id: crypto.randomUUID ? crypto.randomUUID() : `prop_${Date.now()}`,
       criado_em: new Date().toISOString(),
       atualizado_em: new Date().toISOString(),
@@ -305,8 +377,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       console.warn('Supabase insert proprietario offline:', err);
     }
 
-    const updated = sortProprietariosAlphabetically([novoProp, ...proprietarios]);
-    setProprietarios(updated);
+    const updated = sortProprietariosAlphabetically([novoProp, ...allProprietarios]);
+    setAllProprietarios(updated);
     persistir('proprietarios', updated);
     return novoProp;
   };
@@ -319,13 +391,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     const updated = sortProprietariosAlphabetically(
-      proprietarios.map((p) => (p.id === id ? { ...p, ...dados, atualizado_em: new Date().toISOString() } : p))
+      allProprietarios.map((p) => (p.id === id ? { ...p, ...dados, atualizado_em: new Date().toISOString() } : p))
     );
-    setProprietarios(updated);
+    setAllProprietarios(updated);
     persistir('proprietarios', updated);
 
     // Sincroniza dados nos imóveis vinculados
-    setImoveis((prev) =>
+    setAllImoveis((prev) =>
       sortImoveisAlphabetically(
         prev.map((im) =>
           im.proprietario_id === id
@@ -345,12 +417,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // CRUD IMÓVEIS & GATILHO DE EXCLUSÃO INTELIGENTE DE PROPRIETÁRIO
   // -------------------------------------------------------------
   const adicionarImovel = async (dados: Omit<Imovel, 'id' | 'criado_em'>): Promise<Imovel> => {
+    const activeTenantName = currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis';
+    const activeTenantId = currentTenant?.id;
     let finalPropId = dados.proprietario_id;
 
     // Se não tem proprietario_id, busca por telefone ou cria um novo proprietário automaticamente
     if (!finalPropId && dados.proprietario_nome && dados.proprietario_telefone) {
       const cleanPhone = dados.proprietario_telefone.trim().toLowerCase();
-      const existing = proprietarios.find(
+      const existing = allProprietarios.find(
         (p) => p.telefone.trim().toLowerCase() === cleanPhone || p.nome.trim().toLowerCase() === dados.proprietario_nome.trim().toLowerCase()
       );
 
@@ -361,6 +435,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           nome: dados.proprietario_nome,
           telefone: dados.proprietario_telefone,
           email: dados.proprietario_email,
+          imobiliaria: activeTenantName,
+          imobiliaria_id: activeTenantId,
         });
         finalPropId = criado.id;
       }
@@ -368,6 +444,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const novoImovel: Imovel = {
       ...dados,
+      imobiliaria: dados.imobiliaria || activeTenantName,
+      imobiliaria_id: dados.imobiliaria_id || activeTenantId,
       proprietario_id: finalPropId,
       id: crypto.randomUUID ? crypto.randomUUID() : `imovel_${Date.now()}`,
       criado_em: new Date().toISOString(),
@@ -379,8 +457,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       console.warn('Supabase insert imovel offline:', err);
     }
 
-    const updated = sortImoveisAlphabetically([novoImovel, ...imoveis]);
-    setImoveis(updated);
+    const updated = sortImoveisAlphabetically([novoImovel, ...allImoveis]);
+    setAllImoveis(updated);
     persistir('imoveis', updated);
     showToast(`Imóvel "${novoImovel.titulo}" cadastrado com sucesso!`, 'success');
     return novoImovel;
@@ -394,20 +472,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     const updated = sortImoveisAlphabetically(
-      imoveis.map((im) => (im.id === id ? { ...im, ...dados, atualizado_em: new Date().toISOString() } : im))
+      allImoveis.map((im) => (im.id === id ? { ...im, ...dados, atualizado_em: new Date().toISOString() } : im))
     );
-    setImoveis(updated);
+    setAllImoveis(updated);
     persistir('imoveis', updated);
     
     // Atualiza referências nas visitas
-    setVisitas((prev) =>
+    setAllVisitas((prev) =>
       prev.map((v) => (v.imovel_id === id ? { ...v, imovel: { ...v.imovel, ...dados } as Imovel } : v))
     );
     showToast('Imóvel atualizado com sucesso!', 'success');
   };
 
   const removerImovel = async (id: string) => {
-    const imovelParaRemover = imoveis.find((im) => im.id === id);
+    const imovelParaRemover = allImoveis.find((im) => im.id === id);
 
     try {
       await supabase.from('imoveis').delete().eq('id', id);
@@ -415,8 +493,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       console.warn('Supabase delete imovel offline:', err);
     }
 
-    const updatedImoveis = imoveis.filter((im) => im.id !== id);
-    setImoveis(updatedImoveis);
+    const updatedImoveis = allImoveis.filter((im) => im.id !== id);
+    setAllImoveis(updatedImoveis);
     persistir('imoveis', updatedImoveis);
 
     // ─── GATILHO DA REGRA 3: Exclusão Automática de Proprietário Órfão ───
@@ -438,10 +516,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             console.warn('Supabase delete proprietario orfao offline:', err);
           }
         }
-        const updatedProps = proprietarios.filter(
+        const updatedProps = allProprietarios.filter(
           (p) => (propId ? p.id !== propId : p.telefone?.trim().toLowerCase() !== propPhone)
         );
-        setProprietarios(updatedProps);
+        setAllProprietarios(updatedProps);
         persistir('proprietarios', updatedProps);
         showToast('Imóvel excluído. Como era o único imóvel do proprietário, o cadastro dele foi removido automaticamente.', 'info');
         return;
@@ -455,8 +533,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // CRUD CLIENTES
   // -------------------------------------------------------------
   const adicionarCliente = async (dados: Omit<Cliente, 'id' | 'criado_em'>): Promise<Cliente> => {
+    const activeTenantName = currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis';
+    const activeTenantId = currentTenant?.id;
+
     const novoCliente: Cliente = {
       ...dados,
+      imobiliaria: dados.imobiliaria || activeTenantName,
+      imobiliaria_id: dados.imobiliaria_id || activeTenantId,
       id: crypto.randomUUID ? crypto.randomUUID() : `cliente_${Date.now()}`,
       criado_em: new Date().toISOString(),
     };
@@ -467,8 +550,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       console.warn('Supabase insert cliente offline:', err);
     }
 
-    const updated = sortClientesAlphabetically([novoCliente, ...clientes]);
-    setClientes(updated);
+    const updated = sortClientesAlphabetically([novoCliente, ...allClientes]);
+    setAllClientes(updated);
     persistir('clientes', updated);
     showToast(`Cliente "${novoCliente.nome}" cadastrado!`, 'success');
     return novoCliente;
@@ -482,13 +565,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     const updated = sortClientesAlphabetically(
-      clientes.map((cl) => (cl.id === id ? { ...cl, ...dados, atualizado_em: new Date().toISOString() } : cl))
+      allClientes.map((cl) => (cl.id === id ? { ...cl, ...dados, atualizado_em: new Date().toISOString() } : cl))
     );
-    setClientes(updated);
+    setAllClientes(updated);
     persistir('clientes', updated);
     
     // Atualiza referências nas visitas
-    setVisitas((prev) =>
+    setAllVisitas((prev) =>
       prev.map((v) => (v.cliente_id === id ? { ...v, cliente: { ...v.cliente, ...dados } as Cliente } : v))
     );
     showToast('Cliente atualizado!', 'success');
@@ -501,8 +584,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       console.warn('Supabase delete cliente offline:', err);
     }
 
-    const updated = clientes.filter((cl) => cl.id !== id);
-    setClientes(updated);
+    const updated = allClientes.filter((cl) => cl.id !== id);
+    setAllClientes(updated);
     persistir('clientes', updated);
     showToast('Cliente removido.', 'info');
   };
@@ -535,9 +618,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const createdByUserId = dados.created_by_user_id || user?.id || 'user-admin-master';
     const createdByUserNome = dados.created_by_user_nome || user?.name || 'Roger Vasques Berchembrock';
+    const activeTenantName = currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis';
+    const activeTenantId = currentTenant?.id;
 
     const novaVisita: Visita = {
       ...dados,
+      imobiliaria: dados.imobiliaria || activeTenantName,
+      imobiliaria_id: dados.imobiliaria_id || activeTenantId,
       id: crypto.randomUUID ? crypto.randomUUID() : `visita_${Date.now()}`,
       imovel_id: primaryImovelId,
       imoveis_ids: imoveisIds,
@@ -548,6 +635,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       notificar_confirmacao: notificarConfirmacao,
       notificar_lembrete: notificarLembrete,
       notificar_pos_visita: notificarPosVisita,
+      gravar_logs: dados.gravar_logs !== undefined ? dados.gravar_logs : true,
       status: dados.status || 'agendada',
       whatsapp_confirmacao_cliente: notificarConfirmacao ? 'pendente' : 'ignorado',
       whatsapp_confirmacao_proprietario: notificarConfirmacao ? 'pendente' : 'ignorado',
@@ -562,7 +650,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     // Disparo imediato de confirmação WhatsApp se habilitado e configurado
     if (enviarWhatsApp && notificarConfirmacao && configWhatsApp.ativo) {
-      const ctx = buildTemplateContext(novaVisita);
+      const ctx = await buildTemplateContextAsync(novaVisita);
       const visitInstanceName = (novaVisita.created_by_user_id === user?.id ? user?.instance_name : null) || (novaVisita.created_by_user_id ? generateInstanceName(novaVisita.created_by_user_id) : configWhatsApp.instancia_nome || 'easymob');
 
       // 1. Dispara para o Cliente (com roteiro completo de imóveis)
@@ -632,8 +720,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       console.warn('Supabase insert visita offline:', err);
     }
 
-    const updated = [novaVisita, ...visitas];
-    setVisitas(updated);
+    const updated = [novaVisita, ...allVisitas];
+    setAllVisitas(updated);
     persistir('visitas', updated);
 
     showToast(
@@ -653,8 +741,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       console.warn('Supabase update status visita offline:', err);
     }
 
-    const updated = visitas.map((v) => (v.id === id ? { ...v, status: novoStatus, atualizado_em: new Date().toISOString() } : v));
-    setVisitas(updated);
+    const updated = allVisitas.map((v) => (v.id === id ? { ...v, status: novoStatus, atualizado_em: new Date().toISOString() } : v));
+    setAllVisitas(updated);
     persistir('visitas', updated);
     showToast(`Status da visita alterado para "${novoStatus.toUpperCase()}"`, 'info');
   };
@@ -668,13 +756,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       console.warn('Supabase update visita offline:', err);
     }
 
-    const updated = visitas.map((v) => {
+    const updated = allVisitas.map((v) => {
       if (v.id === id) {
         const finalImoveisIds = dados.imoveis_ids || v.imoveis_ids || (dados.imovel_id ? [dados.imovel_id] : [v.imovel_id]);
         const primaryImovelId = finalImoveisIds[0] || dados.imovel_id || v.imovel_id;
-        const imovelRef = imoveis.find((i) => i.id === primaryImovelId) || v.imovel;
-        const imoveisRefs = finalImoveisIds.map((iid) => imoveis.find((i) => i.id === iid)).filter((i): i is Imovel => !!i);
-        const clienteRef = dados.cliente_id ? clientes.find((c) => c.id === dados.cliente_id) : v.cliente;
+        const imovelRef = allImoveis.find((i) => i.id === primaryImovelId) || v.imovel;
+        const imoveisRefs = finalImoveisIds.map((iid) => allImoveis.find((i) => i.id === iid)).filter((i): i is Imovel => !!i);
+        const clienteRef = dados.cliente_id ? allClientes.find((c) => c.id === dados.cliente_id) : v.cliente;
 
         return {
           ...v,
@@ -690,7 +778,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return v;
     });
 
-    setVisitas(updated);
+    setAllVisitas(updated);
     persistir('visitas', updated);
     showToast('Visita atualizada com sucesso!', 'success');
   };
@@ -702,8 +790,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       console.warn('Supabase delete visita offline:', err);
     }
 
-    const updated = visitas.filter((v) => v.id !== id);
-    setVisitas(updated);
+    const updated = allVisitas.filter((v) => v.id !== id);
+    setAllVisitas(updated);
     persistir('visitas', updated);
     showToast('Visita excluída.', 'info');
   };
@@ -735,7 +823,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return { success: false, message: 'Visita não encontrada' };
     }
 
-    const ctx = buildTemplateContext(visita);
+    const ctx = await buildTemplateContextAsync(visita);
     const visitInstanceName = (visita.created_by_user_id === user?.id ? user?.instance_name : null) || (visita.created_by_user_id ? generateInstanceName(visita.created_by_user_id) : configWhatsApp.instancia_nome || 'easymob');
     let successCount = 0;
     const errors: string[] = [];
@@ -898,6 +986,72 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
+  // Sincroniza em cascata o novo nome da imobiliária em todas as coleções e banco de dados
+  const renomearImobiliariaCascade = useCallback(
+    async (antigoNome: string, novoNome: string) => {
+      if (!antigoNome || !novoNome || antigoNome.toLowerCase() === novoNome.toLowerCase()) return;
+
+      const antigoClean = antigoNome.trim().toLowerCase();
+      const novoClean = novoNome.trim();
+
+      // 1. Atualiza na tabela users do Supabase
+      try {
+        await supabase
+          .from('users')
+          .update({ imobiliaria: novoClean })
+          .ilike('imobiliaria', antigoClean);
+      } catch (err) {
+        console.warn('Supabase update users offline:', err);
+      }
+
+      // 2. Atualiza em memória e no localStorage todas as coleções
+      setAllImoveis((prev) => {
+        const next = prev.map((im) => {
+          if (!im.imobiliaria || im.imobiliaria.trim().toLowerCase() === antigoClean || im.imobiliaria.trim().toLowerCase() === 'easymob imóveis') {
+            return { ...im, imobiliaria: novoClean };
+          }
+          return im;
+        });
+        persistir('imoveis', next);
+        return next;
+      });
+
+      setAllClientes((prev) => {
+        const next = prev.map((cl) => {
+          if (!cl.imobiliaria || cl.imobiliaria.trim().toLowerCase() === antigoClean || cl.imobiliaria.trim().toLowerCase() === 'easymob imóveis') {
+            return { ...cl, imobiliaria: novoClean };
+          }
+          return cl;
+        });
+        persistir('clientes', next);
+        return next;
+      });
+
+      setAllProprietarios((prev) => {
+        const next = prev.map((pr) => {
+          if (!pr.imobiliaria || pr.imobiliaria.trim().toLowerCase() === antigoClean || pr.imobiliaria.trim().toLowerCase() === 'easymob imóveis') {
+            return { ...pr, imobiliaria: novoClean };
+          }
+          return pr;
+        });
+        persistir('proprietarios', next);
+        return next;
+      });
+
+      setAllVisitas((prev) => {
+        const next = prev.map((vs) => {
+          if (!vs.imobiliaria || vs.imobiliaria.trim().toLowerCase() === antigoClean || vs.imobiliaria.trim().toLowerCase() === 'easymob imóveis') {
+            return { ...vs, imobiliaria: novoClean };
+          }
+          return vs;
+        });
+        persistir('visitas', next);
+        return next;
+      });
+    },
+    []
+  );
+
   // -------------------------------------------------------------
   // MÉTRICAS CALCULADAS PARA O DASHBOARD
   // -------------------------------------------------------------
@@ -927,7 +1081,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     taxaConfirmacao,
   };
 
-
   return (
     <DataContext.Provider
       value={{
@@ -935,6 +1088,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         proprietarios,
         clientes,
         visitas,
+        allImoveis,
+        allProprietarios,
+        allClientes,
+        allVisitas,
         configWhatsApp,
         logs,
         metrics,
@@ -954,6 +1111,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         atualizarConfigWhatsApp,
         dispararWhatsAppManual,
         executarRotinaLembretes30m,
+        renomearImobiliariaCascade,
         toastMessage,
         showToast,
         clearToast,

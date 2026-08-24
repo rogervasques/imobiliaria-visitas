@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, LogIn, Sparkles, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { EasyMobLogo } from '@/components/ui/EasyMobLogo';
 
 function LoginForm() {
   const router = useRouter();
@@ -50,17 +51,13 @@ function LoginForm() {
       <div className="w-full max-w-md relative z-10 space-y-6">
         {/* Card Principal */}
         <div className="p-8 sm:p-10 rounded-3xl bg-white/10 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/10 dark:border-slate-800 shadow-2xl space-y-7">
-          {/* Logo e Título */}
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-black text-2xl shadow-xl shadow-emerald-500/30 mb-2">
-              EM
-            </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">
-              Easy<span className="text-emerald-400">Mob</span>
-            </h1>
-            <p className="text-xs font-medium text-slate-300">
-              Gestão Imobiliária Inteligente &amp; Automação de Visitas
-            </p>
+          {/* Logo e Título Oficial Sem Fundo Branco */}
+          <div className="flex justify-center">
+            <EasyMobLogo
+              variant="vertical"
+              size="xl"
+              subtitle="Gestão Imobiliária Inteligente & Automação de Visitas"
+            />
           </div>
 
           {/* Feedback de Erro */}

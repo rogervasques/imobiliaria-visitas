@@ -6,7 +6,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
-import { ImageUpload } from '../ui/ImageUpload';
+import { MultiImageUpload } from '../ui/MultiImageUpload';
 import { useData } from '@/context/DataContext';
 import { TipoImovel, FinalidadeImovel, StatusImovel } from '@/types';
 import { Building2, Save, Sparkles, ShieldCheck, Check } from 'lucide-react';
@@ -84,6 +84,7 @@ export function NovoImovelModal({ isOpen, onClose }: NovoImovelModalProps) {
   const [observacoesChaves, setObservacoesChaves] = useState('');
   const [status, setStatus] = useState<StatusImovel>('disponivel');
   const [imagemUrl, setImagemUrl] = useState('');
+  const [fotosUrls, setFotosUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const sugestoesProprietarios = proprietarios.filter(
@@ -104,6 +105,9 @@ export function NovoImovelModal({ isOpen, onClose }: NovoImovelModalProps) {
 
     setIsSubmitting(true);
     try {
+      const capaFinal = imagemUrl || fotosUrls[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80';
+      const fotosFinais = fotosUrls.length > 0 ? fotosUrls : [capaFinal];
+
       await adicionarImovel({
         codigo: codigo || `IM-${Math.floor(1000 + Math.random() * 9000)}`,
         titulo,
@@ -136,7 +140,8 @@ export function NovoImovelModal({ isOpen, onClose }: NovoImovelModalProps) {
         proprietario_email: proprietarioEmail,
         observacoes_chaves: observacoesChaves,
         status,
-        imagem_url: imagemUrl || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
+        imagem_url: capaFinal,
+        fotos_urls: fotosFinais,
       });
       onClose();
     } catch (err) {
@@ -399,14 +404,16 @@ export function NovoImovelModal({ isOpen, onClose }: NovoImovelModalProps) {
           </div>
         </div>
 
-        {/* Foto do Imóvel */}
+        {/* Fotos do Imóvel (Upload Múltiplo & Galeria) */}
         <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Foto Principal do Imóvel
-          </h4>
-          <ImageUpload
-            value={imagemUrl}
-            onChange={(url) => setImagemUrl(url)}
+          <MultiImageUpload
+            label="Galeria de Fotos do Imóvel"
+            fotos={fotosUrls}
+            capaUrl={imagemUrl}
+            onChange={(novasFotos, novaCapa) => {
+              setFotosUrls(novasFotos);
+              setImagemUrl(novaCapa);
+            }}
           />
         </div>
 

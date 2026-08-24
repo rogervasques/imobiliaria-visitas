@@ -47,13 +47,14 @@ export async function POST(req: NextRequest) {
     // 3. Hasheia a senha com bcrypt
     const senhaHash = await hashPassword(senha);
 
-    // 4. Cria o novo usuário com role 'corretor' e a imobiliária do convite
+    // 4. Cria o novo usuário com a role do convite ('corretor' ou 'gestor') e a imobiliária do convite
+    const userRole = (invite.role as 'admin' | 'gestor' | 'corretor') || 'corretor';
     const newUser = await createUser({
       nome: nome.trim(),
       email: normalizedEmail,
       telefone: telefone ? telefone.trim() : undefined,
       senha_hash: senhaHash,
-      role: 'corretor',
+      role: userRole,
       imobiliaria: invite.imobiliaria,
     });
 

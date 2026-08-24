@@ -99,6 +99,86 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, processed: 'MESSAGES_UPDATE' });
     }
 
+    // 3. Evento de Nova Mensagem Recebida/Enviada: MESSAGES_UPSERT (Gravação de Logs com Criptografia AES-256)
+    if (event === 'MESSAGES_UPSERT' || event === 'MESSAGES.UPSERT' || event === 'messages.upsert') {
+      const messages = Array.isArray(data) ? data : data?.messages || [data];
+
+      for (const msg of messages) {
+        const key = msg.key || {};
+        const fromMe = Boolean(key.fromMe);
+        const remoteJid = key.remoteJid || msg.remoteJid || '';
+        const phone = remoteJid.replace(/@.+/, '').replace(/\D/g, '');
+        const messageId = key.id || msg.id || `msg_${Date.now()}`;
+
+        // Extrai texto e mídia
+        let texto = '';
+        let tipoMidia: 'texto' | 'imagem' | 'audio' | 'documento' = 'texto';
+        let midiaUrl = '';
+
+        const m = msg.message || {};
+        if (m.conversation) {
+          texto = m.conversation;
+        } else if (m.extendedTextMessage?.text) {
+          texto = m.extendedTextMessage.text;
+        } else if (m.imageMessage) {
+          tipoMidia = 'imagem';
+          texto = m.imageMessage.caption || '[FOTO DA VISITA / IMOVEL]';
+          midiaUrl = m.imageMessage.url || '';
+        } else if (m.audioMessage) {
+          tipoMidia = 'audio';
+          texto = '[AUDIO DE ATENDIMENTO]';
+          midiaUrl = m.audioMessage.url || '';
+        } else if (m.documentMessage) {
+          tipoMidia = 'documento';
+          texto = m.documentMessage.fileName || '[DOCUMENTO ANEXO]';
+          midiaUrl = m.documentMessage.url || '';
+        }
+
+        if (phone && texto) {
+          // Busca visitas ativas para esse telefone que tenham gravar_logs === true
+          const { data: clientes } = await supabase
+            .from('clientes')
+            .select('id, nome, telefone')
+            .ilike('telefone', `%${phone.slice(-8)}%`);
+
+          if (clientes && clientes.length > 0) {
+            const clienteIds = clientes.map((c) => c.id);
+            const { data: visitas } = await supabase
+              .from('visitas')
+              .select('id, imobiliaria, gravar_logs')
+              .in('cliente_id', clienteIds)
+              .order('data_hora_visita', { ascending: false })
+              .limit(1);
+
+            if (visitas && visitas.length > 0 && visitas[0].gravar_logs !== false) {
+              const v = visitas[0];
+              const { encryptText } = await import('@/lib/crypto');
+              const encryptedText = encryptText(texto);
+
+              try {
+                await supabase.from('logs_mensagens').insert({
+                  visita_id: v.id,
+                  imobiliaria: v.imobiliaria,
+                  message_id: messageId,
+                  timestamp: new Date().toISOString(),
+                  remetente_tipo: fromMe ? 'CORRETOR' : 'CLIENTE',
+                  remetente_nome: fromMe ? 'Corretor' : clientes[0].nome,
+                  remetente_telefone: phone,
+                  conteudo_texto: encryptedText,
+                  tipo_midia: tipoMidia,
+                  midia_url: midiaUrl,
+                });
+              } catch {
+                // Silencia falha se tabela ainda não criada
+              }
+            }
+          }
+        }
+      }
+
+      return NextResponse.json({ success: true, processed: 'MESSAGES_UPSERT' });
+    }
+
     return NextResponse.json({ success: true, received: true });
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : 'Erro ao processar webhook';

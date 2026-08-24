@@ -8,7 +8,9 @@ import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
-import { ImageUpload } from '../ui/ImageUpload';
+import { MultiImageUpload } from '../ui/MultiImageUpload';
+import { ImovelGaleriaLightbox } from './ImovelGaleriaLightbox';
+import { CompartilharImovelModal } from './CompartilharImovelModal';
 import { useData } from '@/context/DataContext';
 import {
   Building2,
@@ -41,8 +43,16 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  ExternalLink,
+  Navigation,
+  Images,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Share2,
 } from 'lucide-react';
 import { formatCurrency, formatPhone, formatDateTime, getWhatsAppDirectLink } from '@/lib/utils';
+import { getGoogleMapsSearchUrl, getGoogleMapsDirectionsUrl } from '@/lib/maps';
 
 interface ImovelDetalhesModalProps {
   imovel: Imovel | null;
@@ -84,6 +94,9 @@ export function ImovelDetalhesModal({
   const [isEditing, setIsEditing] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [isCompartilharOpen, setIsCompartilharOpen] = useState(false);
 
   // Estados de Edição
   const [codigo, setCodigo] = useState('');
@@ -118,6 +131,7 @@ export function ImovelDetalhesModal({
   const [observacoesChaves, setObservacoesChaves] = useState('');
   const [status, setStatus] = useState<StatusImovel>('disponivel');
   const [imagemUrl, setImagemUrl] = useState('');
+  const [fotosUrls, setFotosUrls] = useState<string[]>([]);
 
   // Histórico de visitas vinculadas a este imóvel (individual ou parte de roteiro)
   const historicoVisitas = useMemo(() => {
@@ -160,7 +174,14 @@ export function ImovelDetalhesModal({
       setProprietarioEmail(imovel.proprietario_email || '');
       setObservacoesChaves(imovel.observacoes_chaves || '');
       setStatus(imovel.status || 'disponivel');
-      setImagemUrl(imovel.imagem_url || '');
+
+      const initialFotos = imovel.fotos_urls && imovel.fotos_urls.length > 0
+        ? imovel.fotos_urls
+        : (imovel.imagem_url ? [imovel.imagem_url] : []);
+      setFotosUrls(initialFotos);
+      setImagemUrl(imovel.imagem_url || initialFotos[0] || '');
+      setActivePhotoIndex(0);
+
       setIsEditing(false);
       setIsConfirmingDelete(false);
       setActiveTab('detalhes');
@@ -216,6 +237,13 @@ export function ImovelDetalhesModal({
     imovel.proprietario_telefone,
     `Olá, ${imovel.proprietario_nome}! Gostaria de falar sobre o seu imóvel ${imovel.titulo} (${imovel.codigo || ''}).`
   );
+
+  // Fotos da galeria e capa de visualização
+  const fotosList = imovel.fotos_urls && imovel.fotos_urls.length > 0
+    ? imovel.fotos_urls
+    : (imovel.imagem_url ? [imovel.imagem_url] : []);
+  const capaVisualizacao = imovel.imagem_url || fotosList[0] || '';
+  const activePhoto = fotosList[activePhotoIndex] || capaVisualizacao;
 
   // Cálculo automático do valor do m²
   const areaConstruidaOuUtil = imovel.area_construida || imovel.area_util || 0;
@@ -293,7 +321,8 @@ export function ImovelDetalhesModal({
         proprietario_email: proprietarioEmail,
         observacoes_chaves: observacoesChaves,
         status,
-        imagem_url: imagemUrl,
+        imagem_url: imagemUrl || fotosUrls[0] || '',
+        fotos_urls: fotosUrls.length > 0 ? fotosUrls : (imagemUrl ? [imagemUrl] : []),
       });
       setIsEditing(false);
     } catch (err) {
@@ -575,11 +604,16 @@ export function ImovelDetalhesModal({
               </div>
             </div>
 
-            {/* Foto */}
+            {/* Galeria de Fotos (Upload Múltiplo) */}
             <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <ImageUpload
-                value={imagemUrl}
-                onChange={(url) => setImagemUrl(url)}
+              <MultiImageUpload
+                label="Galeria de Fotos do Imóvel"
+                fotos={fotosUrls}
+                capaUrl={imagemUrl}
+                onChange={(novasFotos, novaCapa) => {
+                  setFotosUrls(novasFotos);
+                  setImagemUrl(novaCapa);
+                }}
               />
             </div>
 
@@ -702,20 +736,20 @@ export function ImovelDetalhesModal({
                 </button>
               </div>
 
-              {/* Botões de Ação do Imóvel: [ 📅 Agendar Visita ] [ ✏️ Editar ] e [ 🗑️ Excluir ] */}
+              {/* Botões de Ação do Imóvel: [ 📲 Compartilhar ] [ ✏️ Editar ] e [ 🗑️ Excluir ] */}
               <div className="flex items-center gap-1.5 flex-wrap">
-                {onAgendarVisita && (
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    onClick={() => onAgendarVisita(imovel)}
-                    className="font-bold text-xs shadow-xs"
-                  >
-                    <Calendar className="w-3.5 h-3.5 mr-1" />
-                    Agendar Visita
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setIsCompartilharOpen(true)}
+                  className="font-bold text-xs shadow-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  title="Compartilhar link público e enviar mensagem pronta para cliente no WhatsApp"
+                >
+                  <Share2 className="w-3.5 h-3.5 mr-1" />
+                  Compartilhar Imóvel
+                </Button>
+
                 <Button
                   type="button"
                   variant="outline"
@@ -742,41 +776,138 @@ export function ImovelDetalhesModal({
             {/* ── ABA 1: DETALHES DO IMÓVEL ── */}
             {activeTab === 'detalhes' && (
               <div className="space-y-6">
-                {/* 1. Imagem de Capa e Badges */}
-                <div className="relative h-60 w-full rounded-2xl bg-slate-200 dark:bg-slate-800 overflow-hidden shadow-inner border border-slate-200/80 dark:border-slate-800">
-                  {imovel.imagem_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={imovel.imagem_url}
-                      alt={imovel.titulo}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100 dark:bg-slate-800">
-                      <Building2 className="w-14 h-14 stroke-[1.5]" />
+                {/* 1. Imagem de Capa, Badges e Carrossel da Galeria */}
+                <div className="space-y-2.5">
+                  <div
+                    onClick={() => fotosList.length > 0 && setLightboxIndex(activePhotoIndex)}
+                    className="relative h-64 sm:h-80 w-full rounded-2xl bg-slate-200 dark:bg-slate-800 overflow-hidden shadow-inner border border-slate-200/80 dark:border-slate-800 group cursor-pointer"
+                  >
+                    {activePhoto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={activePhoto}
+                        alt={`${imovel.titulo} - Foto ${activePhotoIndex + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100 dark:bg-slate-800">
+                        <Building2 className="w-14 h-14 stroke-[1.5]" />
+                      </div>
+                    )}
+
+                    {/* Setas de Navegação do Carrossel */}
+                    {fotosList.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActivePhotoIndex((prev) => (prev - 1 + fotosList.length) % fotosList.length);
+                          }}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md transition-all hover:scale-110 shadow-lg z-20 cursor-pointer"
+                          title="Foto anterior"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActivePhotoIndex((prev) => (prev + 1) % fotosList.length);
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md transition-all hover:scale-110 shadow-lg z-20 cursor-pointer"
+                          title="Próxima foto"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+
+                        {/* Indicadores de bolinhas / dots no rodapé da imagem */}
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md">
+                          {fotosList.map((_, dotIdx) => (
+                            <button
+                              key={dotIdx}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActivePhotoIndex(dotIdx);
+                              }}
+                              className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
+                                dotIdx === activePhotoIndex
+                                  ? 'bg-emerald-400 scale-125'
+                                  : 'bg-white/50 hover:bg-white/80'
+                              }`}
+                              title={`Ir para foto ${dotIdx + 1}`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Badges Topo Esquerda */}
+                    <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
+                      <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-white font-mono text-xs font-bold">
+                        {imovel.codigo || 'SEM-COD'}
+                      </span>
+                      <Badge variant={statusColors[imovel.status] || 'default'} size="sm">
+                        {imovel.status.toUpperCase()}
+                      </Badge>
+                    </div>
+
+                    {/* Contador Topo Direita */}
+                    {fotosList.length > 1 && (
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-white font-mono text-xs font-bold shadow-md z-10">
+                        <Images className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>{activePhotoIndex + 1} / {fotosList.length}</span>
+                      </div>
+                    )}
+
+                    {/* Badges Inferior Esquerda */}
+                    <div className="absolute bottom-3 left-3 flex items-center gap-2 z-10">
+                      <span className="px-3 py-1 rounded-xl bg-emerald-600/95 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider">
+                        {imovel.tipo} • {imovel.finalidade}
+                      </span>
+                      {imovel.aceita_pet !== undefined && (
+                        <span className="px-2.5 py-1 rounded-xl bg-slate-900/85 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1">
+                          <PawPrint className="w-3.5 h-3.5 text-emerald-400" />
+                          {imovel.aceita_pet ? 'Aceita Pet' : 'Não Aceita Pet'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Botão de Zoom no Canto Inferior Direito */}
+                    <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black/90 text-white text-xs font-bold backdrop-blur-md transition-all group-hover:scale-105 shadow-md z-10">
+                      <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="hidden sm:inline">Zoom</span>
+                    </div>
+                  </div>
+
+                  {/* Faixa de Miniaturas Navegáveis */}
+                  {fotosList.length > 1 && (
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
+                      {fotosList.map((url, idx) => {
+                        const isSelected = idx === activePhotoIndex;
+                        return (
+                          <button
+                            key={url + idx}
+                            type="button"
+                            onClick={() => setActivePhotoIndex(idx)}
+                            className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer shadow-xs ${
+                              isSelected
+                                ? 'border-emerald-500 ring-2 ring-emerald-500/50 scale-105 shadow-md'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 opacity-70 hover:opacity-100'
+                            }`}
+                            title={`Visualizar foto ${idx + 1}`}
+                          >
+                            <img src={url} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                            <div className="absolute bottom-0 right-0 bg-black/70 text-[9px] font-mono text-white px-1">
+                              {idx + 1}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
-
-                  <div className="absolute top-3 left-3 flex items-center gap-2">
-                    <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-white font-mono text-xs font-bold">
-                      {imovel.codigo || 'SEM-COD'}
-                    </span>
-                    <Badge variant={statusColors[imovel.status] || 'default'} size="sm">
-                      {imovel.status.toUpperCase()}
-                    </Badge>
-                  </div>
-
-                  <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                    <span className="px-3 py-1 rounded-xl bg-emerald-600/95 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider">
-                      {imovel.tipo} • {imovel.finalidade}
-                    </span>
-                    {imovel.aceita_pet !== undefined && (
-                      <span className="px-2.5 py-1 rounded-xl bg-slate-900/85 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1">
-                        <PawPrint className="w-3.5 h-3.5 text-emerald-400" />
-                        {imovel.aceita_pet ? 'Aceita Pet' : 'Não Aceita Pet'}
-                      </span>
-                    )}
-                  </div>
                 </div>
 
                 {/* 2. Valores Financeiros e Valor do m² */}
@@ -874,16 +1005,40 @@ export function ImovelDetalhesModal({
                 </div>
 
                 {/* 4. Endereço Completo */}
-                <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
-                  <MapPin className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-slate-900 dark:text-slate-100">
-                      {imovel.endereco}{imovel.numero ? `, ${imovel.numero}` : ''}
-                      {imovel.complemento ? ` (${imovel.complemento})` : ''}
-                    </p>
-                    <p className="text-slate-500 dark:text-slate-400">
-                      {imovel.bairro} — {imovel.cidade}/{imovel.estado} {imovel.cep ? `• CEP: ${imovel.cep}` : ''}
-                    </p>
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-start gap-2.5 text-slate-600 dark:text-slate-300 min-w-0">
+                    <MapPin className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                        {imovel.endereco}{imovel.numero ? `, ${imovel.numero}` : ''}
+                        {imovel.complemento ? ` (${imovel.complemento})` : ''}
+                      </p>
+                      <p className="text-slate-500 dark:text-slate-400 mt-0.5">
+                        {imovel.bairro} — {imovel.cidade}/{imovel.estado} {imovel.cep ? `• CEP: ${imovel.cep}` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
+                    <a
+                      href={getGoogleMapsSearchUrl(imovel)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-colors shadow-xs"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>📍 Abrir no Mapa</span>
+                    </a>
+
+                    <a
+                      href={getGoogleMapsDirectionsUrl(imovel)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-xs border border-blue-200 dark:border-blue-800 transition-colors shadow-xs"
+                    >
+                      <Navigation className="w-3.5 h-3.5 text-blue-500" />
+                      <span>🚗 Traçar Rota</span>
+                    </a>
                   </div>
                 </div>
 
@@ -1206,6 +1361,23 @@ export function ImovelDetalhesModal({
           </div>
         </div>
       </Modal>
+
+      {/* Modal de Compartilhamento / Envio no WhatsApp */}
+      <CompartilharImovelModal
+        imovel={imovel}
+        isOpen={isCompartilharOpen}
+        onClose={() => setIsCompartilharOpen(false)}
+      />
+
+      {/* Lightbox de Galeria em Tela Cheia */}
+      <ImovelGaleriaLightbox
+        isOpen={lightboxIndex !== null}
+        fotos={fotosList}
+        initialIndex={lightboxIndex || 0}
+        imovelTitulo={imovel.titulo}
+        imovelCodigo={imovel.codigo}
+        onClose={() => setLightboxIndex(null)}
+      />
     </>
   );
 }

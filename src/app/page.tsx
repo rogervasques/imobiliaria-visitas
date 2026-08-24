@@ -1,742 +1,827 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useData } from '@/context/DataContext';
-import { Visita, StatusVisita } from '@/types';
-import { EditarVisitaModal } from '@/components/visitas/EditarVisitaModal';
-import { VisitaDetalhesModal } from '@/components/visitas/VisitaDetalhesModal';
-import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
+import React, { useState } from 'react';
+import Link from 'next/link';
 import {
-  MessageCircle, MoreVertical, CheckCircle2, XCircle,
-  RotateCcw, Pencil, Trash2, AlertTriangle, MapPin, Phone,
-  Building2, CalendarDays, Timer, ChevronLeft, ChevronRight,
-  Clock, CalendarCheck2, Hourglass, Ban, User,
+  ShieldCheck,
+  CalendarDays,
+  MessageSquare,
+  MapPin,
+  FileText,
+  CheckCircle2,
+  ArrowRight,
+  Sparkles,
+  Users,
+  Building2,
+  Zap,
+  Lock,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Send,
+  HelpCircle,
+  Award,
+  Layers,
+  Scale,
+  TrendingUp,
+  Flame,
+  Check,
+  PhoneCall,
+  Smartphone,
+  ExternalLink,
 } from 'lucide-react';
-import {
-  formatPhone, formatTime, getWhatsAppDirectLink,
-} from '@/lib/utils';
-import { WhatsAppStatusBadge } from '@/components/layout/WhatsAppStatusBadge';
+import { EasyMobLogo } from '@/components/ui/EasyMobLogo';
 
-// ─── Constantes de Status ────────────────────────────────────────────────────
+export default function LandingPage() {
+  const [billingCycle, setBillingCycle] = useState<'mensal' | 'anual'>('mensal');
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-const STATUS_CFG: Record<StatusVisita, { label: string; dot: string; badge: string; line: string }> = {
-  confirmada: {
-    label: 'Confirmada',
-    dot: 'bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-950',
-    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
-    line: 'border-l-emerald-400',
-  },
-  agendada: {
-    label: 'Agendada',
-    dot: 'bg-amber-400 ring-4 ring-amber-100 dark:ring-amber-950',
-    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-    line: 'border-l-amber-400',
-  },
-  cancelada: {
-    label: 'Cancelada',
-    dot: 'bg-rose-500 ring-4 ring-rose-100 dark:ring-rose-950',
-    badge: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
-    line: 'border-l-rose-400',
-  },
-  reagendada: {
-    label: 'Reagendada',
-    dot: 'bg-slate-400 ring-4 ring-slate-100 dark:ring-slate-800',
-    badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-    line: 'border-l-slate-400',
-  },
-};
-
-const pad = (n: number) => String(n).padStart(2, '0');
-
-function toDateStr(d: Date) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-// ─── Hook: Próxima Visita ────────────────────────────────────────────────────
-
-function useProximaVisita(visitas: Visita[]) {
-  const [now, setNow] = useState(new Date());
-  useEffect(() => {
-    const i = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(i);
-  }, []);
-
-  // Procura EXCLUSIVAMENTE a próxima visita futura não cancelada (horário maior que agora)
-  const proxima = visitas
-    .filter(v => new Date(v.data_hora_visita).getTime() > now.getTime() && v.status !== 'cancelada')
-    .sort((a, b) => new Date(a.data_hora_visita).getTime() - new Date(b.data_hora_visita).getTime())[0];
-
-  if (!proxima) {
-    return { proxima: null, horas: 0, minutos: 0, segundos: 0, dias: 0, diffMs: 0 };
-  }
-
-  const targetTime = new Date(proxima.data_hora_visita).getTime();
-  const diffMs = Math.max(0, targetTime - now.getTime());
-  const totalSeg = Math.floor(diffMs / 1000);
-  const dias = Math.floor(totalSeg / 86400);
-  const horas = Math.floor((totalSeg % 86400) / 3600);
-  const minutos = Math.floor((totalSeg % 3600) / 60);
-  const segundos = totalSeg % 60;
-
-  return {
-    proxima,
-    diffMs,
-    dias,
-    horas,
-    minutos,
-    segundos,
+  const toggleFaq = (index: number) => {
+    setOpenFaq(openFaq === index ? null : index);
   };
-}
 
-// ─── Mini Calendário ─────────────────────────────────────────────────────────
+  const WHATSAPP_SUPPORT_URL =
+    'https://wa.me/5511999999999?text=Ol%C3%A1%21+Gostaria+de+saber+mais+sobre+o+EasyMob+e+agendar+uma+demonstra%C3%A7%C3%A3o.';
 
-function MiniCalendario({
-  visitas,
-  selectedDate,
-  onSelectDate,
-}: {
-  visitas: Visita[];
-  selectedDate: string;
-  onSelectDate: (d: string) => void;
-}) {
-  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
-
-  const hoje = toDateStr(new Date());
-
-  // Mapa: dateStr → status[]
-  const visitasPorDia = useMemo(() => {
-    const m: Record<string, StatusVisita[]> = {};
-    visitas.forEach(v => {
-      const ds = toDateStr(new Date(v.data_hora_visita));
-      if (!m[ds]) m[ds] = [];
-      m[ds].push(v.status);
-    });
-    return m;
-  }, [visitas]);
-
-  const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay(); // 0=Dom
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const monthName = new Date(viewYear, viewMonth, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-
-  const cells: (number | null)[] = [
-    ...Array(firstDayOfMonth).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  const faqs = [
+    {
+      q: 'Como funciona a conexão com o WhatsApp?',
+      a: 'É extremamente simples e rápida: basta escanear um QR Code diretamente na tela de configurações com o seu aplicativo do WhatsApp, exatamente como você faz no WhatsApp Web. Não é necessário CNPJ de desenvolvedor nem aprovações burocráticas da Meta.',
+    },
+    {
+      q: 'Como o Dossiê em PDF protege minhas comissões (Art. 727 do Código Civil)?',
+      a: 'O EasyMob registra e carimba com data, hora e IP todo o histórico de interações, confirmações de visita, localização enviada e logs de mensagens trocadas com o cliente. O Dossiê gerado serve como robusto meio de prova da aproximação útil entre comprador e imóvel realizada pelo corretor.',
+    },
+    {
+      q: 'Posso usar o EasyMob sozinho ou com minha equipe de corretores?',
+      a: 'Ambos! O Plano Essencial e o Plano Pro são ideais para corretores autônomos que buscam máxima produtividade e blindagem jurídica. Já o Plano Enterprise permite gerenciar equipes com múltiplos corretores e painel multi-tenant com relatórios consolidados.',
+    },
+    {
+      q: 'Os lembretes de visita automáticos realmente reduzem os no-shows (bolos)?',
+      a: 'Sim! Nossos clientes relatam uma redução média de mais de 75% em faltas e atrasos. O envio imediato dos dados da visita com link do Google Maps somado ao lembrete 1 hora antes garante que o cliente se planeje e confirme a presença.',
+    },
+    {
+      q: 'Preciso instalar algum aplicativo pesado no computador?',
+      a: 'Não. O EasyMob é 100% web e na nuvem, acessível de qualquer computador, tablet ou smartphone. Ele também é um Progressive Web App (PWA), permitindo ser instalado na tela inicial do seu celular com 1 clique.',
+    },
   ];
 
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-    else setViewMonth(m => m - 1);
-  };
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-    else setViewMonth(m => m + 1);
-  };
-
-  // Dots de status únicos por dia
-  const dotColors: Record<StatusVisita, string> = {
-    confirmada: 'bg-emerald-500',
-    agendada: 'bg-amber-400',
-    cancelada: 'bg-rose-500',
-    reagendada: 'bg-slate-400',
-  };
-
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-      {/* Header do calendário */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-        <button type="button" onClick={prevMonth} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 capitalize">{monthName}</span>
-        <button type="button" onClick={nextMonth} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500">
-          <ChevronRight className="w-4 h-4" />
-        </button>
+    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-white antialiased overflow-x-hidden font-sans">
+      {/* ─── BACKGROUND GLOWS ─── */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-emerald-500/10 blur-[140px] rounded-full" />
+        <div className="absolute top-[35%] -left-60 w-[600px] h-[600px] bg-teal-500/10 blur-[160px] rounded-full" />
+        <div className="absolute top-[70%] -right-60 w-[600px] h-[600px] bg-emerald-600/10 blur-[160px] rounded-full" />
       </div>
 
-      <div className="p-3">
-        {/* Cabeçalho Dias da Semana */}
-        <div className="grid grid-cols-7 mb-1">
-          {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
-            <div key={i} className="text-center text-[10px] font-bold text-slate-400 py-1">{d}</div>
-          ))}
-        </div>
+      {/* ─── NAVBAR PÚBLICA ─── */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800/80 transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group focus:outline-none">
+            <EasyMobLogo variant="horizontal" size="md" />
+          </Link>
 
-        {/* Grade de Dias */}
-        <div className="grid grid-cols-7 gap-y-0.5">
-          {cells.map((day, idx) => {
-            if (!day) return <div key={`empty-${idx}`} />;
-            const ds = `${viewYear}-${pad(viewMonth + 1)}-${pad(day)}`;
-            const isSelected = ds === selectedDate;
-            const isHoje = ds === hoje;
-            const statusList = visitasPorDia[ds] || [];
-            const uniqueStatus = [...new Set(statusList)] as StatusVisita[];
+          {/* Links desktop */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-300">
+            <a href="#operacao" className="hover:text-emerald-400 transition-colors">
+              Operação 360°
+            </a>
+            <a href="#rastreabilidade" className="hover:text-emerald-400 transition-colors">
+              Rastreabilidade & Automação
+            </a>
+            <a href="#planos" className="hover:text-emerald-400 transition-colors">
+              Planos & Preços
+            </a>
+            <a href="#faq" className="hover:text-emerald-400 transition-colors">
+              Dúvidas
+            </a>
+          </nav>
 
-            return (
-              <button
-                key={ds}
-                type="button"
-                onClick={() => onSelectDate(ds)}
-                className={`
-                  relative flex flex-col items-center py-1.5 rounded-xl transition-all text-xs font-semibold
-                  ${isSelected
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : isHoje
-                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-black'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }
-                `}
-              >
-                <span>{day}</span>
-                {/* Status Dots */}
-                {uniqueStatus.length > 0 && (
-                  <div className="flex items-center gap-0.5 mt-0.5">
-                    {uniqueStatus.slice(0, 3).map((s) => (
-                      <div
-                        key={s}
-                        className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/70' : dotColors[s]}`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Legenda */}
-      <div className="px-3 pb-3 flex flex-wrap gap-2">
-        {[
-          { color: 'bg-emerald-500', label: 'Confirmada' },
-          { color: 'bg-amber-400', label: 'Agendada' },
-          { color: 'bg-rose-500', label: 'Cancelada' },
-        ].map(({ color, label }) => (
-          <div key={label} className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
-            <div className={`w-1.5 h-1.5 rounded-full ${color}`} />
-            {label}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Widget Próxima Visita ────────────────────────────────────────────────────
-
-function ProximaVisitaWidget({ visitas }: { visitas: Visita[] }) {
-  const { proxima, dias, horas, minutos, segundos } = useProximaVisita(visitas);
-
-  const countdownText = dias > 0
-    ? `${dias}d ${pad(horas)}h`
-    : horas > 0
-    ? `${pad(horas)}h ${pad(minutos)}min`
-    : `${pad(minutos)}min ${pad(segundos)}s`;
-
-  return (
-    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-      {/* Cabeçalho */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-          Próxima visita
-        </span>
-      </div>
-
-      <div className="p-4 space-y-3">
-        {proxima ? (
-          <>
-            {/* Countdown em destaque verde */}
-            <div className="flex items-center justify-between px-3.5 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/30">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-0.5">
-                  Tempo Restante
-                </p>
-                <p className="text-2xl font-black tabular-nums leading-none">
-                  {countdownText}
-                </p>
-              </div>
-              <Timer className="w-8 h-8 text-emerald-500/30" />
-            </div>
-
-            {/* Imóvel e horário */}
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-start gap-2">
-                <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug">
-                  {proxima.imovel?.titulo || 'Imóvel'} às {formatTime(proxima.data_hora_visita)}
-                </p>
-              </div>
-
-              {proxima.cliente?.nome && (
-                <div className="pl-6 text-xs text-slate-500 dark:text-slate-400">
-                  Cliente: <span className="font-semibold text-slate-700 dark:text-slate-300">{proxima.cliente.nome}</span>
-                </div>
-              )}
-
-              {/* Corretor na Próxima Visita */}
-              <div className="pl-6 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>Corretor: <strong className="font-semibold text-slate-700 dark:text-slate-300">{proxima.corretor_nome || proxima.created_by_user_nome || 'Roger Vasques Berchembrock'}</strong></span>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="py-4 px-3 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-1.5">
-            <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Sem visitas futuras
-            </p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-              Não há compromissos pendentes com horário posterior ao atual.
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Timeline Card (clicável) ────────────────────────────────────────────────
-
-function TimelineCard({
-  visita,
-  onOpenDetalhes,
-}: {
-  visita: Visita;
-  onOpenDetalhes: (v: Visita) => void;
-}) {
-  const { atualizarStatusVisita, removerVisita, showToast } = useData();
-  const [showMenu, setShowMenu] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const cfg = STATUS_CFG[visita.status] ?? STATUS_CFG.agendada;
-
-  const handleStatus = async (s: StatusVisita) => {
-    setShowMenu(false);
-    await atualizarStatusVisita(visita.id, s);
-  };
-
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await removerVisita(visita.id);
-      setIsDeleteOpen(false);
-    } catch {
-      showToast('Erro ao excluir. Tente novamente.', 'error');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const waCliente = visita.cliente?.telefone
-    ? getWhatsAppDirectLink(visita.cliente.telefone, `Olá, ${visita.cliente.nome}! Sobre a visita ao imóvel "${visita.imovel?.titulo || ''}".`)
-    : '#';
-  const waProprietario = visita.imovel?.proprietario_telefone
-    ? getWhatsAppDirectLink(visita.imovel.proprietario_telefone, `Olá, ${visita.imovel.proprietario_nome}! Sobre a visita ao "${visita.imovel?.titulo || ''}".`)
-    : '#';
-
-  return (
-    <>
-      {/* Card clicável */}
-      <div
-        className={`group bg-white dark:bg-slate-900 rounded-2xl border border-l-4 ${cfg.line} border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-emerald-400/40 transition-all duration-300 cursor-pointer w-full overflow-hidden`}
-        onClick={() => onOpenDetalhes(visita)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && onOpenDetalhes(visita)}
-        aria-label={`Ver detalhes da visita ao ${visita.imovel?.titulo}`}
-      >
-        <div className="p-3 sm:p-4">
-          {/* Header: thumb + info + badge */}
-          <div className="flex items-start gap-3">
-            <div
-              className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
-              onClick={e => e.stopPropagation()}
+          {/* Botões de Ação */}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="px-4 py-2 text-xs sm:text-sm font-bold text-slate-200 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-slate-800 rounded-xl transition-all shadow-xs"
             >
-              {visita.imovel?.imagem_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={visita.imovel.imagem_url} alt={visita.imovel.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400"><Building2 className="w-5 h-5" /></div>
-              )}
+              Acessar Plataforma
+            </Link>
+            <a
+              href="#planos"
+              className="hidden sm:inline-flex items-center gap-2 px-5 py-2 text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 rounded-xl transition-all shadow-lg shadow-emerald-950/60 hover:shadow-emerald-900/50 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Testar Grátis</span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      {/* ─── 1. HERO SECTION ─── */}
+      <section className="relative z-10 pt-16 pb-24 md:pt-24 md:pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-bold shadow-lg shadow-emerald-950/40 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span>EasyMob — Gestão Inteligente e Proteção Completa para Suas Visitas</span>
+        </div>
+
+        {/* Título Principal */}
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15] max-w-5xl mx-auto">
+          A plataforma intuitiva que organiza a rotina da sua imobiliária,{' '}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+            gera relatórios de desempenho
+          </span>{' '}
+          e ajuda a proteger suas comissões.
+        </h1>
+
+        {/* Subtítulo */}
+        <p className="mt-6 text-base sm:text-xl text-slate-300 max-w-3xl mx-auto font-normal leading-relaxed">
+          O EasyMob acaba com o caos das planilhas e cadernos. Uma solução completa e visual para gerenciar seus imóveis, proprietários e clientes em um só lugar.
+        </p>
+
+        {/* Botões do Hero */}
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+          <a
+            href="#planos"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-extrabold text-white bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 rounded-2xl shadow-xl shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <span>Ver Planos & Testar Grátis</span>
+            <ArrowRight className="w-5 h-5" />
+          </a>
+          <Link
+            href="/login"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 text-base font-bold text-slate-200 bg-slate-900/80 hover:bg-slate-800/90 border border-slate-700/80 rounded-2xl transition-all hover:text-white"
+          >
+            <Lock className="w-4 h-4 text-emerald-400" />
+            <span>Acessar Plataforma</span>
+          </Link>
+        </div>
+
+        {/* Micro Provas Sociais / Garantias */}
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs sm:text-sm text-slate-400 font-medium">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>Sem necessidade de instalação</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>QR Code Instantâneo via WhatsApp</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>Amparo ao Art. 727 do Código Civil</span>
+          </div>
+        </div>
+
+        {/* ─── Hero UI Mockup Visual Interativo ─── */}
+        <div className="mt-16 relative mx-auto max-w-5xl rounded-3xl p-2 sm:p-3 bg-gradient-to-b from-slate-800/60 via-slate-900/60 to-slate-950 border border-slate-800 shadow-2xl shadow-emerald-950/40">
+          <div className="rounded-2xl bg-slate-950 border border-slate-800/80 p-4 sm:p-8 overflow-hidden text-left relative">
+            {/* Barra superior de janela de app */}
+            <div className="flex items-center justify-between pb-6 border-b border-slate-800/80 mb-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-rose-500/80" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                <span className="text-xs font-semibold text-slate-500 ml-2">EasyMob Suite — Painel Operacional</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-800/50">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>WhatsApp Conectado & Operando</span>
+              </div>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start gap-2 justify-between">
-                <div className="flex items-center gap-1.5 flex-1 min-w-0 flex-wrap">
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 line-clamp-1">
-                    {visita.imovel?.titulo || 'Imóvel sem título'}
-                  </h3>
-                  {((visita.imoveis && visita.imoveis.length > 1) || (visita.imoveis_ids && visita.imoveis_ids.length > 1)) && (
-                    <span className="shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                      Roteiro ({visita.imoveis?.length || visita.imoveis_ids?.length} imóveis)
+            {/* Grid interna do mockup */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Card 1: Próxima Visita */}
+              <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Próxima Visita</span>
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/50">Hoje 15:30</span>
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-extrabold text-white">Cobertura Duplex Jardins</h4>
+                  <p className="text-xs text-slate-400 flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-emerald-400 shrink-0" />
+                    <span>Rua Oscar Freire, 1420</span>
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Cliente: <strong>Carlos Eduardo</strong></span>
+                  <span className="text-emerald-400 font-bold">Confirmada</span>
+                </div>
+              </div>
+
+              {/* Card 2: Automação Ativa */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-emerald-950/40 border border-emerald-900/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Automação de WhatsApp</span>
+                  <Zap className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="space-y-1 text-xs">
+                  <p className="text-slate-300 font-medium">Lembrete disparado 1h antes com link do Maps:</p>
+                  <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 font-mono">
+                    💬 &quot;Olá Carlos! Sua visita é às 15:30. Veja a rota no Maps: bit.ly/visita-391&quot;
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Dossiê de Blindagem */}
+              <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Proteção Jurídica</span>
+                  <Scale className="w-4 h-4 text-teal-400" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-slate-300 font-semibold">Dossiê de Atendimento Pronto</p>
+                  <p className="text-[11px] text-slate-400">Comprovação de aproximação útil (Art. 727 CC) com logs auditáveis.</p>
+                </div>
+                <div className="pt-1">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-400">
+                    <FileText className="w-3.5 h-3.5" /> PDF Gerado com 1 Clique
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 2. MÓDULO: ORGANIZAÇÃO TOTAL DA SUA OPERAÇÃO ─── */}
+      <section id="operacao" className="relative z-10 py-24 bg-slate-900/50 border-y border-slate-800/80 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Cabeçalho da Seção */}
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold uppercase tracking-wider">
+              <Layers className="w-3.5 h-3.5" />
+              <span>Módulo de Gestão Operacional</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+              Organização Total da Sua Operação Imobiliária
+            </h2>
+            <p className="text-slate-300 text-base sm:text-lg">
+              Controle cada detalhe do dia a dia dos corretores, imóveis e clientes sem complicação e com total agilidade.
+            </p>
+          </div>
+
+          {/* Grid de Funcionalidades */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Feature 1 */}
+            <div className="p-7 rounded-3xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/40 transition-all group space-y-4 hover:shadow-xl hover:shadow-emerald-950/30">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-950/80 border border-emerald-800/40 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Users className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Visão 360° por Cliente e Imóvel</h3>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li className="flex items-start gap-2">
+                  <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                  <span><strong>No Perfil do Cliente:</strong> Histórico completo e detalhado de todos os imóveis já visitados.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                  <span><strong>No Perfil do Imóvel:</strong> Quantidade de visitas recebidas e o feedback/retorno de cada uma.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="p-7 rounded-3xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/40 transition-all group space-y-4 hover:shadow-xl hover:shadow-emerald-950/30">
+              <div className="w-12 h-12 rounded-2xl bg-teal-950/80 border border-teal-800/40 text-teal-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <CalendarDays className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Agenda Visual e Intuitiva</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Acompanhe o fluxo de compromissos por <strong>dia, semana ou mês</strong> em um painel moderno com linha do tempo e status codificados por cores (Confirmada, Agendada, Cancelada).
+              </p>
+              <div className="pt-2 flex items-center gap-2 text-xs font-bold text-teal-400">
+                <Clock className="w-4 h-4" />
+                <span>Contagem regressiva em tempo real para a próxima visita</span>
+              </div>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="p-7 rounded-3xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/40 transition-all group space-y-4 hover:shadow-xl hover:shadow-emerald-950/30">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-950/80 border border-cyan-800/40 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <MapPin className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Recursos Rápidos de Campo</h3>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li className="flex items-start gap-2">
+                  <Check className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
+                  <span><strong>Navegação via Google Maps:</strong> Botão de 1 clique no imóvel ou visita para abrir a rota direta no GPS.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
+                  <span><strong>Agilidade no WhatsApp:</strong> Início de conversa imediato sem precisar salvar o número na agenda.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="p-7 rounded-3xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/40 transition-all group space-y-4 hover:shadow-xl hover:shadow-emerald-950/30">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-950/80 border border-emerald-800/40 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Relatórios de Desempenho</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Métricas completas de atendimentos realizados, taxa de conversão, índice de pontualidade e desempenho individual por corretor ou geral da imobiliária.
+              </p>
+            </div>
+
+            {/* Feature 5 */}
+            <div className="p-7 rounded-3xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/40 transition-all group space-y-4 hover:shadow-xl hover:shadow-emerald-950/30">
+              <div className="w-12 h-12 rounded-2xl bg-teal-950/80 border border-teal-800/40 text-teal-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Ficha Pública de Imóvel Compartilhável</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Envie links públicos e responsivos com fotos em alta definição, tour visual e dados do imóvel diretamente para o WhatsApp do cliente com a marca da sua imobiliária.
+              </p>
+            </div>
+
+            {/* Feature 6 */}
+            <div className="p-7 rounded-3xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/40 transition-all group space-y-4 hover:shadow-xl hover:shadow-emerald-950/30">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-950/80 border border-cyan-800/40 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Multiplataforma & PWA Mobile</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Acesse do celular, tablet ou computador. Interface otimizada com suporte a modo escuro/claro e navegação fluida em campo.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 3. MÓDULO: CONEXÃO INSTANTÂNEA E RASTREABILIDADE (AUTOMAÇÕES) ─── */}
+      <section id="rastreabilidade" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Lado Esquerdo: Textos e Benefícios */}
+          <div className="lg:col-span-6 space-y-6 text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-950/80 border border-teal-500/30 text-teal-400 text-xs font-extrabold uppercase tracking-wider">
+              <Zap className="w-3.5 h-3.5" />
+              <span>Automação & Rastreabilidade</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+              Conexão Instantânea e Proteção Jurídica para Suas Comissões
+            </h2>
+
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+              O EasyMob cuida da comunicação com o cliente e constrói uma esteira de evidências auditável de todos os seus atendimentos.
+            </p>
+
+            {/* Lista com destaques */}
+            <div className="space-y-4 pt-2">
+              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+                <div className="w-9 h-9 rounded-xl bg-emerald-950 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-800/40">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-sm sm:text-base">Conexão via QR Code sem Burocracia</h4>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+                    Conecte o número de WhatsApp da sua imobiliária em menos de 30 segundos escaneando o QR Code, sem precisar de aprovação complexa da Meta.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+                <div className="w-9 h-9 rounded-xl bg-teal-950 text-teal-400 flex items-center justify-center shrink-0 mt-0.5 border border-teal-800/40">
+                  <Send className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-sm sm:text-base">Notificações e Lembretes Automáticos</h4>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+                    Envio automático dos dados do imóvel + link de localização do Maps no momento do agendamento, e lembrete disparado <strong>1 hora antes da visita</strong>.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+                <div className="w-9 h-9 rounded-xl bg-cyan-950 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5 border border-cyan-800/40">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-sm sm:text-base">Histórico e Retenção de Logs</h4>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+                    Captura e retenção segura de todos os logs da conversa desde o agendamento até 48 horas após a visita.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30">
+                <div className="w-9 h-9 rounded-xl bg-emerald-950 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-700/50">
+                  <Scale className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-emerald-300 text-sm sm:text-base">Dossiê de Atendimento em PDF (Art. 727 do Código Civil)</h4>
+                  <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
+                    Gere em 1 clique um relatório consolidado com data, hora, mensagens trocadas e imóveis visitados para comprovação de aproximação útil e suporte ao departamento jurídico em caso de disputa de honorários.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lado Direito: Preview do Dossiê Jurídico & Mensagens */}
+          <div className="lg:col-span-6">
+            <div className="rounded-3xl bg-gradient-to-tr from-slate-900 via-slate-900/90 to-emerald-950/50 border border-emerald-900/40 p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center font-bold">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-white">Dossiê de Atendimento & Aproximação Útil</h4>
+                    <p className="text-[11px] text-slate-400">Documento Oficial Auditável — Art. 727 CC</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-800">
+                  Válido Juridicamente
+                </span>
+              </div>
+
+              {/* Corpo Simulado do Dossiê */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-3 text-xs text-slate-300">
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div>
+                    <span className="text-slate-500 block">Corretor Responsável:</span>
+                    <strong className="text-white">Roger Vasques Berchembrock</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Cliente Comprador:</span>
+                    <strong className="text-white">Carlos Eduardo Menezes</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Imóvel Visitado:</span>
+                    <strong className="text-white">Apartamento 802 — Reserva Bela Vista</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Data e Hora:</span>
+                    <strong className="text-emerald-400">24/08/2026 às 15:30h</strong>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Trilha de Auditoria & Registro de Conversas:
+                  </span>
+                  <div className="p-2.5 rounded-xl bg-slate-900 text-[11px] font-mono text-slate-300 space-y-1">
+                    <p className="text-emerald-400">[14:30] Sistema: Disparo de lembrete com link de localização Maps enviado.</p>
+                    <p className="text-slate-300">[14:32] Cliente: &quot;Confirmadíssimo! Estou chegando no endereço.&quot;</p>
+                    <p className="text-slate-300">[15:30] Corretor: Visita iniciada e registrada no sistema.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botão de Exemplo */}
+              <div className="pt-2 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Proteção garantida contra bypass de comissão</span>
+                </div>
+                <span className="text-xs font-bold text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-1">
+                  Ver modelo completo <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 4. SEÇÃO DE PLANOS E PREÇOS (TABELA DE PRECIFICAÇÃO) ─── */}
+      <section id="planos" className="relative z-10 py-24 bg-slate-900/60 border-t border-slate-800/80 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Cabeçalho */}
+          <div className="text-center max-w-3xl mx-auto mb-14 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Planos Transparentes</span>
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+              Invista no crescimento e segurança da sua imobiliária
+            </h2>
+            <p className="text-slate-300 text-base sm:text-lg">
+              Escolha o plano ideal para o momento da sua carreira ou imobiliária. Cancele quando quiser, sem fidelidade.
+            </p>
+
+            {/* Toggle Mensal / Anual */}
+            <div className="pt-4 flex items-center justify-center gap-3">
+              <div className="p-1 rounded-2xl bg-slate-950 border border-slate-800 inline-flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle('mensal')}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                    billingCycle === 'mensal'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Mensal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle('anual')}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    billingCycle === 'anual'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span>Anual</span>
+                  <span className="px-1.5 py-0.5 rounded-md bg-emerald-400 text-slate-950 text-[10px] font-black uppercase">
+                    2 meses grátis
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Cards de Preços */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            {/* 1. Plano Essencial */}
+            <div className="rounded-3xl p-8 bg-slate-950 border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-black text-white">Plano Essencial</h3>
+                  <p className="text-xs text-slate-400 mt-1">Para quem quer organizar a casa e abandonar de vez as planilhas.</p>
+                </div>
+
+                <div className="py-2">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm font-bold text-slate-400">R$</span>
+                    <span className="text-4xl font-black text-white">
+                      {billingCycle === 'mensal' ? '67' : '55'}
                     </span>
+                    <span className="text-slate-400 text-xs font-medium">/ mês</span>
+                  </div>
+                  {billingCycle === 'anual' && (
+                    <p className="text-[11px] text-emerald-400 font-semibold mt-1">Cobrado anualmente (R$ 660/ano)</p>
                   )}
                 </div>
-                <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${cfg.badge}`}>
-                  {cfg.label}
-                </span>
+
+                <div className="space-y-3 pt-4 border-t border-slate-800 text-sm text-slate-300">
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Cadastros ilimitados de imóveis, proprietários e clientes</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Agenda visual (Dia / Semana / Mês) e histórico de visitas</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Link direto para navegação no Google Maps</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Atalho para iniciar conversas no WhatsApp com 1 clique</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Relatórios de desempenho de visitas</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1 mt-1 text-xs text-slate-500 dark:text-slate-400">
-                <MapPin className="w-3 h-3 text-emerald-500 shrink-0" />
-                <span className="truncate">
-                  {visita.imovel ? `${visita.imovel.endereco}, ${visita.imovel.numero || 'S/N'} — ${visita.imovel.bairro}` : 'Local a confirmar'}
-                </span>
+
+              <Link
+                href="/login"
+                className="w-full py-3.5 px-4 text-center rounded-2xl text-sm font-extrabold text-slate-200 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:text-white transition-all block"
+              >
+                Começar com Essencial
+              </Link>
+            </div>
+
+            {/* 2. Plano Pro (Destaque / Campeão) */}
+            <div className="rounded-3xl p-8 bg-gradient-to-b from-slate-900 via-slate-950 to-emerald-950/40 border-2 border-emerald-500 shadow-2xl shadow-emerald-950/60 flex flex-col justify-between relative transform lg:-translate-y-2 transition-all space-y-6">
+              {/* Badge de Campeão */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 text-xs font-black uppercase tracking-wider shadow-lg flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 fill-slate-950 text-slate-950" />
+                <span>Mais Escolhido (Campeão)</span>
               </div>
-              <div className="flex items-center gap-1 mt-1 text-xs text-slate-500 dark:text-slate-400">
-                <User className="w-3 h-3 text-emerald-500 shrink-0" />
-                <span className="truncate">
-                  Corretor: <strong className="text-slate-700 dark:text-slate-200 font-semibold">{visita.corretor_nome || visita.created_by_user_nome || 'Roger Vasques Berchembrock'}</strong>
-                </span>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-2xl font-black text-white">Plano Pro</h3>
+                  <p className="text-xs text-emerald-300/90 mt-1">Organização total + Notificações automáticas + Dossiê de Atendimento.</p>
+                </div>
+
+                <div className="py-2">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm font-bold text-slate-400">R$</span>
+                    <span className="text-5xl font-black text-white">
+                      {billingCycle === 'mensal' ? '147' : '122'}
+                    </span>
+                    <span className="text-slate-400 text-xs font-medium">/ mês</span>
+                  </div>
+                  {billingCycle === 'anual' && (
+                    <p className="text-[11px] text-emerald-400 font-semibold mt-1">Cobrado anualmente (R$ 1.464/ano)</p>
+                  )}
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-slate-800 text-sm text-slate-200">
+                  <div className="flex items-start gap-2.5 font-bold text-emerald-400">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Tudo do Plano Essencial, mais:</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span><strong>Conexão simplificada de WhatsApp via QR Code</strong></span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span><strong>Envio automático dos dados da visita</strong> com link de localização</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span><strong>Lembretes automáticos</strong> (Agendamento + 1 hora antes)</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span><strong>Salvamento de logs de conversa</strong> (do agendamento até 48h pós-visita)</span>
+                  </div>
+                  <div className="flex items-start gap-2.5 font-semibold text-emerald-300">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span><strong>Gerador de Dossiê de Atendimento em PDF</strong> (Art. 727 CC)</span>
+                  </div>
+                </div>
               </div>
+
+              <Link
+                href="/login"
+                className="w-full py-4 px-4 text-center rounded-2xl text-sm font-black text-white bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 shadow-xl shadow-emerald-950/80 hover:shadow-emerald-900/60 hover:scale-[1.02] active:scale-[0.98] transition-all block"
+              >
+                Assinar Plano Pro Agora
+              </Link>
+            </div>
+
+            {/* 3. Plano Imobiliária / Enterprise */}
+            <div className="rounded-3xl p-8 bg-slate-950 border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-black text-white">Plano Imobiliária</h3>
+                  <p className="text-xs text-slate-400 mt-1">Para equipes médias e grandes com múltiplos corretores.</p>
+                </div>
+
+                <div className="py-2">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm font-bold text-slate-400">R$</span>
+                    <span className="text-4xl font-black text-white">
+                      {billingCycle === 'mensal' ? '247' : '205'}
+                    </span>
+                    <span className="text-slate-400 text-xs font-medium">/ mês</span>
+                  </div>
+                  {billingCycle === 'anual' && (
+                    <p className="text-[11px] text-emerald-400 font-semibold mt-1">Cobrado anualmente (R$ 2.460/ano)</p>
+                  )}
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-slate-800 text-sm text-slate-300">
+                  <div className="flex items-start gap-2.5 font-bold text-emerald-400">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Tudo do Plano Pro para até 10 corretores</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Relatórios consolidados por equipe e corretor</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Gestão Multi-Tenant de Imobiliárias e Permissões</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Acompanhamento de metas de visitas da equipe</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <span>Suporte prioritário via WhatsApp</span>
+                  </div>
+                </div>
+              </div>
+
+              <a
+                href={WHATSAPP_SUPPORT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 px-4 text-center rounded-2xl text-sm font-extrabold text-slate-200 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:text-white transition-all block"
+              >
+                Falar com Especialista
+              </a>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Cliente e Proprietário */}
-          <div className="mt-3 grid grid-cols-2 gap-2 text-xs" onClick={e => e.stopPropagation()}>
-            <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 space-y-0.5">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 block">Cliente</span>
-              <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">{visita.cliente?.nome || '—'}</p>
-              <p className="text-slate-500 flex items-center gap-1"><Phone className="w-3 h-3 shrink-0" />{formatPhone(visita.cliente?.telefone)}</p>
-            </div>
-            <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 space-y-0.5">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 block">Proprietário</span>
-              <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">{visita.imovel?.proprietario_nome || '—'}</p>
-              <p className="text-slate-500 flex items-center gap-1"><Phone className="w-3 h-3 shrink-0" />{formatPhone(visita.imovel?.proprietario_telefone)}</p>
-            </div>
+      {/* ─── FAQ (DÚVIDAS FREQUENTES) ─── */}
+      <section id="faq" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+        <div className="text-center space-y-3 mb-12">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold uppercase tracking-wider">
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span>Tire Suas Dúvidas</span>
           </div>
+          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            Perguntas Frequentes sobre o EasyMob
+          </h2>
+        </div>
 
-          {/* Rodapé: botões WA + menu — flex-wrap no mobile */}
-          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-2 flex-wrap" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-2 flex-wrap">
-              <a href={waCliente} target="_blank" rel="noopener noreferrer">
-                <button type="button" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors whitespace-nowrap">
-                  <MessageCircle className="w-3.5 h-3.5 shrink-0" /> WA Cliente
-                </button>
-              </a>
-              <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 shrink-0" />
-              <a href={waProprietario} target="_blank" rel="noopener noreferrer">
-                <button type="button" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors whitespace-nowrap">
-                  <MessageCircle className="w-3.5 h-3.5 shrink-0" /> WA Proprietário
-                </button>
-              </a>
-            </div>
-
-            {/* Menu ⋯ */}
-            <div className="relative">
+        <div className="space-y-4">
+          {faqs.map((faq, idx) => (
+            <div
+              key={idx}
+              className="rounded-2xl bg-slate-900/80 border border-slate-800 overflow-hidden transition-all"
+            >
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); setShowMenu(v => !v); }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                onClick={() => toggleFaq(idx)}
+                className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 font-bold text-white hover:text-emerald-400 transition-colors cursor-pointer"
               >
-                <MoreVertical className="w-4 h-4" />
+                <span className="text-base sm:text-lg">{faq.q}</span>
+                {openFaq === idx ? (
+                  <ChevronUp className="w-5 h-5 text-emerald-400 shrink-0" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />
+                )}
               </button>
-              {showMenu && (
-                <div className="absolute right-0 bottom-8 z-30 w-52 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
-                  <div className="px-3 py-1.5 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">Alterar Status</div>
-                  <button type="button" onClick={() => handleStatus('agendada')} className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium flex items-center gap-2">
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-500" /> Marcar como Agendada
-                  </button>
-                  <button type="button" onClick={() => handleStatus('confirmada')} className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Marcar Confirmada
-                  </button>
-                  <button type="button" onClick={() => handleStatus('cancelada')} className="w-full text-left px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-medium flex items-center gap-2">
-                    <XCircle className="w-3.5 h-3.5 text-rose-500" /> Cancelar Visita
-                  </button>
-                  <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
-                  <button type="button" onClick={() => { setShowMenu(false); setIsEditOpen(true); }} className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2">
-                    <Pencil className="w-3.5 h-3.5 text-slate-500" /> Editar Visita
-                  </button>
-                  <button type="button" onClick={() => { setShowMenu(false); setIsDeleteOpen(true); }} className="w-full text-left px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-medium flex items-center gap-2">
-                    <Trash2 className="w-3.5 h-3.5 text-rose-500" /> Excluir Visita
-                  </button>
+              {openFaq === idx && (
+                <div className="px-5 pb-6 sm:px-6 sm:pb-6 text-sm text-slate-300 leading-relaxed border-t border-slate-800/60 pt-4 animate-in fade-in duration-200">
+                  {faq.a}
                 </div>
               )}
             </div>
-          </div>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* Modais do card */}
-      <EditarVisitaModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} visita={visita} />
+      {/* ─── 5. CHAMADA PARA AÇÃO FINAL (CTA) ─── */}
+      <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="rounded-3xl p-8 sm:p-14 bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 border border-emerald-500/40 text-center space-y-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute -right-20 -top-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <Modal isOpen={isDeleteOpen} onClose={() => !isDeleting && setIsDeleteOpen(false)} title="Excluir Visita" subtitle="Confirmação de segurança" maxWidth="md">
-        <div className="space-y-4 pt-1">
-          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-600 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div className="text-xs flex-1 space-y-1.5">
-              <p className="font-bold text-sm text-rose-900 dark:text-rose-100">Tem certeza que deseja excluir esta visita?</p>
-              <div className="p-2.5 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-rose-100 dark:border-rose-900/30 text-slate-700 dark:text-slate-300 space-y-0.5">
-                <p>🏠 <strong>{visita.imovel?.titulo}</strong></p>
-                <p>👤 <strong>{visita.cliente?.nome}</strong></p>
-                <p>⏰ <strong>às {formatTime(visita.data_hora_visita)}</strong></p>
-              </div>
-              <p className="text-[11px] text-rose-700 dark:text-rose-400 font-medium">Esta ação é irreversível.</p>
-            </div>
-          </div>
-          <div className="flex items-center justify-end gap-2.5 pt-2">
-            <Button type="button" variant="ghost" onClick={() => setIsDeleteOpen(false)} disabled={isDeleting}>Cancelar</Button>
-            <Button type="button" variant="danger" onClick={handleDelete} isLoading={isDeleting}>
-              <Trash2 className="w-4 h-4 mr-1.5" /> Sim, Excluir
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    </>
-  );
-}
-
-// ─── Página Principal ─────────────────────────────────────────────────────────
-
-export default function DashboardPage() {
-  const { visitas, metrics } = useData();
-
-  // Estado: data selecionada no calendário (default = hoje)
-  const [selectedDate, setSelectedDate] = useState<string>(() => toDateStr(new Date()));
-  // Estado: filtro de status (null = todas)
-  const [filterStatus, setFilterStatus] = useState<StatusVisita | null>(null);
-  // Estado: modal de detalhes
-  const [visitaDetalhes, setVisitaDetalhes] = useState<Visita | null>(null);
-
-  // Visitas do dia selecionado
-  const visitasDoDia = useMemo(() =>
-    visitas.filter(v => toDateStr(new Date(v.data_hora_visita)) === selectedDate),
-    [visitas, selectedDate]
-  );
-
-  // Visitas filtradas + ordenadas por horário
-  const visitasFiltradas = useMemo(() =>
-    visitasDoDia
-      .filter(v => filterStatus === null || v.status === filterStatus)
-      .sort((a, b) => new Date(a.data_hora_visita).getTime() - new Date(b.data_hora_visita).getTime()),
-    [visitasDoDia, filterStatus]
-  );
-
-  // Métricas do dia selecionado
-  const metricasDia = useMemo(() => ({
-    total: visitasDoDia.length,
-    confirmadas: visitasDoDia.filter(v => v.status === 'confirmada').length,
-    agendadas: visitasDoDia.filter(v => v.status === 'agendada').length,
-    canceladas: visitasDoDia.filter(v => v.status === 'cancelada').length,
-  }), [visitasDoDia]);
-
-  // Data por extenso
-  const isHoje = selectedDate === toDateStr(new Date());
-  const dataLabel = isHoje
-    ? (() => {
-        const s = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
-        return s.charAt(0).toUpperCase() + s.slice(1);
-      })()
-    : (() => {
-        const [y, m, d] = selectedDate.split('-').map(Number);
-        const s = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(y, m - 1, d));
-        return s.charAt(0).toUpperCase() + s.slice(1);
-      })();
-
-  // Cards-filtro de métricas
-  const metricCards = [
-    { key: null, label: 'Total no Dia', value: metricasDia.total, color: 'slate', active: filterStatus === null },
-    { key: 'confirmada' as StatusVisita, label: 'Confirmadas', value: metricasDia.confirmadas, color: 'emerald', active: filterStatus === 'confirmada' },
-    { key: 'agendada' as StatusVisita, label: 'Aguardando', value: metricasDia.agendadas, color: 'amber', active: filterStatus === 'agendada' },
-    { key: 'cancelada' as StatusVisita, label: 'Canceladas', value: metricasDia.canceladas, color: 'rose', active: filterStatus === 'cancelada' },
-  ];
-
-  return (
-    <>
-      <div className="space-y-5">
-        {/* ── Cabeçalho ── */}
-        <div className="space-y-1.5">
-          <div className="space-y-0.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
-              Agenda de <span className="text-emerald-600 dark:text-emerald-400">Hoje</span>
-            </h1>
-            <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">
-              {dataLabel}
+          <div className="space-y-4 max-w-3xl mx-auto">
+            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+              Evolua a gestão da sua imobiliária hoje mesmo!
+            </h2>
+            <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
+              Junte-se a corretores e imobiliárias que transformaram visitas em fechamentos seguros, eliminaram faltas e blindaram juridicamente suas comissões com o EasyMob.
             </p>
           </div>
 
-          {/* Status do WhatsApp na versão mobile (embaixo da data, versão mini/compacta) */}
-          <div className="block md:hidden pt-0.5">
-            <WhatsAppStatusBadge compact className="mt-0" />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <Link
+              href="/login"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-extrabold text-white bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 rounded-2xl shadow-xl shadow-emerald-950/80 hover:shadow-emerald-900/60 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span>Criar Minha Conta / Começar Agora</span>
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            <a
+              href={WHATSAPP_SUPPORT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 text-base font-bold text-slate-200 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-2xl transition-all hover:text-white"
+            >
+              <MessageSquare className="w-5 h-5 text-emerald-400" />
+              <span>Falar com Suporte no WhatsApp</span>
+            </a>
           </div>
         </div>
+      </section>
 
-        {/* ── Cards de Métricas como Filtros Clicáveis (Layout Compacto & Fluido) ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
-          {metricCards.map((card) => {
-            // Configuração visual por cor
-            const visualMap: Record<string, {
-              icon: React.ReactNode;
-              iconBg: string;
-              iconColor: string;
-              numColor: string;
-              barGradient: string;
-              barActiveGradient: string;
-              ring: string;
-            }> = {
-              slate: {
-                icon: <CalendarDays className="w-4 h-4" />,
-                iconBg: 'bg-slate-100 dark:bg-slate-800',
-                iconColor: 'text-slate-600 dark:text-slate-400',
-                numColor: 'text-slate-900 dark:text-slate-100',
-                barGradient: 'from-slate-300 to-slate-400',
-                barActiveGradient: 'from-slate-500 via-slate-600 to-slate-700',
-                ring: 'ring-slate-300 dark:ring-slate-700',
-              },
-              emerald: {
-                icon: <CalendarCheck2 className="w-4 h-4" />,
-                iconBg: 'bg-emerald-50 dark:bg-emerald-950/60',
-                iconColor: 'text-emerald-600 dark:text-emerald-400',
-                numColor: 'text-emerald-700 dark:text-emerald-300',
-                barGradient: 'from-emerald-300 to-emerald-400',
-                barActiveGradient: 'from-emerald-400 via-emerald-500 to-teal-500',
-                ring: 'ring-emerald-300 dark:ring-emerald-800',
-              },
-              amber: {
-                icon: <Hourglass className="w-4 h-4" />,
-                iconBg: 'bg-amber-50 dark:bg-amber-950/60',
-                iconColor: 'text-amber-600 dark:text-amber-400',
-                numColor: 'text-amber-700 dark:text-amber-300',
-                barGradient: 'from-amber-300 to-amber-400',
-                barActiveGradient: 'from-amber-400 via-amber-500 to-orange-400',
-                ring: 'ring-amber-300 dark:ring-amber-800',
-              },
-              rose: {
-                icon: <Ban className="w-4 h-4" />,
-                iconBg: 'bg-rose-50 dark:bg-rose-950/60',
-                iconColor: 'text-rose-600 dark:text-rose-400',
-                numColor: 'text-rose-700 dark:text-rose-400',
-                barGradient: 'from-rose-300 to-rose-400',
-                barActiveGradient: 'from-rose-400 via-rose-500 to-pink-500',
-                ring: 'ring-rose-300 dark:ring-rose-800',
-              },
-            };
-
-            const v = visualMap[card.color];
-
-            return (
-              <button
-                key={String(card.key)}
-                type="button"
-                onClick={() => setFilterStatus(card.key)}
-                className={`
-                  relative flex items-center gap-2 sm:gap-3 px-3 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-white dark:bg-slate-900
-                  border border-slate-200 dark:border-slate-800 text-left
-                  transition-all duration-200 overflow-hidden cursor-pointer
-                  hover:shadow-md hover:-translate-y-0.5
-                  ${card.active ? `ring-2 ${v.ring} shadow-xs bg-slate-50/50 dark:bg-slate-800/40` : 'shadow-xs'}
-                `}
-              >
-                {/* Ícone à esquerda */}
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${v.iconBg} ${v.iconColor}`}>
-                  {v.icon}
-                </div>
-
-                {/* Número e Rótulo */}
-                <div className="min-w-0 flex-1">
-                  <div className={`text-base sm:text-xl font-black tabular-nums leading-tight ${v.numColor}`}>
-                    {card.value}
-                  </div>
-                  <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight text-slate-500 dark:text-slate-400 truncate">
-                    {card.label}
-                  </div>
-                </div>
-
-                {/* Linha gradiente inferior sutil */}
-                <div
-                  className={`
-                    absolute bottom-0 left-0 right-0 bg-gradient-to-r
-                    ${card.active ? v.barActiveGradient : v.barGradient}
-                    transition-all duration-300
-                    ${card.active ? 'h-0.5 sm:h-1' : 'h-0.5 opacity-30'}
-                  `}
-                />
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── Layout 2 Colunas ── */}
-        <div className="flex flex-col lg:flex-row gap-5 items-start w-full overflow-x-hidden">
-
-          {/* ── COLUNA PRINCIPAL: Timeline ── */}
-          <div className="flex-1 min-w-0 w-full overflow-x-hidden space-y-1">
-            {visitasFiltradas.length === 0 ? (
-              <div className="py-16 flex flex-col items-center gap-3 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-                  <CalendarDays className="w-6 h-6" />
-                </div>
-                <h3 className="font-bold text-slate-700 dark:text-slate-300 text-sm">
-                  {filterStatus ? `Nenhuma visita "${STATUS_CFG[filterStatus].label}" neste dia` : 'Nenhuma visita neste dia'}
-                </h3>
-                <p className="text-xs text-slate-400 max-w-xs">
-                  Selecione outro dia no calendário ou ajuste os filtros acima.
-                </p>
-                {filterStatus && (
-                  <button type="button" onClick={() => setFilterStatus(null)} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
-                    Ver todas as visitas
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="relative">
-                {/* Linha Vertical — posição relativa à coluna de horário (56px) */}
-                <div className="absolute left-[39px] top-5 bottom-5 w-px bg-slate-200 dark:bg-slate-700/60" />
-
-                <div className="space-y-4">
-                  {visitasFiltradas.map((visita) => {
-                    const cfg = STATUS_CFG[visita.status] ?? STATUS_CFG.agendada;
-                    return (
-                      <div key={visita.id} className="flex items-start min-w-0">
-                        {/* Coluna de horário — compacta no mobile */}
-                        <div className="flex flex-col items-center w-14 sm:w-20 shrink-0 pt-4">
-                          <span className="text-[10px] sm:text-xs font-black text-slate-700 dark:text-slate-300 tabular-nums leading-none">
-                            {formatTime(visita.data_hora_visita)}
-                          </span>
-                          <div className={`mt-2 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full ${cfg.dot}`} />
-                        </div>
-
-                        {/* Card — min-w-0 evita overflow */}
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <TimelineCard visita={visita} onOpenDetalhes={setVisitaDetalhes} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+      {/* ─── FOOTER ─── */}
+      <footer className="relative z-10 border-t border-slate-800/80 bg-slate-950/90 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+          <div className="flex flex-col items-center md:items-start gap-2">
+            <EasyMobLogo variant="horizontal" size="sm" />
+            <p className="text-xs text-slate-400 max-w-sm mt-1">
+              Plataforma de gestão imobiliária inteligente, automação de WhatsApp e blindagem de comissões para corretores e imobiliárias.
+            </p>
           </div>
 
-          {/* ── COLUNA LATERAL: Mini Calendário + Widget ── */}
-          <div className="w-full lg:w-72 shrink-0 space-y-4">
-            <MiniCalendario
-              visitas={visitas}
-              selectedDate={selectedDate}
-              onSelectDate={(d) => {
-                setSelectedDate(d);
-                setFilterStatus(null);
-              }}
-            />
-            <ProximaVisitaWidget visitas={visitas} />
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-slate-400">
+            <a href="#operacao" className="hover:text-emerald-400 transition-colors">
+              Operação
+            </a>
+            <a href="#rastreabilidade" className="hover:text-emerald-400 transition-colors">
+              Rastreabilidade
+            </a>
+            <a href="#planos" className="hover:text-emerald-400 transition-colors">
+              Planos
+            </a>
+            <Link href="/login" className="hover:text-emerald-400 transition-colors">
+              Login
+            </Link>
+            <a href={WHATSAPP_SUPPORT_URL} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">
+              Atendimento WhatsApp
+            </a>
+          </div>
+
+          <div className="text-xs text-slate-500">
+            <p>© {new Date().getFullYear()} EasyMob. Todos os direitos reservados.</p>
+            <p className="text-[10px] text-slate-600 mt-0.5">Amparo técnico e rastreabilidade conforme o Art. 727 do Código Civil Brasileiro.</p>
           </div>
         </div>
-      </div>
-
-      {/* ── Modal de Detalhes da Visita ── */}
-      <VisitaDetalhesModal
-        visita={visitaDetalhes}
-        isOpen={!!visitaDetalhes}
-        onClose={() => setVisitaDetalhes(null)}
-      />
-    </>
+      </footer>
+    </div>
   );
 }

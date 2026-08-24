@@ -12,8 +12,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [isNovaVisitaOpen, setIsNovaVisitaOpen] = useState(false);
   const pathname = usePathname();
 
-  // Em rotas públicas como /login e /cadastrar, não renderiza a casca do app (Sidebar, Header, etc)
-  if (pathname === '/login' || pathname.startsWith('/cadastrar')) {
+  // Em rotas públicas (Landing Page, Login, Recuperação, Compartilhamento Público), não renderiza a casca do app
+  const isStandalonePublic =
+    pathname === '/' ||
+    pathname === '/home' ||
+    pathname === '/login' ||
+    pathname.startsWith('/cadastrar') ||
+    pathname.startsWith('/recuperar-senha') ||
+    pathname.startsWith('/redefinir-senha') ||
+    pathname.startsWith('/imovel/') ||
+    pathname.startsWith('/p/');
+
+  if (isStandalonePublic) {
     return (
       <>
         {children}

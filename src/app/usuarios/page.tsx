@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -21,23 +21,29 @@ import {
   Search,
   Pencil,
   Lock,
+  Briefcase,
 } from 'lucide-react';
-import { Usuario, Convite } from '@/types';
+import { Usuario, Convite, UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
+import { useTenant } from '@/context/TenantContext';
+import { cn } from '@/lib/utils';
 
 export default function UsuariosPage() {
   const { user: currentUser } = useAuth();
   const { showToast } = useData();
+  const { imobiliarias, currentTenant } = useTenant();
 
   const [users, setUsers] = useState<Usuario[]>([]);
   const [invites, setInvites] = useState<Convite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTenantFilter, setSelectedTenantFilter] = useState<string>('todos');
 
   // Modal Gerar Convite
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [imobiliariaInvite, setImobiliariaInvite] = useState('EasyMob Imóveis');
+  const [imobiliariaInvite, setImobiliariaInvite] = useState(currentTenant?.nome || 'EasyMob Imóveis');
+  const [roleInvite, setRoleInvite] = useState<UserRole>('corretor');
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -52,9 +58,16 @@ export default function UsuariosPage() {
   const [editEmail, setEditEmail] = useState('');
   const [editTelefone, setEditTelefone] = useState('');
   const [editImobiliaria, setEditImobiliaria] = useState('');
-  const [editRole, setEditRole] = useState<'admin' | 'corretor'>('corretor');
+  const [editRole, setEditRole] = useState<UserRole>('corretor');
   const [editNovaSenha, setEditNovaSenha] = useState('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Atualiza imobiliariaInvite ao abrir o modal ou mudar o tenant ativo
+  useEffect(() => {
+    if (currentTenant?.nome) {
+      setImobiliariaInvite(currentTenant.nome);
+    }
+  }, [currentTenant]);
 
   const fetchUsersAndInvites = useCallback(async () => {
     setIsLoading(true);
@@ -94,7 +107,8 @@ export default function UsuariosPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          imobiliaria: imobiliariaInvite,
+          imobiliaria: imobiliariaInvite.trim() || 'EasyMob Imóveis',
+          role: roleInvite,
         }),
       });
 
@@ -102,7 +116,10 @@ export default function UsuariosPage() {
 
       if (res.ok && data.success && data.inviteUrl) {
         setGeneratedInviteUrl(data.inviteUrl);
-        showToast('Convite de corretor gerado com sucesso (validade: 24h)!', 'success');
+        showToast(
+          `Convite de ${roleInvite === 'gestor' ? 'Gestor' : 'Corretor'} gerado com sucesso (validade: 24h)!`,
+          'success'
+        );
         fetchUsersAndInvites();
       } else {
         showToast(data.error || 'Erro ao gerar convite.', 'error');
@@ -217,18 +234,58 @@ export default function UsuariosPage() {
     setNowMs(Date.now());
   }, [invites]);
 
-  // Filtro de Busca
+  // Filtro de Busca e Imobiliária
   const filteredUsers = users.filter((u) => {
     const q = searchTerm.toLowerCase();
-    return (
+    const matchesSearch =
       u.nome.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q) ||
       u.imobiliaria.toLowerCase().includes(q) ||
-      (u.telefone && u.telefone.includes(q))
-    );
+      (u.telefone && u.telefone.includes(q));
+
+    const matchesTenant =
+      selectedTenantFilter === 'todos' ||
+      u.imobiliaria.toLowerCase() === selectedTenantFilter.toLowerCase();
+
+    return matchesSearch && matchesTenant;
   });
 
+  // Agrupamento dos usuários filtrados por Imobiliária
+  const usersByImobiliaria = useMemo(() => {
+    const groups: Record<string, Usuario[]> = {};
+
+    filteredUsers.forEach((u) => {
+      const rawTenant = u.imobiliaria?.trim();
+      const key =
+        u.role === 'admin' &&
+        (!rawTenant || rawTenant.toLowerCase() === 'administração' || rawTenant.toLowerCase() === 'administracao')
+          ? 'Administração Geral'
+          : (rawTenant || 'Sem Imobiliária');
+
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(u);
+    });
+
+    // Ordenação: Grupos de administração primeiro, depois ordem alfabética
+    return Object.entries(groups).sort(([a, usersA], [b, usersB]) => {
+      const hasAdminA = usersA.some((u) => u.role === 'admin');
+      const hasAdminB = usersB.some((u) => u.role === 'admin');
+      if (hasAdminA && !hasAdminB) return -1;
+      if (!hasAdminA && hasAdminB) return 1;
+      return a.localeCompare(b);
+    });
+  }, [filteredUsers]);
+
+  const handleOpenInviteForTenant = (tenantName: string) => {
+    setImobiliariaInvite(tenantName);
+    setGeneratedInviteUrl(null);
+    setIsInviteModalOpen(true);
+  };
+
   const totalAdmins = users.filter((u) => u.role === 'admin').length;
+  const totalGestores = users.filter((u) => u.role === 'gestor').length;
   const totalCorretores = users.filter((u) => u.role === 'corretor').length;
   const totalInvitesAtivos = invites.filter(
     (i) => !i.used && new Date(i.expires_at).getTime() > (nowMs || 0)
@@ -244,7 +301,7 @@ export default function UsuariosPage() {
             Gestão de Usuários &amp; Corretores
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Controle de acesso, permissões e emissão de convites temporários com validade de 24h
+            Controle de acesso multi-tenant (Admin, Gestor e Corretor) e emissão de convites temporários
           </p>
         </div>
 
@@ -257,12 +314,12 @@ export default function UsuariosPage() {
           className="shadow-md flex items-center gap-2 font-bold text-xs"
         >
           <UserPlus className="w-4 h-4" />
-          Gerar Convite de Corretor
+          Gerar Convite de Membro
         </Button>
       </div>
 
       {/* ─── CARDS DE RESUMO / MÉTRICAS ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
         <Card className="border-slate-200 dark:border-slate-800">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
@@ -287,6 +344,20 @@ export default function UsuariosPage() {
                 {totalAdmins}
               </div>
               <div className="text-[11px] font-medium text-slate-400">Administradores</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200 dark:border-slate-800">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+              <Briefcase className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xl font-black text-slate-900 dark:text-slate-100">
+                {totalGestores}
+              </div>
+              <div className="text-[11px] font-medium text-slate-400">Gestores</div>
             </div>
           </CardContent>
         </Card>
@@ -320,142 +391,215 @@ export default function UsuariosPage() {
         </Card>
       </div>
 
-      {/* ─── TABELA DE USUÁRIOS CADASTRADOS ─── */}
-      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="w-4 h-4 text-emerald-500" />
-            Equipe Cadastrada ({filteredUsers.length})
-          </CardTitle>
+      {/* ─── BARRA DE FILTRO E BUSCA ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="flex items-center gap-2">
+          <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+            Equipe por Imobiliária
+          </span>
+          <span className="text-xs font-bold text-slate-400">
+            ({filteredUsers.length} {filteredUsers.length === 1 ? 'usuário' : 'usuários'})
+          </span>
+        </div>
 
-          <div className="relative w-full sm:w-64">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          {/* Seletor / Filtro por Imobiliária */}
+          <div className="relative min-w-[200px] sm:min-w-[230px]">
+            <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <select
+              value={selectedTenantFilter}
+              onChange={(e) => setSelectedTenantFilter(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 font-semibold cursor-pointer"
+            >
+              <option value="todos">🏢 Todas as Imobiliárias</option>
+              {imobiliarias.map((imo) => (
+                <option key={imo.id} value={imo.nome}>
+                  {imo.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Campo de Busca */}
+          <div className="relative w-full sm:w-60">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por nome, email..."
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100"
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100"
             />
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="py-12 text-center text-xs text-slate-400">
-              Carregando lista de usuários...
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-400">
-              Nenhum usuário encontrado.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-slate-800/60 border-y border-slate-200/70 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px]">
-                  <tr>
-                    <th className="py-3 px-4">Usuário</th>
-                    <th className="py-3 px-4">Contato</th>
-                    <th className="py-3 px-4">Imobiliária</th>
-                    <th className="py-3 px-4">Perfil</th>
-                    <th className="py-3 px-4 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
-                  {filteredUsers.map((u) => {
-                    const isAdmin = u.role === 'admin';
-                    const isSelf = currentUser?.id === u.id;
+        </div>
+      </div>
 
-                    return (
-                      <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
-                        {/* Nome & Avatar */}
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                              {u.nome.slice(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                                <span>{u.nome}</span>
-                                {isSelf && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                                    Você
+      {/* ─── LISTAGEM DE USUÁRIOS AGRUPADOS POR IMOBILIÁRIA ─── */}
+      <div className="space-y-4">
+        {isLoading ? (
+          <Card className="border-slate-200 dark:border-slate-800">
+            <CardContent className="p-12 text-center text-xs text-slate-400">
+              Carregando lista de usuários...
+            </CardContent>
+          </Card>
+        ) : usersByImobiliaria.length === 0 ? (
+          <Card className="border-slate-200 dark:border-slate-800">
+            <CardContent className="p-12 text-center text-xs text-slate-400">
+              Nenhum usuário encontrado para os filtros selecionados.
+            </CardContent>
+          </Card>
+        ) : (
+          usersByImobiliaria.map(([tenantName, groupUsers]) => {
+            const isAdminGroup = groupUsers.some((u) => u.role === 'admin');
+
+            return (
+              <Card key={tenantName} className="border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+                <CardHeader className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200/70 dark:border-slate-800 py-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 shadow-xs',
+                        isAdminGroup
+                          ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300'
+                          : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                      )}
+                    >
+                      {isAdminGroup ? <Shield className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                        {tenantName}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        {groupUsers.length} {groupUsers.length === 1 ? 'colaborador' : 'colaboradores'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {!isAdminGroup && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenInviteForTenant(tenantName)}
+                      className="text-xs font-semibold self-start sm:self-auto hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 hover:border-emerald-300"
+                    >
+                      <UserPlus className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                      Convidar Corretor para {tenantName}
+                    </Button>
+                  )}
+                </CardHeader>
+
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
+                        <tr>
+                          <th className="py-2.5 px-4">Usuário</th>
+                          <th className="py-2.5 px-4">Contato</th>
+                          <th className="py-2.5 px-4">Perfil de Acesso</th>
+                          <th className="py-2.5 px-4 text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
+                        {groupUsers.map((u) => {
+                          const isAdmin = u.role === 'admin';
+                          const isSelf = currentUser?.id === u.id;
+
+                          return (
+                            <tr
+                              key={u.id}
+                              className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
+                            >
+                              {/* Nome & Avatar */}
+                              <td className="py-3 px-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                                    {u.nome.slice(0, 2).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                      <span>{u.nome}</span>
+                                      {isSelf && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                                          Você
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[11px] text-slate-400">{u.email}</div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Contato */}
+                              <td className="py-3 px-4 font-mono text-[11px]">
+                                {u.telefone ? (
+                                  <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
+                                    <Phone className="w-3 h-3 text-emerald-500" />
+                                    {u.telefone}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">-</span>
+                                )}
+                              </td>
+
+                              {/* Perfil */}
+                              <td className="py-3 px-4">
+                                {u.role === 'admin' ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[10px] bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                    <Shield className="w-3 h-3" />
+                                    Administrador
+                                  </span>
+                                ) : u.role === 'gestor' ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[10px] bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                    <Briefcase className="w-3 h-3" />
+                                    Gestor
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[10px] bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                                    <UserPlus className="w-3 h-3" />
+                                    Corretor
                                   </span>
                                 )}
-                              </div>
-                              <div className="text-[11px] text-slate-400">{u.email}</div>
-                            </div>
-                          </div>
-                        </td>
+                              </td>
 
-                        {/* Contato */}
-                        <td className="py-3 px-4 font-mono text-[11px]">
-                          {u.telefone ? (
-                            <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
-                              <Phone className="w-3 h-3 text-emerald-500" />
-                              {u.telefone}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">-</span>
-                          )}
-                        </td>
+                              {/* Ações */}
+                              <td className="py-3 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEdit(u)}
+                                    title="Editar Usuário"
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors cursor-pointer"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
 
-                        {/* Imobiliária */}
-                        <td className="py-3 px-4">
-                          <span className="flex items-center gap-1.5 font-medium">
-                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                            {u.imobiliaria}
-                          </span>
-                        </td>
-
-                        {/* Perfil */}
-                        <td className="py-3 px-4">
-                          {isAdmin ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                              <Shield className="w-3 h-3" />
-                              Administrador
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                              <UserPlus className="w-3 h-3" />
-                              Corretor
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Ações */}
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEdit(u)}
-                              title="Editar Usuário"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors cursor-pointer"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-
-                            {!isSelf && (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteUser(u.id, u.nome)}
-                                disabled={isDeletingId === u.id}
-                                title="Excluir Usuário"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer disabled:opacity-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                                  {!isSelf && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteUser(u.id, u.nome)}
+                                      disabled={isDeletingId === u.id}
+                                      title="Excluir Usuário"
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer disabled:opacity-50"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
 
       {/* ─── HISTÓRICO DE CONVITES GERADOS ─── */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
@@ -551,30 +695,62 @@ export default function UsuariosPage() {
         </CardContent>
       </Card>
 
-      {/* ─── MODAL GERAR CONVITE DE CORRETOR ─── */}
+      {/* ─── MODAL GERAR CONVITE DE MEMBRO (CORRETOR / GESTOR) ─── */}
       <Modal
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
-        title="Gerar Convite de Corretor"
-        subtitle="Crie um link único com validade de 24 horas para cadastrar um novo corretor"
+        title="Gerar Convite de Acesso"
+        subtitle="Crie um link único com validade de 24 horas para cadastrar um Corretor ou Gestor"
         maxWidth="md"
       >
         {!generatedInviteUrl ? (
           <form onSubmit={handleGenerateInvite} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                Nome da Imobiliária Vinculada
+                Imobiliária Vinculada ao Membro *
               </label>
-              <input
-                type="text"
-                required
-                value={imobiliariaInvite}
-                onChange={(e) => setImobiliariaInvite(e.target.value)}
-                placeholder="Ex: EasyMob Imóveis Matriz"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
+              <div className="space-y-2">
+                <select
+                  value={imobiliariaInvite}
+                  onChange={(e) => setImobiliariaInvite(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer"
+                >
+                  {imobiliarias.map((imo) => (
+                    <option key={imo.id} value={imo.nome}>
+                      🏢 {imo.nome}
+                    </option>
+                  ))}
+                </select>
+
+                {!imobiliarias.some((i) => i.nome === imobiliariaInvite) && (
+                  <input
+                    type="text"
+                    required
+                    value={imobiliariaInvite}
+                    onChange={(e) => setImobiliariaInvite(e.target.value)}
+                    placeholder="Digite o nome da nova imobiliária..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Perfil de Acesso do Convidado *
+              </label>
+              <select
+                value={roleInvite}
+                onChange={(e) => setRoleInvite(e.target.value as UserRole)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer"
+              >
+                <option value="corretor">Corretor (Agenda restrita às suas próprias visitas)</option>
+                <option value="gestor">Gestor (Visualiza todas as visitas e métricas da imobiliária)</option>
+              </select>
               <p className="text-[11px] text-slate-400">
-                O corretor cadastrado por este link ficará automaticamente vinculado a esta imobiliária.
+                {roleInvite === 'gestor'
+                  ? 'O gestor terá visão panorâmica de todas as visitas agendadas por todos os corretores da imobiliária.'
+                  : 'O corretor visualizará apenas os imóveis e clientes da imobiliária, mas sua agenda e visitas serão estritamente individuais.'}
               </p>
             </div>
 
@@ -586,7 +762,7 @@ export default function UsuariosPage() {
               <ul className="text-[11px] text-slate-600 dark:text-slate-300 list-disc list-inside space-y-0.5">
                 <li>Validade de 24 horas a partir da geração.</li>
                 <li>Uso único (o link expira automaticamente após o primeiro cadastro).</li>
-                <li>Atribui automaticamente o perfil de Corretor.</li>
+                <li>Atribui o perfil selecionado ({roleInvite === 'gestor' ? 'Gestor' : 'Corretor'}).</li>
               </ul>
             </div>
 
@@ -722,15 +898,22 @@ export default function UsuariosPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Imobiliária
+                  Imobiliária *
                 </label>
-                <input
-                  type="text"
+                <select
                   value={editImobiliaria}
                   onChange={(e) => setEditImobiliaria(e.target.value)}
-                  placeholder="EasyMob Imóveis"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer"
+                >
+                  {imobiliarias.map((imo) => (
+                    <option key={imo.id} value={imo.nome}>
+                      🏢 {imo.nome}
+                    </option>
+                  ))}
+                  {!imobiliarias.some((i) => i.nome === editImobiliaria) && editImobiliaria && (
+                    <option value={editImobiliaria}>🏢 {editImobiliaria}</option>
+                  )}
+                </select>
               </div>
 
               <div className="space-y-1.5">
@@ -739,11 +922,12 @@ export default function UsuariosPage() {
                 </label>
                 <select
                   value={editRole}
-                  onChange={(e) => setEditRole(e.target.value as 'admin' | 'corretor')}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  onChange={(e) => setEditRole(e.target.value as UserRole)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer"
                 >
-                  <option value="corretor">Corretor</option>
-                  <option value="admin">Administrador</option>
+                  <option value="corretor">Corretor (Agenda individual)</option>
+                  <option value="gestor">Gestor (Visão ampla da imobiliária)</option>
+                  <option value="admin">Administrador (Super Admin)</option>
                 </select>
               </div>
             </div>

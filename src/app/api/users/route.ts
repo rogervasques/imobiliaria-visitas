@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       email,
       telefone,
       senha_hash: senhaHash,
-      role: role === 'admin' ? 'admin' : 'corretor',
+      role: role === 'admin' ? 'admin' : role === 'gestor' ? 'gestor' : 'corretor',
       imobiliaria: imobiliaria || 'EasyMob Imóveis',
     });
 

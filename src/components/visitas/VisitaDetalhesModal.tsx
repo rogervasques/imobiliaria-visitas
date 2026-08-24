@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
-import { Visita, Imovel, StatusDisparoWhatsApp } from '@/types';
+import { Visita, Imovel, StatusDisparoWhatsApp, LogMensagem } from '@/types';
 import { ImovelDetalhesModal } from '../imoveis/ImovelDetalhesModal';
 import { EditarVisitaModal } from './EditarVisitaModal';
 import {
@@ -21,8 +21,20 @@ import {
   Calendar,
   ExternalLink,
   Pencil,
+  FileDown,
+  ShieldCheck,
+  Volume2,
+  Image as ImageIcon,
+  Copy,
+  Lock,
+  Navigation,
 } from 'lucide-react';
 import { formatDateTime, formatPhone, getWhatsAppDirectLink, formatCurrency } from '@/lib/utils';
+import { getGoogleMapsSearchUrl, getGoogleMapsDirectionsUrl } from '@/lib/maps';
+import { gerarDossieJuridicoPdf, getVisitaLogs } from '@/lib/pdfDossieGenerator';
+import { useTenant } from '@/context/TenantContext';
+import { useData } from '@/context/DataContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface VisitaDetalhesModalProps {
   visita: Visita | null;
@@ -98,8 +110,35 @@ function WhatsAppDeliveryStatusBadge({
 }
 
 export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesModalProps) {
+  const { currentTenant } = useTenant();
+  const { user } = useAuth();
+  const { configWhatsApp } = useData();
   const [imovelSelecionado, setImovelSelecionado] = useState<Imovel | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [logs, setLogs] = useState<LogMensagem[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  // Busca os logs descriptografados em memória no servidor via API Route
+  useEffect(() => {
+    if (visita?.id && isOpen) {
+      setIsLoadingLogs(true);
+      fetch(`/api/visitas/${visita.id}/logs`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.logs && data.logs.length > 0) {
+            setLogs(data.logs);
+          } else {
+            setLogs(getVisitaLogs(visita));
+          }
+        })
+        .catch(() => {
+          setLogs(getVisitaLogs(visita));
+        })
+        .finally(() => {
+          setIsLoadingLogs(false);
+        });
+    }
+  }, [visita?.id, isOpen]);
 
   if (!visita) return null;
 
@@ -129,6 +168,20 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
     ? getWhatsAppDirectLink(cliente.telefone, `Olá, ${cliente.nome}! Sobre nossa visita agendada pela EasyMob.`)
     : '#';
 
+  const handleDownloadDossie = () => {
+    const corretorTelefone = visita.corretor_telefone || '(31) 99887-7665';
+    const instanciaOrigem = user?.instance_name || configWhatsApp?.instancia_nome || 'easymob';
+    gerarDossieJuridicoPdf({
+      visita: {
+        ...visita,
+        logs_mensagens: logs.length > 0 ? logs : undefined,
+      },
+      imobiliariaNome: currentTenant?.nome,
+      corretorTelefone,
+      instanciaOrigem,
+    });
+  };
+
   return (
     <>
       <Modal
@@ -138,15 +191,28 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
         subtitle={imoveisLista.length > 1 ? `Cliente: ${cliente?.nome || '—'}` : (imoveisLista[0]?.titulo || 'Compromisso')}
         maxWidth="xl"
         headerActions={
-          <button
-            type="button"
-            onClick={() => setIsEditOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-400 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs border border-slate-200 dark:border-slate-700"
-            title="Editar Visita"
-          >
-            <Pencil className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Editar</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDownloadDossie}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs"
+              title="Baixar Relatório Certificado em PDF"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">📄 Baixar Relatório Certificado (PDF)</span>
+              <span className="sm:hidden">Relatório PDF</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsEditOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-400 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs border border-slate-200 dark:border-slate-700"
+              title="Editar Visita"
+            >
+              <Pencil className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Editar</span>
+            </button>
+          </div>
         }
       >
         <div className="space-y-5 pb-1 max-h-[80vh] overflow-y-auto pr-1">
@@ -217,9 +283,37 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                          <span>{im.endereco}, {im.numero || 'S/N'} - {im.bairro}, {im.cidade}</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          <div className="flex items-center gap-1 min-w-0 flex-1">
+                            <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span className="truncate">{im.endereco}, {im.numero || 'S/N'} - {im.bairro}, {im.cidade}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
+                            <a
+                              href={getGoogleMapsDirectionsUrl(im)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-[11px] border border-blue-200 dark:border-blue-800 transition-colors shadow-xs"
+                              title="Traçar rota no Google Maps até este imóvel"
+                            >
+                              <Navigation className="w-3 h-3 text-blue-500" />
+                              <span>🚗 Traçar Rota</span>
+                            </a>
+
+                            <a
+                              href={getGoogleMapsSearchUrl(im)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] border border-slate-200 dark:border-slate-700 transition-colors shadow-xs"
+                              title="Abrir no Google Maps"
+                            >
+                              <MapPin className="w-3 h-3 text-emerald-500" />
+                              <span>📍 Mapa</span>
+                            </a>
+                          </div>
                         </div>
 
                         <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -358,6 +452,108 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
                   />
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* ── SEÇÃO 4: LOGS DE ATENDIMENTO & HISTÓRICO AUDITÁVEL (WHATSAPP) ── */}
+          <div className="p-4 rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-3.5 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/70 dark:border-slate-800 pb-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                  Relatório Certificado &amp; Logs Gravados (WhatsApp)
+                </h4>
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                  Histórico Auditável
+                </span>
+                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                  <Lock className="w-3 h-3 text-emerald-500" />
+                  AES-256
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleDownloadDossie}
+                className="self-start sm:self-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-colors cursor-pointer border border-emerald-200 dark:border-emerald-800"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                <span>Exportar Relatório em PDF</span>
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {isLoadingLogs ? (
+                <div className="py-4 text-center text-xs text-slate-400">
+                  <span>Descriptografando registros em memória no servidor...</span>
+                </div>
+              ) : (
+                (logs.length > 0 ? logs : getVisitaLogs(visita)).map((log) => (
+                <div
+                  key={log.id}
+                  className="p-3 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-1.5 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={
+                          log.remetente_tipo === 'CLIENTE'
+                            ? 'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                            : log.remetente_tipo === 'CORRETOR'
+                            ? 'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
+                            : 'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        }
+                      >
+                        {log.remetente_tipo}
+                      </span>
+                      {log.remetente_nome && (
+                        <span className="font-bold text-slate-800 dark:text-slate-200 text-[11px]">
+                          {log.remetente_nome}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {new Date(log.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+
+                  <p className="text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
+                    {log.conteudo_texto}
+                  </p>
+
+                  {log.tipo_midia === 'audio' && log.midia_url && (
+                    <div className="pt-1">
+                      <a
+                        href={log.midia_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 font-bold text-[11px] hover:underline"
+                      >
+                        <Volume2 className="w-3.5 h-3.5 text-amber-600" />
+                        <span>[🔊 Áudio de Atendimento • Ouvir Gravação]</span>
+                      </a>
+                    </div>
+                  )}
+
+                  {log.tipo_midia === 'imagem' && log.midia_url && (
+                    <div className="pt-1">
+                      <a
+                        href={log.midia_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 font-bold text-[11px] hover:underline"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>[🖼️ Foto da Visita/Imóvel • Ver Anexo]</span>
+                      </a>
+                    </div>
+                  )}
+
+                  <div className="text-[9px] font-mono text-slate-400 truncate pt-0.5">
+                    Meta ID: {log.message_id}
+                  </div>
+                </div>
+              )))}
             </div>
           </div>
         </div>

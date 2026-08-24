@@ -3,6 +3,7 @@
 import React, { useState, useTransition, Suspense } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowLeft, Send, CheckCircle2, AlertCircle, Sparkles, MessageSquare } from 'lucide-react';
+import { EasyMobLogo } from '@/components/ui/EasyMobLogo';
 
 function RecuperarSenhaForm() {
   const [email, setEmail] = useState('');
@@ -56,8 +57,8 @@ function RecuperarSenhaForm() {
         <div className="p-8 sm:p-10 rounded-3xl bg-white/10 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/10 dark:border-slate-800 shadow-2xl space-y-6">
           {/* Logo e Título */}
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-black text-2xl shadow-xl shadow-emerald-500/30 mb-2">
-              EM
+            <div className="flex justify-center mb-1">
+              <EasyMobLogo variant="icon" size="lg" />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">
               Recuperar <span className="text-emerald-400">Senha</span>

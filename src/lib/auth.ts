@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
-import { Usuario, Convite } from '@/types';
+import { Usuario, Convite, UserRole } from '@/types';
 import { supabase } from './supabase';
 import { generateInstanceName } from './utils';
 
@@ -17,7 +17,7 @@ export interface UserSession {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'corretor';
+  role: UserRole;
   avatar?: string;
   imobiliaria: string;
   instance_name: string;
@@ -453,7 +453,7 @@ export async function resetPasswordWithToken(token: string, newPasswordRaw: stri
 /**
  * Cria um novo convite com validade de 24h
  */
-export async function createInvite(imobiliaria: string): Promise<Convite> {
+export async function createInvite(imobiliaria: string, role: UserRole = 'corretor'): Promise<Convite> {
   const token = typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
     : `tok-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -463,6 +463,7 @@ export async function createInvite(imobiliaria: string): Promise<Convite> {
     id: `inv-${Date.now()}`,
     token,
     imobiliaria: imobiliaria.trim() || 'EasyMob Imóveis',
+    role,
     expires_at: expiresAt,
     used: false,
     created_at: new Date().toISOString(),
@@ -474,6 +475,7 @@ export async function createInvite(imobiliaria: string): Promise<Convite> {
       .insert({
         token: newInvite.token,
         imobiliaria: newInvite.imobiliaria,
+        role: newInvite.role,
         expires_at: newInvite.expires_at,
         used: false,
       })
@@ -630,7 +632,7 @@ export async function verifySessionToken(token: string): Promise<UserSession | n
       id: payload.sub as string,
       name: (payload.name as string) || 'Usuário',
       email: (payload.email as string) || '',
-      role: (payload.role as 'admin' | 'corretor') || 'corretor',
+      role: (payload.role as UserRole) || 'corretor',
       avatar: payload.avatar as string | undefined,
       imobiliaria: (payload.imobiliaria as string) || 'EasyMob',
       instance_name: (payload.instance_name as string) || generateInstanceName(payload.sub as string),

@@ -32,9 +32,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { imobiliaria } = body;
+    const { imobiliaria, role } = body;
 
-    const newInvite = await createInvite(imobiliaria || sessionUser.imobiliaria || 'EasyMob Imóveis');
+    const targetRole = role === 'gestor' ? 'gestor' : 'corretor';
+    const newInvite = await createInvite(
+      imobiliaria || sessionUser.imobiliaria || 'EasyMob Imóveis',
+      targetRole
+    );
 
     // Monta o link completo do convite
     const origin = req.nextUrl.origin;
@@ -44,7 +48,7 @@ export async function POST(req: NextRequest) {
       success: true,
       invite: newInvite,
       inviteUrl,
-      message: 'Convite de corretor gerado com sucesso (validade: 24h)!',
+      message: `Convite de ${targetRole === 'gestor' ? 'gestor' : 'corretor'} gerado com sucesso (validade: 24h)!`,
     });
   } catch (err) {
     console.error('Erro ao criar convite:', err);

@@ -17,6 +17,8 @@ import {
   ChevronRight,
   LogOut,
   UserCog,
+  Store,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
@@ -51,10 +53,22 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
     ...(user?.role === 'admin'
       ? [
           {
+            label: 'Imobiliárias',
+            href: '/imobiliarias',
+            icon: Store,
+            description: 'Gestão multi-tenant de empresas',
+          },
+          {
             label: 'Usuários',
             href: '/usuarios',
             icon: UserCog,
             description: 'Gestão de equipe e convites',
+          },
+          {
+            label: 'Infraestrutura',
+            href: '/infraestrutura',
+            icon: Activity,
+            description: 'Monitoramento de servidores e APIs',
           },
         ]
       : []),
@@ -81,11 +95,11 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
         <div className="flex items-center justify-around relative">
           {/* 1. Hoje */}
           <Link
-            href="/"
+            href="/dashboard"
             onClick={() => setIsMoreOpen(false)}
             className={cn(
               'flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all',
-              pathname === '/'
+              pathname === '/dashboard' || pathname === '/'
                 ? 'text-emerald-600 dark:text-emerald-400 font-bold'
                 : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
             )}

@@ -49,6 +49,7 @@ export function NovaVisitaModal({
   const [notificarConfirmacao, setNotificarConfirmacao] = useState(true);
   const [notificarLembrete, setNotificarLembrete] = useState(true);
   const [notificarPosVisita, setNotificarPosVisita] = useState(true);
+  const [gravarLogs, setGravarLogs] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -73,6 +74,7 @@ export function NovaVisitaModal({
       setNotificarConfirmacao(true);
       setNotificarLembrete(true);
       setNotificarPosVisita(true);
+      setGravarLogs(true);
       setImovelToAddId('');
     }
   }, [imovelPreSelecionado, clientePreSelecionado, isOpen]);
@@ -121,6 +123,7 @@ export function NovaVisitaModal({
           notificar_confirmacao: notificarConfirmacao,
           notificar_lembrete: notificarLembrete,
           notificar_pos_visita: notificarPosVisita,
+          gravar_logs: gravarLogs,
           whatsapp_confirmacao_cliente: notificarConfirmacao ? 'pendente' : 'inativo',
           whatsapp_confirmacao_proprietario: notificarConfirmacao ? 'pendente' : 'inativo',
           whatsapp_lembrete_cliente: notificarLembrete ? 'pendente' : 'inativo',
@@ -185,16 +188,16 @@ export function NovaVisitaModal({
                 {imoveisSelecionados.map((im, index) => (
                   <div
                     key={im.id}
-                    className="inline-flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700/60 shadow-xs group transition-all"
+                    className="inline-flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 shadow-xs group transition-all"
                   >
                     {/* Número da Ordem do Roteiro */}
-                    <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold flex items-center justify-center shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-extrabold flex items-center justify-center shrink-0">
                       {index + 1}
                     </span>
 
                     {/* Código e Título */}
                     <div className="text-xs leading-tight">
-                      <span className="font-mono text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mr-1">
+                      <span className="font-mono text-[10px] font-bold text-blue-700 dark:text-blue-400 mr-1">
                         [{im.codigo || 'S/C'}]
                       </span>
                       <strong className="text-slate-800 dark:text-slate-200">{im.titulo}</strong>
@@ -362,6 +365,31 @@ export function NovaVisitaModal({
                 </p>
               </div>
             </label>
+
+            {/* Checkbox 4: Gravar Log de Mensagens do Atendimento (Dossiê Jurídico & Compliance) */}
+            <div className="pt-2.5 border-t border-emerald-200/60 dark:border-emerald-800/40">
+              <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                <input
+                  type="checkbox"
+                  checked={gravarLogs}
+                  onChange={(e) => setGravarLogs(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                />
+                <div className="leading-snug flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
+                      Gravar Log de Mensagens do Atendimento
+                    </span>
+                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+                      Validade Jurídica
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Registra as mensagens com IDs técnicos da Meta (WhatsApp) para emissão de dossiê comprobatório em PDF.
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
         </div>
 

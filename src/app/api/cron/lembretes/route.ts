@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { buildTemplateContext, compileTemplate, sendWhatsAppMessage } from '@/lib/whatsapp';
+import { buildTemplateContext, buildTemplateContextAsync, compileTemplate, sendWhatsAppMessage } from '@/lib/whatsapp';
 import { Visita } from '@/types';
 
 export async function GET(req: NextRequest) {
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     if (visitasLembrete && visitasLembrete.length > 0) {
       for (const visita of visitasLembrete as unknown as Visita[]) {
-        const ctx = buildTemplateContext(visita);
+        const ctx = await buildTemplateContextAsync(visita);
 
         // Disparo para o Cliente
         if (visita.cliente?.telefone) {
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
     if (visitasPosVisita && visitasPosVisita.length > 0) {
       for (const visita of visitasPosVisita as unknown as Visita[]) {
         if (visita.cliente?.telefone && config.template_pos_visita_cliente) {
-          const ctx = buildTemplateContext(visita);
+          const ctx = await buildTemplateContextAsync(visita);
           const msg = compileTemplate(config.template_pos_visita_cliente, ctx);
           const res = await sendWhatsAppMessage({
             toPhone: visita.cliente.telefone,

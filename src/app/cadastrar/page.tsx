@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Clock,
 } from 'lucide-react';
+import { EasyMobLogo } from '@/components/ui/EasyMobLogo';
 import { useAuth } from '@/context/AuthContext';
 
 function CadastrarForm() {
@@ -172,8 +173,8 @@ function CadastrarForm() {
         <div className="p-8 sm:p-10 rounded-3xl bg-white/10 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/10 dark:border-slate-800 shadow-2xl space-y-6">
           {/* Logo e Título */}
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-black text-xl shadow-xl shadow-emerald-500/30 mb-1">
-              EM
+            <div className="flex justify-center mb-1">
+              <EasyMobLogo variant="icon" size="lg" />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">
               Cadastro de <span className="text-emerald-400">Corretor</span>

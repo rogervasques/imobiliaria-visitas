@@ -2,11 +2,31 @@ export type TipoImovel = 'apartamento' | 'casa' | 'terreno' | 'comercial' | 'cob
 export type FinalidadeImovel = 'venda' | 'locacao' | 'ambos';
 export type StatusImovel = 'disponivel' | 'reservado' | 'vendido' | 'alugado' | 'inativo';
 
+export interface Imobiliaria {
+  id: string;
+  nome: string;
+  slug?: string;
+  logo_url?: string;
+  telefone?: string;
+  email?: string;
+  endereco?: string;
+  ativo?: boolean;
+  criado_em?: string;
+  atualizado_em?: string;
+}
+
 export interface Proprietario {
   id: string;
   nome: string;
   telefone: string;
   email?: string;
+  documento?: string;
+  chave_pix?: string;
+  banco_nome?: string;
+  imoveis_count?: number;
+  observacoes?: string;
+  imobiliaria_id?: string;
+  imobiliaria?: string;
   criado_em?: string;
   atualizado_em?: string;
 }
@@ -46,6 +66,9 @@ export interface Imovel {
   observacoes_chaves?: string;
   status: StatusImovel;
   imagem_url?: string;
+  fotos_urls?: string[];
+  imobiliaria_id?: string;
+  imobiliaria?: string;
   criado_em?: string;
   atualizado_em?: string;
 }
@@ -63,6 +86,8 @@ export interface Cliente {
   origem_lead?: OrigemLead;
   status: StatusCliente;
   observacoes?: string;
+  imobiliaria_id?: string;
+  imobiliaria?: string;
   criado_em?: string;
   atualizado_em?: string;
 }
@@ -90,14 +115,19 @@ export interface Visita {
   lembrete_agendado_para?: string;
   pos_visita_agendado_para?: string;
   
+  // Vínculo de Imobiliária / Tenant
+  imobiliaria_id?: string;
+  imobiliaria?: string;
+
   // Vínculo do usuário criador (Multi-Instância)
   created_by_user_id?: string;
   created_by_user_nome?: string;
 
-  // Preferências de Notificação (Checkboxes)
+  // Preferências de Notificação & Compliance Jurídico
   notificar_confirmacao?: boolean;
   notificar_lembrete?: boolean;
   notificar_pos_visita?: boolean;
+  gravar_logs?: boolean; // Gravar log de mensagens do atendimento para dossiê jurídico
 
   status: StatusVisita;
   whatsapp_confirmacao_cliente: StatusDisparoWhatsApp;
@@ -115,6 +145,23 @@ export interface Visita {
   imovel?: Imovel;
   imoveis?: Imovel[]; // Lista de imóveis do roteiro
   cliente?: Cliente;
+  logs_mensagens?: LogMensagem[]; // Histórico de mensagens gravadas
+}
+
+export interface LogMensagem {
+  id: string;
+  visita_id: string;
+  imobiliaria_id?: string;
+  imobiliaria?: string;
+  message_id: string; // ID único retornado pela Meta / Evolution API (ex: wamid.HBgL... / 3EB0...)
+  timestamp: string; // Data e hora exatas com fuso horário (ex: 2026-08-24T14:35:10-03:00)
+  remetente_tipo: 'CLIENTE' | 'CORRETOR' | 'PROPRIETARIO' | 'SISTEMA';
+  remetente_nome?: string;
+  remetente_telefone?: string;
+  conteudo_texto: string;
+  tipo_midia: 'texto' | 'imagem' | 'audio' | 'documento';
+  midia_url?: string; // Link público para áudios ou fotos
+  criado_em?: string;
 }
 
 export type ProvedorWhatsApp = 'evolution_api' | 'zapi' | 'meta_cloud' | 'custom_webhook';
@@ -125,6 +172,8 @@ export interface ConfiguracaoWhatsApp {
   api_url: string;
   api_key: string;
   instancia_nome: string;
+  imobiliaria_id?: string;
+  imobiliaria?: string;
   ativo: boolean;
   template_confirmacao_cliente: string;
   template_confirmacao_proprietario: string;
@@ -138,6 +187,8 @@ export interface ConfiguracaoWhatsApp {
 export interface WhatsAppLog {
   id?: string;
   visita_id?: string;
+  imobiliaria_id?: string;
+  imobiliaria?: string;
   tipo_mensagem: 'confirmacao_cliente' | 'confirmacao_proprietario' | 'lembrete_cliente' | 'lembrete_proprietario' | 'pos_visita_cliente' | 'avulsa';
   destinatario_nome: string;
   destinatario_telefone: string;
@@ -159,7 +210,7 @@ export interface DashboardMetrics {
   taxaConfirmacao: number;
 }
 
-export type UserRole = 'admin' | 'corretor';
+export type UserRole = 'admin' | 'gestor' | 'corretor';
 
 export interface Usuario {
   id: string;
@@ -169,6 +220,7 @@ export interface Usuario {
   senha_hash?: string;
   role: UserRole;
   imobiliaria: string;
+  imobiliaria_id?: string;
   instance_name?: string;
   avatar_url?: string;
   created_at?: string;
@@ -178,9 +230,12 @@ export interface Convite {
   id: string;
   token: string;
   imobiliaria: string;
+  imobiliaria_id?: string;
+  role?: UserRole;
   expires_at: string;
   used: boolean;
   created_at?: string;
 }
+
 
 

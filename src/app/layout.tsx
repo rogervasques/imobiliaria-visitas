@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import { TenantProvider } from '@/context/TenantContext';
 import { DataProvider } from '@/context/DataContext';
 import { AppShell } from '@/components/layout/AppShell';
 
@@ -37,9 +38,11 @@ export default function RootLayout({
     <html lang="pt-BR" className={inter.variable}>
       <body className="antialiased bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen">
         <AuthProvider>
-          <DataProvider>
-            <AppShell>{children}</AppShell>
-          </DataProvider>
+          <TenantProvider>
+            <DataProvider>
+              <AppShell>{children}</AppShell>
+            </DataProvider>
+          </TenantProvider>
         </AuthProvider>
       </body>
     </html>

@@ -15,11 +15,11 @@ export const mockConfigWhatsApp: ConfiguracaoWhatsApp = {
   instancia_nome: 'easymob',
   ativo: true,
   template_confirmacao_cliente:
-    'Olá, {cliente_nome}! 👋 Confirmando nossa visita para *{data_hora}*.\n\n📍 *Roteiro de Imóveis:*\n{roteiro_imoveis}\n\n👤 *Corretor:* {corretor_nome} ({corretor_telefone})\n\nQualquer dúvida, conte com a *EasyMob*!',
+    'Olá, {cliente_nome}! 👋 Confirmada nossa visita para *{data_hora}* no imóvel *{imovel_titulo}*.\n\n📍 *Roteiro de Imóveis:*\n{roteiro_imoveis}\n\n📍 *Localização no Mapa:* {link_curto_mapa}\n\n👤 *Corretor:* {corretor_nome} ({corretor_telefone})\n\nQualquer dúvida, conte com a *EasyMob*!',
   template_confirmacao_proprietario:
-    'Olá, {proprietario_nome}! Informamos que a equipe *EasyMob* agendou uma visita ao seu imóvel *{imovel_titulo}* ({endereco}) para *{data_hora}* com o cliente {cliente_nome}.\n\n👤 *Corretor:* {corretor_nome}\n*EasyMob - Gestão Imobiliária Inteligente*',
+    'Olá, {proprietario_nome}! Informamos que a equipe *EasyMob* agendou uma visita ao seu imóvel *{imovel_titulo}* ({endereco}) para *{data_hora}* com o cliente {cliente_nome}.\n\n📍 *Localização:* {link_curto_mapa}\n\n👤 *Corretor:* {corretor_nome}\n*EasyMob - Gestão Imobiliária Inteligente*',
   template_lembrete_cliente:
-    '⏰ *Lembrete de Visita (em 1 hora)*\n\nOlá, {cliente_nome}! Lembramos que sua visita aos imóveis acontecerá hoje às *{horario}*.\n\n📍 *Roteiro:*\n{roteiro_imoveis}\n\n👤 *Corretor:* {corretor_nome} ({corretor_telefone})\n\nNos vemos em breve!\n*EasyMob*',
+    '⏰ *Lembrete de Visita (em 1 hora)*\n\nOlá, {cliente_nome}! Lembramos que sua visita aos imóveis acontecerá hoje às *{horario}*.\n\n📍 *Roteiro:*\n{roteiro_imoveis}\n\n📍 *Como Chegar:* {link_curto_mapa}\n\n👤 *Corretor:* {corretor_nome} ({corretor_telefone})\n\nTe vejo lá!\n*EasyMob*',
   template_lembrete_proprietario:
     '⏰ *Lembrete de Visita (em 1 hora)*\n\nOlá, {proprietario_nome}! A *EasyMob* lembra que a visita ao seu imóvel *{imovel_titulo}* com o cliente {cliente_nome} acontecerá às *{horario}*.\n\n👤 *Corretor:* {corretor_nome}\n*EasyMob*',
   template_pos_visita_cliente:

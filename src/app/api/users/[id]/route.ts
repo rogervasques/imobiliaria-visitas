@@ -31,7 +31,7 @@ export async function PUT(
       email: typeof email === 'string' ? email.trim() : undefined,
       telefone: typeof telefone === 'string' ? telefone.trim() : undefined,
       imobiliaria: typeof imobiliaria === 'string' ? imobiliaria.trim() : undefined,
-      role: role === 'admin' || role === 'corretor' ? role : undefined,
+      role: role === 'admin' || role === 'gestor' || role === 'corretor' ? role : undefined,
       password: typeof newPass === 'string' && newPass.trim().length > 0 ? newPass.trim() : undefined,
     });
 

@@ -61,30 +61,36 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/recuperar-senha') ||
     pathname.startsWith('/redefinir-senha');
 
+  const isPublicLandingRoute =
+    pathname === '/' ||
+    pathname === '/home' ||
+    pathname.startsWith('/imovel/') ||
+    pathname.startsWith('/p/');
+
   // 4. Se o Usuário ESTIVER autenticado:
   if (isAuthenticated) {
-    // Redireciona /login e /cadastrar para a página principal /
+    // Redireciona /login e /cadastrar para /dashboard
     if (isAuthRoute) {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/dashboard', req.url));
     }
 
     // Bloqueia acesso à tela /usuarios para quem não for admin
     if (pathname.startsWith('/usuarios') && user?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/dashboard', req.url));
     }
 
     return NextResponse.next();
   }
 
   // 5. Se o Usuário NÃO estiver autenticado:
-  // Permite acesso apenas às rotas públicas (/login e /cadastrar)
-  if (isAuthRoute) {
+  // Permite acesso às rotas públicas (Landing Page, /login, /cadastrar, /recuperar-senha, /redefinir-senha e páginas públicas do imóvel)
+  if (isAuthRoute || isPublicLandingRoute) {
     return NextResponse.next();
   }
 
   // Redireciona obrigatoriamente qualquer outra rota para /login e limpa o cookie inválido
   const loginUrl = new URL('/login', req.url);
-  if (pathname !== '/') {
+  if (pathname !== '/' && pathname !== '/home') {
     loginUrl.searchParams.set('from', pathname);
   }
   const response = NextResponse.redirect(loginUrl);

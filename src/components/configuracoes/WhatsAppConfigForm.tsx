@@ -401,12 +401,16 @@ export function WhatsAppConfigForm() {
     data: '20/08/2026',
     corretor_nome: 'Rogério Silva',
     corretor_telefone: '(11) 98999-0000',
+    link_curto_mapa: 'https://tinyurl.com/maps-easymob',
+    link_mapa: 'https://www.google.com/maps/search/?api=1&query=Av+Paulista+1500',
   };
 
   const tagsDisponiveis = [
     '{cliente_nome}',
     '{proprietario_nome}',
     '{roteiro_imoveis}',
+    '{link_curto_mapa}',
+    '{link_mapa}',
     '{total_imoveis}',
     '{imovel_titulo}',
     '{imovel_codigo}',

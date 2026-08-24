@@ -2,12 +2,17 @@ import { ConfiguracaoWhatsApp, Visita, WhatsAppLog } from '@/types';
 import { cleanPhoneForWhatsApp, formatDate, formatDateTime, formatTime } from './utils';
 import { supabase } from './supabase';
 
+import { getGoogleMapsSearchUrl, getShortMapsUrl, formatEnderecoCompleto } from './maps';
+
 export interface TemplateContext {
   cliente_nome: string;
+  nome_cliente?: string;
   cliente_telefone?: string;
   proprietario_nome: string;
+  nome_proprietario?: string;
   proprietario_telefone?: string;
   imovel_titulo: string;
+  titulo_imovel?: string;
   imovel_codigo?: string;
   endereco: string;
   roteiro_imoveis: string;
@@ -17,10 +22,12 @@ export interface TemplateContext {
   data: string;
   corretor_nome: string;
   corretor_telefone: string;
+  link_mapa?: string;
+  link_curto_mapa?: string;
 }
 
 /**
- * Monta o contexto de variáveis para interpolação nos templates a partir de uma Visita
+ * Monta o contexto de variáveis para interpolação nos templates a partir de uma Visita (síncrono)
  */
 export function buildTemplateContext(visita: Visita): TemplateContext {
   const dataHora = formatDateTime(visita.data_hora_visita);
@@ -49,6 +56,9 @@ export function buildTemplateContext(visita: Visita): TemplateContext {
         .join('; ')
     : 'Endereço a confirmar';
 
+  const primeiroImovel = listaImoveis[0];
+  const mapsSearchUrl = primeiroImovel ? getGoogleMapsSearchUrl(primeiroImovel) : 'https://www.google.com/maps';
+
   const titulosCombinados = listaImoveis.length > 0
     ? listaImoveis.map((im) => im.titulo).join(', ')
     : 'Imóvel';
@@ -65,12 +75,17 @@ export function buildTemplateContext(visita: Visita): TemplateContext {
     ? Array.from(new Set(listaImoveis.map((im) => im.proprietario_telefone).filter(Boolean))).join(', ')
     : '';
 
+  const clienteNome = visita.cliente?.nome || 'Cliente';
+
   return {
-    cliente_nome: visita.cliente?.nome || 'Cliente',
+    cliente_nome: clienteNome,
+    nome_cliente: clienteNome,
     cliente_telefone: visita.cliente?.telefone || '',
     proprietario_nome: proprietariosNomes || 'Proprietário',
+    nome_proprietario: proprietariosNomes || 'Proprietário',
     proprietario_telefone: proprietariosTelefones || '',
     imovel_titulo: titulosCombinados,
+    titulo_imovel: titulosCombinados,
     imovel_codigo: codigosCombinados,
     endereco: enderecoCompleto,
     roteiro_imoveis: roteiroFormatado,
@@ -80,7 +95,34 @@ export function buildTemplateContext(visita: Visita): TemplateContext {
     data: data,
     corretor_nome: visita.corretor_nome || 'Corretor',
     corretor_telefone: visita.corretor_telefone || '',
+    link_mapa: mapsSearchUrl,
+    link_curto_mapa: mapsSearchUrl,
   };
+}
+
+/**
+ * Monta o contexto de variáveis de forma assíncrona, encurtando o link do mapa via TinyURL
+ */
+export async function buildTemplateContextAsync(visita: Visita): Promise<TemplateContext> {
+  const ctx = buildTemplateContext(visita);
+  const listaImoveis = visita.imoveis && visita.imoveis.length > 0
+    ? visita.imoveis
+    : visita.imovel
+    ? [visita.imovel]
+    : [];
+
+  const primeiroImovel = listaImoveis[0];
+  if (primeiroImovel) {
+    try {
+      const shortUrl = await getShortMapsUrl(primeiroImovel);
+      ctx.link_curto_mapa = shortUrl;
+      ctx.link_mapa = shortUrl;
+    } catch {
+      // Fallback já definido
+    }
+  }
+
+  return ctx;
 }
 
 /**

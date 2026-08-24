@@ -244,42 +244,40 @@ export default function AgendaPage() {
         </div>
 
         {/* Seletores de Visão [ Semana ] [ Mês ] [ Lista ] */}
-        <div className="flex items-center">
-          <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800/80 p-1 border border-slate-200 dark:border-slate-700 shadow-xs">
-            <button
-              type="button"
-              onClick={() => setViewMode('semana')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                viewMode === 'semana'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-              }`}
-            >
-              Semana
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('mes')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                viewMode === 'mes'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-              }`}
-            >
-              Mês
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('lista')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                viewMode === 'lista'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-              }`}
-            >
-              Lista
-            </button>
-          </div>
+        <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800/80 p-1 border border-slate-200 dark:border-slate-700 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setViewMode('semana')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === 'semana'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            Semana
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('mes')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === 'mes'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            Mês
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('lista')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === 'lista'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            Lista
+          </button>
         </div>
       </div>
 
