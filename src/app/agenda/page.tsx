@@ -159,6 +159,7 @@ export default function AgendaPage() {
       total: visitasDaSemana.length,
       confirmadas: visitasDaSemana.filter((v) => v.status === 'confirmada').length,
       agendadas: visitasDaSemana.filter((v) => v.status === 'agendada').length,
+      concluidas: visitasDaSemana.filter((v) => v.status === 'concluida' || v.status === 'reagendada').length,
       canceladas: visitasDaSemana.filter((v) => v.status === 'cancelada').length,
     };
   }, [visitasDaSemana]);
@@ -660,29 +661,43 @@ export default function AgendaPage() {
 
             <CardContent className="p-4 space-y-3">
               <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60">
-                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <CalendarCheck2 className="w-3.5 h-3.5 text-emerald-500" />
+                {/* Agendadas */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/70 dark:bg-amber-950/30">
+                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium">
+                    <CalendarCheck2 className="w-3.5 h-3.5 text-amber-500" />
                     <span>Visitas Agendadas</span>
                   </div>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                  <span className="font-bold text-amber-700 dark:text-amber-300">
                     {statsSemana.agendadas}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-2 rounded-xl bg-sky-50/50 dark:bg-sky-950/30">
-                  <div className="flex items-center gap-2 text-sky-700 dark:text-sky-400">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
+                {/* Confirmadas */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30">
+                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                     <span>Confirmadas</span>
                   </div>
-                  <span className="font-bold text-sky-700 dark:text-sky-300">
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300">
                     {statsSemana.confirmadas}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-2 rounded-xl bg-rose-50/50 dark:bg-rose-950/30">
-                  <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400">
-                    <Ban className="w-3.5 h-3.5" />
+                {/* Concluídas */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-purple-50/70 dark:bg-purple-950/30">
+                  <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-500" />
+                    <span>Concluídas</span>
+                  </div>
+                  <span className="font-bold text-purple-700 dark:text-purple-300">
+                    {statsSemana.concluidas}
+                  </span>
+                </div>
+
+                {/* Canceladas */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-rose-50/70 dark:bg-rose-950/30">
+                  <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-medium">
+                    <Ban className="w-3.5 h-3.5 text-rose-500" />
                     <span>Canceladas</span>
                   </div>
                   <span className="font-bold text-rose-700 dark:text-rose-300">

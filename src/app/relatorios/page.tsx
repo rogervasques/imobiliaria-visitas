@@ -99,12 +99,13 @@ export default function RelatoriosPage() {
   const totalVisitas = visitasFiltradas.length;
   const confirmadas = visitasFiltradas.filter((v) => v.status === 'confirmada').length;
   const agendadas = visitasFiltradas.filter((v) => v.status === 'agendada').length;
+  const concluidas = visitasFiltradas.filter((v) => v.status === 'concluida' || v.status === 'reagendada').length;
   const canceladas = visitasFiltradas.filter((v) => v.status === 'cancelada').length;
-  const taxaSucesso = totalVisitas > 0 ? Math.round((confirmadas / totalVisitas) * 100) : 0;
+  const taxaSucesso = totalVisitas > 0 ? Math.round(((confirmadas + concluidas) / totalVisitas) * 100) : 0;
 
   // 1. Relatório de Desempenho por Corretor
   const desempenhoCorretores = useMemo(() => {
-    const mapa = new Map<string, { nome: string; total: number; confirmadas: number; concluidas: number; canceladas: number }>();
+    const mapa = new Map<string, { nome: string; total: number; confirmadas: number; agendadas: number; concluidas: number; canceladas: number }>();
 
     visitasFiltradas.forEach((v) => {
       const nomeCorretor = v.corretor_nome || v.created_by_user_nome || 'Corretor Geral';
@@ -113,6 +114,7 @@ export default function RelatoriosPage() {
           nome: nomeCorretor,
           total: 0,
           confirmadas: 0,
+          agendadas: 0,
           concluidas: 0,
           canceladas: 0,
         });
@@ -121,14 +123,15 @@ export default function RelatoriosPage() {
       const item = mapa.get(nomeCorretor)!;
       item.total += 1;
       if (v.status === 'confirmada') item.confirmadas += 1;
-      if (v.status === 'agendada') item.concluidas += 1;
+      if (v.status === 'agendada') item.agendadas += 1;
+      if (v.status === 'concluida' || v.status === 'reagendada') item.concluidas += 1;
       if (v.status === 'cancelada') item.canceladas += 1;
     });
 
     return Array.from(mapa.values())
       .map((c) => ({
         ...c,
-        taxaConversao: c.total > 0 ? Math.round((c.confirmadas / c.total) * 100) : 0,
+        taxaConversao: c.total > 0 ? Math.round(((c.confirmadas + c.concluidas) / c.total) * 100) : 0,
       }))
       .sort((a, b) => b.total - a.total);
   }, [visitasFiltradas]);
@@ -172,7 +175,7 @@ export default function RelatoriosPage() {
       resumo: {
         totalVisitas,
         confirmadas,
-        concluidas: agendadas,
+        concluidas,
         canceladas,
         taxaSucesso,
       },
@@ -340,7 +343,7 @@ export default function RelatoriosPage() {
       </Card>
 
       {/* ── Cards de Métricas Principais (Compactos) ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
         {/* Total */}
         <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
           <CardContent className="p-3 sm:p-4">
@@ -380,7 +383,29 @@ export default function RelatoriosPage() {
               </div>
             </div>
             <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-2 border-t border-emerald-500/10 pt-1.5 truncate">
-              {taxaSucesso}% taxa de conversão
+              {taxaSucesso}% conversão global
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Concluídas */}
+        <Card className="border-purple-500/20 bg-purple-500/5 shadow-xs">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xl sm:text-2xl font-black text-purple-700 dark:text-purple-300 leading-tight">
+                  {concluidas}
+                </div>
+                <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight text-purple-600 dark:text-purple-400 truncate">
+                  Concluídas
+                </div>
+              </div>
+            </div>
+            <p className="text-[11px] text-purple-600/80 dark:text-purple-400/80 mt-2 border-t border-purple-500/10 pt-1.5 truncate">
+              Visitas realizadas
             </p>
           </CardContent>
         </Card>
@@ -480,10 +505,11 @@ export default function RelatoriosPage() {
                     </div>
 
                     {/* Métricas do Corretor */}
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5 flex-wrap gap-1">
                       <span>Total: <strong className="text-slate-800 dark:text-slate-200">{corretor.total}</strong></span>
                       <span>Confirmadas: <strong className="text-emerald-600">{corretor.confirmadas}</strong></span>
-                      <span>Agendadas: <strong className="text-amber-600">{corretor.concluidas}</strong></span>
+                      <span>Concluídas: <strong className="text-purple-600">{corretor.concluidas}</strong></span>
+                      <span>Agendadas: <strong className="text-amber-600">{corretor.agendadas}</strong></span>
                       <span>Canceladas: <strong className="text-rose-500">{corretor.canceladas}</strong></span>
                     </div>
                   </div>
