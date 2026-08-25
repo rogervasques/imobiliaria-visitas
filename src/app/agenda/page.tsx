@@ -210,7 +210,7 @@ export default function AgendaPage() {
   }, [selectedDayStr]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3.5 sm:space-y-5">
       {/* ─── 1. Topo & Controles Principais ─── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Controles de Navegação */}

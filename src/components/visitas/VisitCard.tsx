@@ -106,6 +106,9 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
       )
     : '#';
 
+  // Link do Google Maps / Rotas
+  const directMapsUrl = visita.imovel ? getGoogleMapsDirectionsUrl(visita.imovel) : '#';
+
   return (
     <>
       <Card className="hover:border-emerald-500/40 transition-all duration-300 relative group overflow-visible">
@@ -411,39 +414,62 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
             </button>
           )}
 
-          {/* Dois Botões Visualmente Idênticos de WhatsApp (Verde Oficial) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Três Botões de Ação em Linha: WhatsApp Cliente, WhatsApp Proprietário e Mapa */}
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {/* WhatsApp Cliente */}
             <a
               href={directWhatsAppCliente}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full"
+              title="WhatsApp Cliente"
             >
               <Button
                 variant="whatsapp"
                 size="sm"
-                className="w-full text-xs font-semibold py-2"
+                className="w-full text-[11px] sm:text-xs font-bold py-1.5 sm:py-2 px-1 sm:px-2 flex items-center justify-center gap-1 truncate shadow-xs"
               >
-                <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                WhatsApp Cliente
+                <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">WhatsApp </span>
+                <span>Cliente</span>
               </Button>
             </a>
 
-            {/* WhatsApp Proprietário (Idêntico ao Cliente) */}
+            {/* WhatsApp Proprietário */}
             <a
               href={directWhatsAppProprietario}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full"
+              title="WhatsApp Proprietário"
             >
               <Button
                 variant="whatsapp"
                 size="sm"
-                className="w-full text-xs font-semibold py-2"
+                className="w-full text-[11px] sm:text-xs font-bold py-1.5 sm:py-2 px-1 sm:px-2 flex items-center justify-center gap-1 truncate shadow-xs"
               >
-                <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                WhatsApp Proprietário
+                <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">WhatsApp </span>
+                <span>Proprietário</span>
+              </Button>
+            </a>
+
+            {/* Mapa / GPS */}
+            <a
+              href={directMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full"
+              title="Abrir no Google Maps / GPS"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-[11px] sm:text-xs font-bold py-1.5 sm:py-2 px-1 sm:px-2 flex items-center justify-center gap-1 bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border-sky-200/80 dark:border-sky-800/80 truncate shadow-xs"
+              >
+                <Navigation className="w-3.5 h-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
+                <span className="hidden sm:inline">Abrir </span>
+                <span>Mapa</span>
               </Button>
             </a>
           </div>

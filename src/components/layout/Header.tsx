@@ -84,7 +84,7 @@ export function Header({ onOpenNovaVisita }: HeaderProps) {
   return (
     <>
       <header className="sticky top-0 z-30 w-full glass-panel border-b border-slate-200/80 dark:border-slate-800 backdrop-blur-md bg-white/85 dark:bg-slate-900/85">
-        <div className="flex items-center justify-between px-4 sm:px-8 h-16 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between px-3 sm:px-8 h-14 sm:h-16 max-w-7xl mx-auto">
           {/* ─── LADO ESQUERDO ─── */}
           <div className="flex items-center gap-3">
             {/* NO MOBILE: Marca da Imobiliária + Alternador para Admin */}

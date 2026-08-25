@@ -61,7 +61,7 @@ export default function ProprietariosPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Topo */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -69,7 +69,7 @@ export default function ProprietariosPage() {
             <UserCheck className="w-6 h-6 text-emerald-500" />
             Módulo de Proprietários
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hidden md:block">
             Gerenciamento relacional de proprietários e visualização unificada de seus imóveis cadastrados.
           </p>
         </div>

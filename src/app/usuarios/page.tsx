@@ -292,7 +292,7 @@ export default function UsuariosPage() {
   ).length;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
       {/* ─── TOPO DA PÁGINA ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -300,7 +300,7 @@ export default function UsuariosPage() {
             <Users className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             Gestão de Usuários &amp; Corretores
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400 hidden md:block">
             Controle de acesso multi-tenant (Admin, Gestor e Corretor) e emissão de convites temporários
           </p>
         </div>

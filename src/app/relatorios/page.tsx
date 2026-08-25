@@ -191,7 +191,7 @@ export default function RelatoriosPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* ── Topo & Botão Principal de Exportação ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -199,7 +199,7 @@ export default function RelatoriosPage() {
             <BarChart3 className="w-6 h-6 text-emerald-500" />
             Central de Relatórios
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hidden md:block">
             Acompanhe a performance de visitas da sua equipe e faça download de relatórios completos em Excel (.xlsx).
           </p>
         </div>
