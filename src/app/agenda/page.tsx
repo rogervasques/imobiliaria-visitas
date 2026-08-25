@@ -163,34 +163,34 @@ export default function AgendaPage() {
     };
   }, [visitasDaSemana]);
 
-  // Mapa de cor dos blocos na grade (Fundo Pastel Integral)
+  // Mapa de cor dos blocos na grade correspondendo perfeitamente à legenda
   const statusCardStyles: Record<
     StatusVisita,
     { bg: string; border: string; text: string; label: string }
   > = {
-    agendada: {
-      bg: 'bg-emerald-100/90 dark:bg-emerald-950/80 hover:bg-emerald-200/90 dark:hover:bg-emerald-900/90',
-      border: 'border border-emerald-300 dark:border-emerald-700/60',
-      text: 'text-emerald-950 dark:text-emerald-100',
-      label: 'Agendada',
-    },
     confirmada: {
-      bg: 'bg-sky-100/90 dark:bg-sky-950/80 hover:bg-sky-200/90 dark:hover:bg-sky-900/90',
-      border: 'border border-sky-300 dark:border-sky-700/60',
-      text: 'text-sky-950 dark:text-sky-100',
+      bg: 'bg-emerald-700 dark:bg-emerald-800 hover:bg-emerald-600 dark:hover:bg-emerald-700',
+      border: 'border border-emerald-500 dark:border-emerald-400',
+      text: 'text-white dark:text-emerald-50',
       label: 'Confirmada',
     },
+    agendada: {
+      bg: 'bg-amber-100/95 dark:bg-amber-950/80 hover:bg-amber-200/90 dark:hover:bg-amber-900/90',
+      border: 'border border-amber-300 dark:border-amber-700/60',
+      text: 'text-amber-950 dark:text-amber-100',
+      label: 'Agendada',
+    },
     cancelada: {
-      bg: 'bg-rose-100/90 dark:bg-rose-950/80 hover:bg-rose-200/90 dark:hover:bg-rose-900/90',
+      bg: 'bg-rose-100/95 dark:bg-rose-950/80 hover:bg-rose-200/90 dark:hover:bg-rose-900/90',
       border: 'border border-rose-300 dark:border-rose-700/60',
       text: 'text-rose-950 dark:text-rose-100',
       label: 'Cancelada',
     },
     reagendada: {
-      bg: 'bg-purple-100/90 dark:bg-purple-950/80 hover:bg-purple-200/90 dark:hover:bg-purple-900/90',
+      bg: 'bg-purple-100/95 dark:bg-purple-950/80 hover:bg-purple-200/90 dark:hover:bg-purple-900/90',
       border: 'border border-purple-300 dark:border-purple-700/60',
       text: 'text-purple-950 dark:text-purple-100',
-      label: 'Reagendada',
+      label: 'Concluída',
     },
   };
 
@@ -422,24 +422,20 @@ export default function AgendaPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                    <span>Agendada</span>
+                    <div className="w-3 h-3 rounded-full bg-emerald-700 border border-emerald-500 shrink-0" />
+                    <span className="font-semibold">Confirmada</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-2.5 h-2.5 rounded-full bg-sky-500 shrink-0" />
-                    <span>Confirmada</span>
+                    <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
+                    <span className="font-semibold">Agendada</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                    <span>Aguardando</span>
+                    <div className="w-3 h-3 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
+                    <span className="font-semibold">Concluída</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0" />
-                    <span>Concluída</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
-                    <span>Cancelada</span>
+                    <div className="w-3 h-3 rounded-full bg-rose-500 border border-rose-400 shrink-0" />
+                    <span className="font-semibold">Cancelada</span>
                   </div>
                 </div>
               </div>

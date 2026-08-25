@@ -546,19 +546,19 @@ export default function UsuariosPage() {
                               {/* Perfil */}
                               <td className="py-3 px-4">
                                 {u.role === 'admin' ? (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[10px] bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                                    <Shield className="w-3 h-3" />
-                                    Administrador
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold text-xs bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60 shadow-xs">
+                                    <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                                    <span>Administrador</span>
                                   </span>
                                 ) : u.role === 'gestor' ? (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[10px] bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                                    <Briefcase className="w-3 h-3" />
-                                    Gestor
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold text-xs bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60 shadow-xs">
+                                    <Briefcase className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                                    <span>Gestor</span>
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[10px] bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                                    <UserPlus className="w-3 h-3" />
-                                    Corretor
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold text-xs bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shadow-xs">
+                                    <UserPlus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                    <span>Corretor</span>
                                   </span>
                                 )}
                               </td>

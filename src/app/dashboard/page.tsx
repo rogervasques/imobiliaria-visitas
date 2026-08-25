@@ -412,18 +412,20 @@ function TimelineCard({
             </div>
           </div>
 
-          {/* Rodapé: botões WA + menu — flex-wrap no mobile */}
+          {/* Rodapé: botões WhatsApp + menu — flex-wrap no mobile */}
           <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-2 flex-wrap" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 flex-wrap">
               <a href={waCliente} target="_blank" rel="noopener noreferrer">
-                <button type="button" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors whitespace-nowrap">
-                  <MessageCircle className="w-3.5 h-3.5 shrink-0" /> WA Cliente
+                <button type="button" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors whitespace-nowrap border border-emerald-200/60 dark:border-emerald-800/60">
+                  <MessageCircle className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span>WhatsApp Cliente</span>
                 </button>
               </a>
               <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 shrink-0" />
               <a href={waProprietario} target="_blank" rel="noopener noreferrer">
-                <button type="button" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors whitespace-nowrap">
-                  <MessageCircle className="w-3.5 h-3.5 shrink-0" /> WA Proprietário
+                <button type="button" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors whitespace-nowrap border border-emerald-200/60 dark:border-emerald-800/60">
+                  <MessageCircle className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span>WhatsApp Proprietário</span>
                 </button>
               </a>
             </div>
@@ -528,18 +530,19 @@ export default function DashboardHojePage() {
     canceladas: visitasDoDia.filter(v => v.status === 'cancelada').length,
   }), [visitasDoDia]);
 
-  // Data por extenso
+  // Data por extenso formatada dinamicamente a partir da data selecionada
   const isHoje = selectedDate === toDateStr(new Date());
-  const dataLabel = isHoje
-    ? (() => {
-        const s = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
-        return s.charAt(0).toUpperCase() + s.slice(1);
-      })()
-    : (() => {
-        const [y, m, d] = selectedDate.split('-').map(Number);
-        const s = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(y, m - 1, d));
-        return s.charAt(0).toUpperCase() + s.slice(1);
-      })();
+  const dataLabel = useMemo(() => {
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d, 12, 0, 0); // Meio-dia para prevenir divergência de fuso horário
+    const s = new Intl.DateTimeFormat('pt-BR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(dateObj);
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }, [selectedDate]);
 
   // Cards-filtro de métricas
   const metricCards = [

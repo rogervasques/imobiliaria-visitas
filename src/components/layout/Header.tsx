@@ -36,6 +36,7 @@ export function Header({ onOpenNovaVisita }: HeaderProps) {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
+    year: 'numeric',
   }).format(new Date());
 
   const hojeCapitalizado = hoje.charAt(0).toUpperCase() + hoje.slice(1);
