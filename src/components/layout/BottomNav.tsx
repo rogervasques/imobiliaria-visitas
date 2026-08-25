@@ -19,6 +19,7 @@ import {
   UserCog,
   Store,
   Activity,
+  Kanban,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
@@ -31,11 +32,23 @@ interface BottomNavProps {
 
 export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
   const pathname = usePathname();
-  const { metrics, proprietarios } = useData();
+  const { metrics, proprietarios, clientes } = useData();
   const { user, logout } = useAuth();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
+  const totalLeadsAtivosCrm = clientes.filter((c) => {
+    if (c.etapa_crm) return c.etapa_crm !== 'fechado';
+    return c.status !== 'fechado' && c.status !== 'inativo';
+  }).length;
+
   const moreItems = [
+    {
+      label: 'CRM (Kanban de Leads)',
+      href: '/crm',
+      icon: Kanban,
+      badge: totalLeadsAtivosCrm > 0 ? `${totalLeadsAtivosCrm}` : undefined,
+      description: 'Funil visual e gestão de negociações',
+    },
     {
       label: 'Proprietários',
       href: '/proprietarios',

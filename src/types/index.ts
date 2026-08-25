@@ -75,6 +75,7 @@ export interface Imovel {
 
 export type StatusCliente = 'ativo' | 'negociando' | 'fechado' | 'inativo';
 export type OrigemLead = 'site' | 'portal' | 'indicacao' | 'instagram' | 'whatsapp' | 'placa';
+export type EtapaCRM = 'novo' | 'em_atendimento' | 'visita_agendada' | 'proposta' | 'fechado';
 
 export interface Cliente {
   id: string;
@@ -85,6 +86,9 @@ export interface Cliente {
   faixa_orcamento?: string;
   origem_lead?: OrigemLead;
   status: StatusCliente;
+  etapa_crm?: EtapaCRM;
+  imovel_interesse_id?: string;
+  imovel_interesse_titulo?: string;
   observacoes?: string;
   imobiliaria_id?: string;
   imobiliaria?: string;

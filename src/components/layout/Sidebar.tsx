@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Check,
   PlusCircle,
+  Kanban,
   Store,
   Activity,
 } from 'lucide-react';
@@ -31,7 +32,7 @@ import { EasyMobLogo } from '../ui/EasyMobLogo';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { metrics, proprietarios } = useData();
+  const { metrics, proprietarios, clientes } = useData();
   const { user, logout } = useAuth();
   const { imobiliarias, currentTenant, setCurrentTenant, adicionarImobiliaria } = useTenant();
 
@@ -83,9 +84,15 @@ export function Sidebar() {
     }
   };
 
+  const totalLeadsAtivosCrm = clientes.filter((c) => {
+    if (c.etapa_crm) return c.etapa_crm !== 'fechado';
+    return c.status !== 'fechado' && c.status !== 'inativo';
+  }).length;
+
   const navItems = [
     { label: 'Hoje', href: '/dashboard', icon: LayoutDashboard, badge: metrics.totalVisitasHoje ? `${metrics.totalVisitasHoje}` : undefined },
     { label: 'Agenda', href: '/agenda', icon: CalendarDays },
+    { label: 'CRM', href: '/crm', icon: Kanban, badge: totalLeadsAtivosCrm > 0 ? `${totalLeadsAtivosCrm}` : undefined },
     { label: 'Imóveis', href: '/imoveis', icon: Building2, badge: `${metrics.totalImoveisAtivos}` },
     { label: 'Proprietários', href: '/proprietarios', icon: UserCheck, badge: `${proprietarios.length}` },
     { label: 'Clientes', href: '/clientes', icon: Users, badge: `${metrics.totalClientesAtivos}` },

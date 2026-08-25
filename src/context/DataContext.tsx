@@ -5,8 +5,10 @@ import {
   Cliente,
   ConfiguracaoWhatsApp,
   DashboardMetrics,
+  EtapaCRM,
   Imovel,
   Proprietario,
+  StatusCliente,
   StatusVisita,
   Visita,
   WhatsAppLog,
@@ -48,9 +50,10 @@ interface DataContextType {
   adicionarProprietario: (proprietario: Omit<Proprietario, 'id' | 'criado_em'>) => Promise<Proprietario>;
   atualizarProprietario: (id: string, proprietario: Partial<Proprietario>) => Promise<void>;
   
-  // Clientes
+  // Clientes & CRM
   adicionarCliente: (cliente: Omit<Cliente, 'id' | 'criado_em'>) => Promise<Cliente>;
   atualizarCliente: (id: string, cliente: Partial<Cliente>) => Promise<void>;
+  moverEtapaCRM: (id: string, novaEtapa: EtapaCRM) => Promise<void>;
   removerCliente: (id: string) => Promise<void>;
   
   // Visitas
@@ -626,6 +629,47 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     showToast('Cliente atualizado!', 'success');
   };
 
+  const moverEtapaCRM = async (id: string, novaEtapa: EtapaCRM) => {
+    const target = allClientes.find((c) => c.id === id);
+    if (!target) return;
+
+    let novoStatus: StatusCliente = target.status;
+    if (novaEtapa === 'fechado') {
+      novoStatus = 'fechado';
+    } else if (novaEtapa === 'proposta') {
+      novoStatus = 'negociando';
+    } else if (target.status === 'fechado' || target.status === 'inativo') {
+      novoStatus = 'ativo';
+    }
+
+    const etapaNomes: Record<EtapaCRM, string> = {
+      novo: 'Novos Leads',
+      em_atendimento: 'Em Atendimento',
+      visita_agendada: 'Visita Agendada',
+      proposta: 'Proposta / Em Negociação',
+      fechado: 'Fechado',
+    };
+
+    try {
+      await supabase.from('clientes').update({ etapa_crm: novaEtapa, status: novoStatus }).eq('id', id);
+    } catch (err) {
+      console.warn('Supabase update etapa_crm offline:', err);
+    }
+
+    const updated = sortClientesAlphabetically(
+      allClientes.map((cl) => (cl.id === id ? { ...cl, etapa_crm: novaEtapa, status: novoStatus, atualizado_em: new Date().toISOString() } : cl))
+    );
+    setAllClientes(updated);
+    persistir('clientes', updated);
+
+    // Atualiza referências nas visitas
+    setAllVisitas((prev) =>
+      prev.map((v) => (v.cliente_id === id ? { ...v, cliente: { ...v.cliente, etapa_crm: novaEtapa, status: novoStatus } as Cliente } : v))
+    );
+
+    showToast(`Lead movido para "${etapaNomes[novaEtapa]}".`, 'success');
+  };
+
   const removerCliente = async (id: string) => {
     try {
       await supabase.from('clientes').delete().eq('id', id);
@@ -1167,6 +1211,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         atualizarProprietario,
         adicionarCliente,
         atualizarCliente,
+        moverEtapaCRM,
         removerCliente,
         adicionarVisita,
         atualizarStatusVisita,

@@ -1,4 +1,4 @@
-import { Cliente, Imovel, Proprietario, Visita, TipoImovel, FinalidadeImovel, StatusImovel, StatusCliente, OrigemLead, StatusVisita } from '@/types';
+import { Cliente, Imovel, Proprietario, Visita, TipoImovel, FinalidadeImovel, StatusImovel, StatusCliente, OrigemLead, StatusVisita, EtapaCRM } from '@/types';
 
 // Lista de 30 Proprietários com dados brasileiros realistas
 export const PROPRIETARIOS_DATA = [
@@ -309,20 +309,38 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
     });
   }
 
-  // 3. Gera 50 Clientes com preferências completas
-  const clientes: Cliente[] = CLIENTES_DATA.map((c, idx) => ({
-    id: `cli-${String(idx + 1).padStart(3, '0')}`,
-    nome: c.nome,
-    telefone: c.telefone,
-    email: c.email,
-    perfil_interesse: c.perfil,
-    faixa_orcamento: c.orcamento,
-    origem_lead: c.origem as OrigemLead,
-    status: c.status as StatusCliente,
-    observacoes: `Lead qualificado via ${c.origem}. Preferência de contato por WhatsApp.`,
-    criado_em: new Date(now.getTime() - (45 - idx) * 86400000).toISOString(),
-    atualizado_em: new Date().toISOString(),
-  }));
+  // 3. Gera 50 Clientes com preferências completas e etapas de CRM
+  const etapasCrmList: EtapaCRM[] = ['novo', 'em_atendimento', 'visita_agendada', 'proposta', 'fechado'];
+
+  const clientes: Cliente[] = CLIENTES_DATA.map((c, idx) => {
+    let etapaCrm: EtapaCRM = 'novo';
+    if (c.status === 'fechado') {
+      etapaCrm = 'fechado';
+    } else if (c.status === 'negociando') {
+      etapaCrm = idx % 2 === 0 ? 'proposta' : 'visita_agendada';
+    } else {
+      etapaCrm = etapasCrmList[idx % 4]; // Distribui entre novo, em_atendimento, visita_agendada, proposta
+    }
+
+    const imovelRef = imoveis[idx % imoveis.length];
+
+    return {
+      id: `cli-${String(idx + 1).padStart(3, '0')}`,
+      nome: c.nome,
+      telefone: c.telefone,
+      email: c.email,
+      perfil_interesse: c.perfil,
+      faixa_orcamento: c.orcamento,
+      origem_lead: c.origem as OrigemLead,
+      status: c.status as StatusCliente,
+      etapa_crm: etapaCrm,
+      imovel_interesse_id: imovelRef?.id,
+      imovel_interesse_titulo: imovelRef?.titulo,
+      observacoes: `Lead qualificado via ${c.origem}. Preferência de contato por WhatsApp.`,
+      criado_em: new Date(now.getTime() - (45 - idx) * 86400000).toISOString(),
+      atualizado_em: new Date().toISOString(),
+    };
+  });
 
   // 4. Gera 38 Visitas espalhadas pelos próximos 30 dias a partir de hoje
   // Horários comerciais: 09:00, 10:30, 14:00, 15:30, 17:00
