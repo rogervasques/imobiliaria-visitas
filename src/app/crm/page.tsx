@@ -6,6 +6,8 @@ import { Cliente, EtapaCRM, Visita } from '@/types';
 import { KanbanColumn } from '@/components/crm/KanbanColumn';
 import { CrmLeadCard } from '@/components/crm/CrmLeadCard';
 import { NovoLeadModal } from '@/components/crm/NovoLeadModal';
+import { PrimeiroContatoModal } from '@/components/crm/PrimeiroContatoModal';
+import { ConfirmDeleteLeadModal } from '@/components/crm/ConfirmDeleteLeadModal';
 import { ClienteDetalhesModal } from '@/components/clientes/ClienteDetalhesModal';
 import { NovaVisitaModal } from '@/components/visitas/NovaVisitaModal';
 import { VisitaDetalhesModal } from '@/components/visitas/VisitaDetalhesModal';
@@ -170,6 +172,8 @@ export default function CrmPage() {
   const [clienteParaVisita, setClienteParaVisita] = useState<Cliente | null>(null);
   const [isNovaVisitaOpen, setIsNovaVisitaOpen] = useState(false);
   const [visitaDetalhes, setVisitaDetalhes] = useState<Visita | null>(null);
+  const [leadParaPrimeiroContato, setLeadParaPrimeiroContato] = useState<Cliente | null>(null);
+  const [leadParaExcluir, setLeadParaExcluir] = useState<Cliente | null>(null);
 
   // Drag and Drop
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
@@ -177,7 +181,6 @@ export default function CrmPage() {
   // Normalização e associação de cada cliente a uma das 7 etapas
   const getClienteEtapa = (c: Cliente): EtapaCRM => {
     if (c.etapa_crm) {
-      // Mapeamento retrocompatível caso haja strings antigas
       if (c.etapa_crm === ('novo' as any)) return 'novos_leads';
       if (c.etapa_crm === ('em_atendimento' as any)) return 'qualificacao';
       if (c.etapa_crm === ('visita_agendada' as any)) return 'agendamento_visita';
@@ -248,6 +251,14 @@ export default function CrmPage() {
   const handleAgendarVisita = (lead: Cliente) => {
     setClienteParaVisita(lead);
     setIsNovaVisitaOpen(true);
+  };
+
+  const handlePrimeiroContato = (lead: Cliente) => {
+    setLeadParaPrimeiroContato(lead);
+  };
+
+  const handleExcluirLead = (lead: Cliente) => {
+    setLeadParaExcluir(lead);
   };
 
   const handleDropLead = (leadId: string, targetEtapa: EtapaCRM) => {
@@ -431,8 +442,9 @@ export default function CrmPage() {
                 etapaAtual={mobileTabEtapa}
                 onClickDetails={(l) => setClienteDetalhes(l)}
                 onAgendarVisita={handleAgendarVisita}
+                onPrimeiroContato={handlePrimeiroContato}
                 onMoverEtapa={(id, novaEtapa) => moverEtapaCRM(id, novaEtapa)}
-                onExcluirLead={(id) => removerCliente(id)}
+                onExcluirLead={handleExcluirLead}
               />
             ))
           )}
@@ -459,8 +471,9 @@ export default function CrmPage() {
                 onDropLead={handleDropLead}
                 onClickDetails={(l) => setClienteDetalhes(l)}
                 onAgendarVisita={handleAgendarVisita}
+                onPrimeiroContato={handlePrimeiroContato}
                 onMoverEtapa={(id, novaEtapa) => moverEtapaCRM(id, novaEtapa)}
-                onExcluirLead={(id) => removerCliente(id)}
+                onExcluirLead={handleExcluirLead}
                 onAddNewLead={(et) => handleOpenNovoLead(et)}
               />
             );
@@ -476,7 +489,24 @@ export default function CrmPage() {
         initialEtapa={initialLeadEtapa}
       />
 
-      {/* 2. Modal de Detalhes do Lead/Cliente */}
+      {/* 2. Modal de Disparo de Primeiro Contato via Evolution API */}
+      <PrimeiroContatoModal
+        isOpen={!!leadParaPrimeiroContato}
+        onClose={() => setLeadParaPrimeiroContato(null)}
+        lead={leadParaPrimeiroContato}
+      />
+
+      {/* 3. Modal de Confirmação de Exclusão de Lead */}
+      <ConfirmDeleteLeadModal
+        isOpen={!!leadParaExcluir}
+        onClose={() => setLeadParaExcluir(null)}
+        lead={leadParaExcluir}
+        onConfirm={async (id) => {
+          await removerCliente(id);
+        }}
+      />
+
+      {/* 4. Modal de Detalhes do Lead/Cliente */}
       {clienteDetalhes && (
         <ClienteDetalhesModal
           isOpen={!!clienteDetalhes}
@@ -493,7 +523,7 @@ export default function CrmPage() {
         />
       )}
 
-      {/* 3. Modal de Agendamento de Visita a partir do Lead */}
+      {/* 5. Modal de Agendamento de Visita a partir do Lead */}
       <NovaVisitaModal
         isOpen={isNovaVisitaOpen}
         onClose={() => {
@@ -503,7 +533,7 @@ export default function CrmPage() {
         clientePreSelecionado={clienteParaVisita || undefined}
       />
 
-      {/* 4. Modal de Detalhes da Visita */}
+      {/* 6. Modal de Detalhes da Visita */}
       {visitaDetalhes && (
         <VisitaDetalhesModal
           isOpen={!!visitaDetalhes}

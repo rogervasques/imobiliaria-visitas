@@ -23,8 +23,9 @@ interface KanbanColumnProps {
   onDropLead: (leadId: string, targetEtapa: EtapaCRM) => void;
   onClickDetails: (lead: Cliente) => void;
   onAgendarVisita: (lead: Cliente) => void;
+  onPrimeiroContato?: (lead: Cliente) => void;
   onMoverEtapa: (leadId: string, novaEtapa: EtapaCRM) => void;
-  onExcluirLead?: (leadId: string) => void;
+  onExcluirLead?: (lead: Cliente) => void;
   onAddNewLead?: (initialEtapa: EtapaCRM) => void;
 }
 
@@ -39,6 +40,7 @@ export function KanbanColumn({
   onDropLead,
   onClickDetails,
   onAgendarVisita,
+  onPrimeiroContato,
   onMoverEtapa,
   onExcluirLead,
   onAddNewLead,
@@ -138,6 +140,7 @@ export function KanbanColumn({
               isDragging={draggingLeadId === lead.id}
               onClickDetails={onClickDetails}
               onAgendarVisita={onAgendarVisita}
+              onPrimeiroContato={onPrimeiroContato}
               onMoverEtapa={onMoverEtapa}
               onExcluirLead={onExcluirLead}
             />

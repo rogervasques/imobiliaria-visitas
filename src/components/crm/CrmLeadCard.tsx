@@ -21,6 +21,7 @@ import {
   Clock,
   Sparkles,
   ExternalLink,
+  Send,
 } from 'lucide-react';
 import { formatPhone, getInitials, getWhatsAppDirectLink, cn } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
@@ -33,8 +34,9 @@ interface CrmLeadCardProps {
   onDragEnd?: () => void;
   onClickDetails: (lead: Cliente) => void;
   onAgendarVisita: (lead: Cliente) => void;
+  onPrimeiroContato?: (lead: Cliente) => void;
   onMoverEtapa: (leadId: string, novaEtapa: EtapaCRM) => void;
-  onExcluirLead?: (leadId: string) => void;
+  onExcluirLead?: (lead: Cliente) => void;
 }
 
 const ETAPAS_ORDEM: { id: EtapaCRM; label: string; short: string }[] = [
@@ -64,6 +66,7 @@ export function CrmLeadCard({
   onDragEnd,
   onClickDetails,
   onAgendarVisita,
+  onPrimeiroContato,
   onMoverEtapa,
   onExcluirLead,
 }: CrmLeadCardProps) {
@@ -75,8 +78,9 @@ export function CrmLeadCard({
     `Olá, ${lead.nome}! Tudo bem? Sou da imobiliária e gostaria de saber se encontrou as opções ideais de imóveis para você.`
   );
 
-  // Visitas vinculadas a este cliente
-  const visitasDoLead = visitas.filter((v) => v.cliente_id === lead.id);
+  // Visitas vinculadas a este cliente (NÃO exibe em novos_leads ou qualificacao)
+  const podeExibirVisita = etapaAtual !== 'novos_leads' && etapaAtual !== 'qualificacao';
+  const visitasDoLead = podeExibirVisita ? visitas.filter((v) => v.cliente_id === lead.id) : [];
   const proximaVisita = visitasDoLead.find((v) => v.status === 'agendada' || v.status === 'confirmada');
 
   // Imóvel de interesse
@@ -118,7 +122,7 @@ export function CrmLeadCard({
         isDragging && 'opacity-40 ring-2 ring-emerald-500 scale-[0.98]'
       )}
     >
-      {/* ─── TOPO: Avatar, Nome, Origem e Menu de 3 Pontos ─── */}
+      {/* ─── TOPO: Avatar, Nome, Origem e Ações Rápidas de Topo ─── */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Avatar com Iniciais */}
@@ -137,86 +141,113 @@ export function CrmLeadCard({
           </div>
         </div>
 
-        {/* Menu de Ações Secundárias */}
-        <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            onClick={() => setShowMenu(!showMenu)}
-            aria-label="Opções do Lead"
-            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </button>
+        {/* Menu de Ações Secundárias + Ícone de Excluir */}
+        <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+          {onExcluirLead && (
+            <button
+              type="button"
+              onClick={() => onExcluirLead(lead)}
+              title="Excluir lead"
+              className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
 
-          {showMenu && (
-            <div className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                Ações do Lead
-              </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowMenu(!showMenu)}
+              aria-label="Opções do Lead"
+              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMenu(false);
-                  onClickDetails(lead);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
-              >
-                <Eye className="w-3.5 h-3.5 text-slate-400" />
-                <span>Ver Detalhes do Lead</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMenu(false);
-                  onAgendarVisita(lead);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors text-left"
-              >
-                <CalendarPlus className="w-3.5 h-3.5" />
-                <span>Agendar Nova Visita</span>
-              </button>
-
-              {/* Mover Etapas */}
-              <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800 px-3 py-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Mover para:
-                </span>
-                <div className="space-y-0.5 mt-1">
-                  {ETAPAS_ORDEM.filter((e) => e.id !== etapaAtual).map((e) => (
-                    <button
-                      key={e.id}
-                      type="button"
-                      onClick={() => {
-                        setShowMenu(false);
-                        onMoverEtapa(lead.id, e.id);
-                      }}
-                      className="w-full text-left text-xs py-1 px-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 transition-colors truncate"
-                    >
-                      → {e.label}
-                    </button>
-                  ))}
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                  Ações do Lead
                 </div>
-              </div>
 
-              {onExcluirLead && (
-                <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    onClickDetails(lead);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
+                >
+                  <Eye className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Ver Detalhes do Lead</span>
+                </button>
+
+                {onPrimeiroContato && (
                   <button
                     type="button"
                     onClick={() => {
                       setShowMenu(false);
-                      onExcluirLead(lead.id);
+                      onPrimeiroContato(lead);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors text-left"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Excluir Lead</span>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Primeiro Contato (WhatsApp)</span>
                   </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    onAgendarVisita(lead);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors text-left"
+                >
+                  <CalendarPlus className="w-3.5 h-3.5" />
+                  <span>Agendar Nova Visita</span>
+                </button>
+
+                {/* Mover Etapas */}
+                <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800 px-3 py-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Mover para:
+                  </span>
+                  <div className="space-y-0.5 mt-1">
+                    {ETAPAS_ORDEM.filter((e) => e.id !== etapaAtual).map((e) => (
+                      <button
+                        key={e.id}
+                        type="button"
+                        onClick={() => {
+                          setShowMenu(false);
+                          onMoverEtapa(lead.id, e.id);
+                        }}
+                        className="w-full text-left text-xs py-1 px-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 transition-colors truncate"
+                      >
+                        → {e.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
+
+                {onExcluirLead && (
+                  <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMenu(false);
+                        onExcluirLead(lead);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors text-left"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Excluir Lead</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -296,30 +327,45 @@ export function CrmLeadCard({
         </div>
       )}
 
-      {/* ─── RODAPÉ: Ações Rápidas (WhatsApp + Agendar Visita + Navegação de Etapa) ─── */}
+      {/* ─── RODAPÉ: Ações Rápidas Adaptadas por Etapa ─── */}
       <div className="flex items-center justify-between gap-1.5 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-1.5 flex-wrap">
-          {/* Botão Rápido WhatsApp */}
-          <a
-            href={directWhatsApp}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-xs hover:shadow-emerald-500/20 active:scale-95 transition-all"
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>WhatsApp</span>
-          </a>
+          {/* Caso seja "Novos Leads": Botão Principal é [ 💬 Primeiro Contato ] */}
+          {etapaAtual === 'novos_leads' ? (
+            <button
+              type="button"
+              onClick={() => onPrimeiroContato?.(lead)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs hover:shadow-emerald-600/30 active:scale-95 transition-all cursor-pointer"
+              title="Disparar primeiro contato via Evolution API com confirmação"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>💬 Primeiro Contato</span>
+            </button>
+          ) : (
+            <>
+              {/* Botão Rápido WhatsApp para demais etapas */}
+              <a
+                href={directWhatsApp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-xs hover:shadow-emerald-500/20 active:scale-95 transition-all"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>WhatsApp</span>
+              </a>
 
-          {/* Botão + Agendar Visita */}
-          <button
-            type="button"
-            onClick={() => onAgendarVisita(lead)}
-            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl bg-slate-100 hover:bg-purple-50 dark:bg-slate-800 dark:hover:bg-purple-950/40 text-slate-700 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-400 font-bold text-xs transition-colors cursor-pointer"
-            title="Agendar visita com este lead"
-          >
-            <CalendarPlus className="w-3.5 h-3.5" />
-            <span className="hidden xs:inline">Agendar</span>
-          </button>
+              {/* Botão + Agendar Visita (a partir da etapa de qualificação) */}
+              <button
+                type="button"
+                onClick={() => onAgendarVisita(lead)}
+                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl bg-slate-100 hover:bg-purple-50 dark:bg-slate-800 dark:hover:bg-purple-950/40 text-slate-700 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-400 font-bold text-xs transition-colors cursor-pointer"
+                title="Agendar visita com este lead"
+              >
+                <CalendarPlus className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Agendar</span>
+              </button>
+            </>
+          )}
         </div>
 
         {/* Atalhos Rápidos para Avançar/Retroceder Etapa */}
