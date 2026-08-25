@@ -27,11 +27,16 @@ import {
   Layers,
   PhoneCall,
   Flame,
+  UserCheck,
+  FileText,
+  ShieldCheck,
+  FileSignature,
+  Trophy,
   LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Configuração das 5 Etapas do Funil
+// Configuração das 7 Etapas do Funil de Vendas do CRM
 export const ETAPAS_CRM_CONFIG: Record<
   EtapaCRM,
   {
@@ -48,9 +53,9 @@ export const ETAPAS_CRM_CONFIG: Record<
     };
   }
 > = {
-  novo: {
+  novos_leads: {
     titulo: 'Novos Leads',
-    descricao: 'Contatos recém-captados',
+    descricao: 'Contatos recebidos aguardando primeiro retorno',
     icon: Flame,
     accent: {
       bg: 'bg-sky-100 dark:bg-sky-950/80',
@@ -61,10 +66,10 @@ export const ETAPAS_CRM_CONFIG: Record<
       pillActive: 'bg-sky-600 text-white shadow-md shadow-sky-600/30',
     },
   },
-  em_atendimento: {
-    titulo: 'Em Atendimento',
-    descricao: 'Contato e qualificação',
-    icon: PhoneCall,
+  qualificacao: {
+    titulo: 'Qualificação',
+    descricao: 'Em atendimento / identificando perfil e orçamento',
+    icon: UserCheck,
     accent: {
       bg: 'bg-amber-100 dark:bg-amber-950/80',
       text: 'text-amber-600 dark:text-amber-400',
@@ -74,9 +79,9 @@ export const ETAPAS_CRM_CONFIG: Record<
       pillActive: 'bg-amber-600 text-white shadow-md shadow-amber-600/30',
     },
   },
-  visita_agendada: {
-    titulo: 'Visita Agendada',
-    descricao: 'Roteiro na agenda',
+  agendamento_visita: {
+    titulo: 'Agendamento de Visita',
+    descricao: 'Visita presencial/virtual marcada — integrado à agenda',
     icon: CalendarCheck,
     accent: {
       bg: 'bg-purple-100 dark:bg-purple-950/80',
@@ -87,9 +92,9 @@ export const ETAPAS_CRM_CONFIG: Record<
       pillActive: 'bg-purple-600 text-white shadow-md shadow-purple-600/30',
     },
   },
-  proposta: {
+  proposta_negociacao: {
     titulo: 'Proposta / Negociação',
-    descricao: 'Em análise ou proposta',
+    descricao: 'Oferta formal enviada e negociação de valores',
     icon: TrendingUp,
     accent: {
       bg: 'bg-blue-100 dark:bg-blue-950/80',
@@ -100,9 +105,35 @@ export const ETAPAS_CRM_CONFIG: Record<
       pillActive: 'bg-blue-600 text-white shadow-md shadow-blue-600/30',
     },
   },
-  fechado: {
-    titulo: 'Fechado',
-    descricao: 'Venda / Locação concluída',
+  documentacao_credito: {
+    titulo: 'Documentação / Crédito',
+    descricao: 'Coleta de documentos e aprovação bancária/locação',
+    icon: ShieldCheck,
+    accent: {
+      bg: 'bg-teal-100 dark:bg-teal-950/80',
+      text: 'text-teal-600 dark:text-teal-400',
+      border: 'border-teal-200 dark:border-teal-800',
+      badge: 'bg-teal-600 text-white',
+      dot: 'bg-teal-600',
+      pillActive: 'bg-teal-600 text-white shadow-md shadow-teal-600/30',
+    },
+  },
+  fechamento_contrato: {
+    titulo: 'Fechamento / Contrato',
+    descricao: 'Elaboração, assinatura de contrato e sinal',
+    icon: FileSignature,
+    accent: {
+      bg: 'bg-indigo-100 dark:bg-indigo-950/80',
+      text: 'text-indigo-600 dark:text-indigo-400',
+      border: 'border-indigo-200 dark:border-indigo-800',
+      badge: 'bg-indigo-600 text-white',
+      dot: 'bg-indigo-600',
+      pillActive: 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30',
+    },
+  },
+  venda_concluida: {
+    titulo: 'Venda Concluída',
+    descricao: 'Negócio finalizado e comissão liberada',
     icon: CheckCircle2,
     accent: {
       bg: 'bg-emerald-100 dark:bg-emerald-950/80',
@@ -115,18 +146,26 @@ export const ETAPAS_CRM_CONFIG: Record<
   },
 };
 
-const ETAPAS_KEYS: EtapaCRM[] = ['novo', 'em_atendimento', 'visita_agendada', 'proposta', 'fechado'];
+const ETAPAS_KEYS: EtapaCRM[] = [
+  'novos_leads',
+  'qualificacao',
+  'agendamento_visita',
+  'proposta_negociacao',
+  'documentacao_credito',
+  'fechamento_contrato',
+  'venda_concluida',
+];
 
 export default function CrmPage() {
   const { clientes, moverEtapaCRM, removerCliente } = useData();
 
   const [search, setSearch] = useState('');
   const [origemFilter, setOrigemFilter] = useState('todos');
-  const [mobileTabEtapa, setMobileTabEtapa] = useState<EtapaCRM>('novo');
+  const [mobileTabEtapa, setMobileTabEtapa] = useState<EtapaCRM>('novos_leads');
 
   // Modais
   const [isNovoLeadOpen, setIsNovoLeadOpen] = useState(false);
-  const [initialLeadEtapa, setInitialLeadEtapa] = useState<EtapaCRM>('novo');
+  const [initialLeadEtapa, setInitialLeadEtapa] = useState<EtapaCRM>('novos_leads');
   const [clienteDetalhes, setClienteDetalhes] = useState<Cliente | null>(null);
   const [clienteParaVisita, setClienteParaVisita] = useState<Cliente | null>(null);
   const [isNovaVisitaOpen, setIsNovaVisitaOpen] = useState(false);
@@ -135,12 +174,20 @@ export default function CrmPage() {
   // Drag and Drop
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
 
-  // Normalização e associação de cada cliente a uma etapa
+  // Normalização e associação de cada cliente a uma das 7 etapas
   const getClienteEtapa = (c: Cliente): EtapaCRM => {
-    if (c.etapa_crm) return c.etapa_crm;
-    if (c.status === 'fechado') return 'fechado';
-    if (c.status === 'negociando') return 'proposta';
-    return 'novo';
+    if (c.etapa_crm) {
+      // Mapeamento retrocompatível caso haja strings antigas
+      if (c.etapa_crm === ('novo' as any)) return 'novos_leads';
+      if (c.etapa_crm === ('em_atendimento' as any)) return 'qualificacao';
+      if (c.etapa_crm === ('visita_agendada' as any)) return 'agendamento_visita';
+      if (c.etapa_crm === ('proposta' as any)) return 'proposta_negociacao';
+      if (c.etapa_crm === ('fechado' as any)) return 'venda_concluida';
+      return c.etapa_crm;
+    }
+    if (c.status === 'fechado') return 'venda_concluida';
+    if (c.status === 'negociando') return 'proposta_negociacao';
+    return 'novos_leads';
   };
 
   // Filtragem de Leads
@@ -164,11 +211,13 @@ export default function CrmPage() {
   // Agrupamento por Etapa
   const leadsPorEtapa = useMemo(() => {
     const map: Record<EtapaCRM, Cliente[]> = {
-      novo: [],
-      em_atendimento: [],
-      visita_agendada: [],
-      proposta: [],
-      fechado: [],
+      novos_leads: [],
+      qualificacao: [],
+      agendamento_visita: [],
+      proposta_negociacao: [],
+      documentacao_credito: [],
+      fechamento_contrato: [],
+      venda_concluida: [],
     };
 
     filteredClientes.forEach((c) => {
@@ -176,7 +225,7 @@ export default function CrmPage() {
       if (map[etapa]) {
         map[etapa].push(c);
       } else {
-        map.novo.push(c);
+        map.novos_leads.push(c);
       }
     });
 
@@ -187,11 +236,11 @@ export default function CrmPage() {
   const totalLeads = clientes.length;
   const totalAtivos = clientes.filter((c) => {
     const et = getClienteEtapa(c);
-    return et !== 'fechado';
+    return et !== 'venda_concluida' && c.status !== 'inativo';
   }).length;
-  const totalFechados = leadsPorEtapa.fechado.length;
+  const totalFechados = leadsPorEtapa.venda_concluida.length;
 
-  const handleOpenNovoLead = (etapa: EtapaCRM = 'novo') => {
+  const handleOpenNovoLead = (etapa: EtapaCRM = 'novos_leads') => {
     setInitialLeadEtapa(etapa);
     setIsNovoLeadOpen(true);
   };
@@ -213,16 +262,16 @@ export default function CrmPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <Kanban className="w-6 h-6 text-emerald-500" />
-            CRM &amp; Funil de Leads
+            CRM &amp; Funil de Vendas
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hidden md:block">
-            Acompanhamento visual de oportunidades, etapas de negociação e conversão de leads.
+            Gestão visual do pipeline de oportunidades em 7 etapas estratégicas.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Button
-            onClick={() => handleOpenNovoLead('novo')}
+            onClick={() => handleOpenNovoLead('novos_leads')}
             variant="primary"
             size="sm"
             className="shadow-md shadow-emerald-600/20 font-bold"
@@ -245,13 +294,13 @@ export default function CrmPage() {
           <span className="text-base font-black text-emerald-600 dark:text-emerald-400">{totalAtivos}</span>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-900/60 rounded-2xl p-2.5 text-center shadow-xs">
-          <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 block">Fechados</span>
+          <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 block">Concluídos</span>
           <span className="text-base font-black text-purple-600 dark:text-purple-400">{totalFechados}</span>
         </div>
       </div>
 
-      {/* Desktop: Cards de Métricas */}
-      <div className="hidden md:grid grid-cols-5 gap-3">
+      {/* Desktop: Cards de Métricas das 7 Etapas */}
+      <div className="hidden md:grid grid-cols-7 gap-2.5">
         {ETAPAS_KEYS.map((key) => {
           const cfg = ETAPAS_CRM_CONFIG[key];
           const Icon = cfg.icon;
@@ -261,18 +310,18 @@ export default function CrmPage() {
             <div
               key={key}
               onClick={() => setMobileTabEtapa(key)}
-              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs flex items-center justify-between transition-all hover:border-emerald-500/30"
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 shadow-xs flex items-center justify-between transition-all hover:border-emerald-500/30"
             >
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-slate-400 block truncate">
+              <div className="min-w-0 pr-1">
+                <span className="text-[11px] font-bold text-slate-400 block truncate" title={cfg.titulo}>
                   {cfg.titulo}
                 </span>
-                <span className="text-xl font-black text-slate-900 dark:text-slate-100">
+                <span className="text-lg font-black text-slate-900 dark:text-slate-100">
                   {count}
                 </span>
               </div>
-              <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', cfg.accent.bg, cfg.accent.text)}>
-                <Icon className="w-4 h-4" />
+              <div className={cn('w-7 h-7 rounded-xl flex items-center justify-center shrink-0', cfg.accent.bg, cfg.accent.text)}>
+                <Icon className="w-3.5 h-3.5" />
               </div>
             </div>
           );
@@ -319,9 +368,9 @@ export default function CrmPage() {
         </CardContent>
       </Card>
 
-      {/* ─── MOBILE (< 768px): TABS / PÍLULAS SUPERIORES + LISTA VERTICAL ─── */}
+      {/* ─── MOBILE (< 768px): TABS / PÍLULAS SUPERIORES COM ROLAGEM + LISTA VERTICAL ─── */}
       <div className="md:hidden space-y-3">
-        {/* Seletor de Tabs em Pílulas */}
+        {/* Seletor de Tabs em Pílulas com Scroll Horizontal */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
           {ETAPAS_KEYS.map((key) => {
             const cfg = ETAPAS_CRM_CONFIG[key];
@@ -362,7 +411,7 @@ export default function CrmPage() {
                 Nenhum lead em {ETAPAS_CRM_CONFIG[mobileTabEtapa].titulo}
               </p>
               <p className="text-xs text-slate-400">
-                Cadastre um novo lead ou mova contatos de outras etapas.
+                Cadastre um novo lead ou mova contatos de outras etapas do funil.
               </p>
               <Button
                 variant="outline"
@@ -390,9 +439,9 @@ export default function CrmPage() {
         </div>
       </div>
 
-      {/* ─── DESKTOP (>= 768px): KANBAN BOARD COM 5 COLUNAS E DRAG & DROP ─── */}
+      {/* ─── DESKTOP (>= 768px): KANBAN BOARD COM AS 7 COLUNAS E DRAG & DROP ─── */}
       <div className="hidden md:block">
-        <div className="flex gap-4 overflow-x-auto pb-6 pt-1 scrollbar-thin">
+        <div className="flex gap-3.5 overflow-x-auto pb-6 pt-1 scrollbar-thin">
           {ETAPAS_KEYS.map((key) => {
             const cfg = ETAPAS_CRM_CONFIG[key];
             const leadsDaColuna = leadsPorEtapa[key];

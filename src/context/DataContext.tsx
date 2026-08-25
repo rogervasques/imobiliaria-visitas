@@ -634,20 +634,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (!target) return;
 
     let novoStatus: StatusCliente = target.status;
-    if (novaEtapa === 'fechado') {
+    if (novaEtapa === 'venda_concluida') {
       novoStatus = 'fechado';
-    } else if (novaEtapa === 'proposta') {
+    } else if (
+      novaEtapa === 'proposta_negociacao' ||
+      novaEtapa === 'documentacao_credito' ||
+      novaEtapa === 'fechamento_contrato'
+    ) {
       novoStatus = 'negociando';
     } else if (target.status === 'fechado' || target.status === 'inativo') {
       novoStatus = 'ativo';
     }
 
     const etapaNomes: Record<EtapaCRM, string> = {
-      novo: 'Novos Leads',
-      em_atendimento: 'Em Atendimento',
-      visita_agendada: 'Visita Agendada',
-      proposta: 'Proposta / Em Negociação',
-      fechado: 'Fechado',
+      novos_leads: 'Novos Leads',
+      qualificacao: 'Qualificação',
+      agendamento_visita: 'Agendamento de Visita',
+      proposta_negociacao: 'Proposta / Negociação',
+      documentacao_credito: 'Documentação / Análise de Crédito',
+      fechamento_contrato: 'Fechamento / Contrato',
+      venda_concluida: 'Venda Concluída',
     };
 
     try {

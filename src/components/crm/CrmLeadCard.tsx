@@ -38,11 +38,13 @@ interface CrmLeadCardProps {
 }
 
 const ETAPAS_ORDEM: { id: EtapaCRM; label: string; short: string }[] = [
-  { id: 'novo', label: 'Novos Leads', short: 'Novo' },
-  { id: 'em_atendimento', label: 'Em Atendimento', short: 'Atendimento' },
-  { id: 'visita_agendada', label: 'Visita Agendada', short: 'Visita' },
-  { id: 'proposta', label: 'Proposta / Em Negociação', short: 'Proposta' },
-  { id: 'fechado', label: 'Fechado', short: 'Fechado' },
+  { id: 'novos_leads', label: 'Novos Leads', short: 'Novos' },
+  { id: 'qualificacao', label: 'Qualificação', short: 'Qualif.' },
+  { id: 'agendamento_visita', label: 'Agendamento de Visita', short: 'Visita' },
+  { id: 'proposta_negociacao', label: 'Proposta / Negociação', short: 'Proposta' },
+  { id: 'documentacao_credito', label: 'Documentação / Análise de Crédito', short: 'Doc' },
+  { id: 'fechamento_contrato', label: 'Fechamento / Contrato', short: 'Contrato' },
+  { id: 'venda_concluida', label: 'Venda Concluída', short: 'Concluído' },
 ];
 
 const ORIGEM_LABELS: Record<string, { label: string; color: string }> = {
@@ -209,7 +211,7 @@ export function CrmLeadCard({
         </div>
       </div>
 
-      {/* ─── BADGES: Origem do Lead e Status ─── */}
+      {/* ─── BADGES: Origem do Lead, Orçamento e Última Interação ─── */}
       <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
         {origemConfig && (
           <span className={cn('text-[10px] font-extrabold px-2 py-0.5 rounded-full', origemConfig.color)}>
@@ -223,10 +225,18 @@ export function CrmLeadCard({
             {lead.faixa_orcamento}
           </span>
         )}
+
+        {/* Tag de Última Interação / Atualização */}
+        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 flex items-center gap-1 ml-auto">
+          <Clock className="w-2.5 h-2.5" />
+          {lead.atualizado_em
+            ? new Date(lead.atualizado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+            : 'Recente'}
+        </span>
       </div>
 
       {/* ─── INFORMAÇÕES DO INTERESSE DO LEAD ─── */}
-      <div className="mt-3 p-2.5 rounded-xl bg-slate-50/90 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80 text-xs space-y-1.5">
+      <div className="mt-2.5 p-2.5 rounded-xl bg-slate-50/90 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80 text-xs space-y-1.5">
         {lead.perfil_interesse && (
           <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
             <Tag className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
@@ -252,27 +262,40 @@ export function CrmLeadCard({
         )}
       </div>
 
-      {/* ─── RODAPÉ: Ações Rápidas (WhatsApp + Navegação de Etapa) ─── */}
-      <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
-        {/* Botão Rápido WhatsApp */}
-        <a
-          href={directWhatsApp}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-xs hover:shadow-emerald-500/20 active:scale-95 transition-all"
-        >
-          <MessageSquare className="w-3.5 h-3.5" />
-          <span>WhatsApp</span>
-        </a>
+      {/* ─── RODAPÉ: Ações Rápidas (WhatsApp + Agendar Visita + Navegação de Etapa) ─── */}
+      <div className="flex items-center justify-between gap-1.5 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Botão Rápido WhatsApp */}
+          <a
+            href={directWhatsApp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-xs hover:shadow-emerald-500/20 active:scale-95 transition-all"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>WhatsApp</span>
+          </a>
+
+          {/* Botão + Agendar Visita */}
+          <button
+            type="button"
+            onClick={() => onAgendarVisita(lead)}
+            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl bg-slate-100 hover:bg-purple-50 dark:bg-slate-800 dark:hover:bg-purple-950/40 text-slate-700 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-400 font-bold text-xs transition-colors cursor-pointer"
+            title="Agendar visita com este lead"
+          >
+            <CalendarPlus className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline">Agendar</span>
+          </button>
+        </div>
 
         {/* Atalhos Rápidos para Avançar/Retroceder Etapa */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 shrink-0">
           {prevEtapa && (
             <button
               type="button"
               onClick={() => onMoverEtapa(lead.id, prevEtapa.id)}
               title={`Voltar para ${prevEtapa.label}`}
-              className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
             </button>
@@ -283,9 +306,8 @@ export function CrmLeadCard({
               type="button"
               onClick={() => onMoverEtapa(lead.id, nextEtapa.id)}
               title={`Avançar para ${nextEtapa.label}`}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 text-xs font-semibold transition-colors cursor-pointer"
+              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             >
-              <span className="text-[11px] hidden xs:inline">{nextEtapa.short}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}

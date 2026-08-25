@@ -85,7 +85,7 @@ export function Sidebar() {
   };
 
   const totalLeadsAtivosCrm = clientes.filter((c) => {
-    if (c.etapa_crm) return c.etapa_crm !== 'fechado';
+    if (c.etapa_crm) return c.etapa_crm !== 'venda_concluida' && c.etapa_crm !== ('fechado' as any);
     return c.status !== 'fechado' && c.status !== 'inativo';
   }).length;
 

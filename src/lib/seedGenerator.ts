@@ -309,17 +309,25 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
     });
   }
 
-  // 3. Gera 50 Clientes com preferências completas e etapas de CRM
-  const etapasCrmList: EtapaCRM[] = ['novo', 'em_atendimento', 'visita_agendada', 'proposta', 'fechado'];
+  // 3. Gera 50 Clientes com preferências completas e 7 etapas de CRM
+  const etapasCrmList: EtapaCRM[] = [
+    'novos_leads',
+    'qualificacao',
+    'agendamento_visita',
+    'proposta_negociacao',
+    'documentacao_credito',
+    'fechamento_contrato',
+    'venda_concluida',
+  ];
 
   const clientes: Cliente[] = CLIENTES_DATA.map((c, idx) => {
-    let etapaCrm: EtapaCRM = 'novo';
+    let etapaCrm: EtapaCRM = 'novos_leads';
     if (c.status === 'fechado') {
-      etapaCrm = 'fechado';
+      etapaCrm = 'venda_concluida';
     } else if (c.status === 'negociando') {
-      etapaCrm = idx % 2 === 0 ? 'proposta' : 'visita_agendada';
+      etapaCrm = idx % 2 === 0 ? 'proposta_negociacao' : 'documentacao_credito';
     } else {
-      etapaCrm = etapasCrmList[idx % 4]; // Distribui entre novo, em_atendimento, visita_agendada, proposta
+      etapaCrm = etapasCrmList[idx % 6]; // Distribui entre as 6 etapas ativas
     }
 
     const imovelRef = imoveis[idx % imoveis.length];

@@ -75,7 +75,14 @@ export interface Imovel {
 
 export type StatusCliente = 'ativo' | 'negociando' | 'fechado' | 'inativo';
 export type OrigemLead = 'site' | 'portal' | 'indicacao' | 'instagram' | 'whatsapp' | 'placa';
-export type EtapaCRM = 'novo' | 'em_atendimento' | 'visita_agendada' | 'proposta' | 'fechado';
+export type EtapaCRM =
+  | 'novos_leads'
+  | 'qualificacao'
+  | 'agendamento_visita'
+  | 'proposta_negociacao'
+  | 'documentacao_credito'
+  | 'fechamento_contrato'
+  | 'venda_concluida';
 
 export interface Cliente {
   id: string;

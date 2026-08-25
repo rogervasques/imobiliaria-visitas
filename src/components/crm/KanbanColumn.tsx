@@ -73,7 +73,7 @@ export function KanbanColumn({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        'flex flex-col flex-1 min-w-[290px] max-w-[340px] md:min-w-[310px] md:max-w-[360px] bg-slate-100/70 dark:bg-slate-900/60 rounded-3xl p-3 sm:p-3.5 border transition-all duration-200 select-none shrink-0',
+        'flex flex-col flex-1 min-w-[280px] max-w-[320px] lg:min-w-[295px] lg:max-w-[335px] bg-slate-100/70 dark:bg-slate-900/60 rounded-3xl p-3 sm:p-3.5 border transition-all duration-200 select-none shrink-0',
         isDragOver
           ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 ring-2 ring-emerald-500/30 shadow-lg'
           : 'border-slate-200/80 dark:border-slate-800 shadow-xs'

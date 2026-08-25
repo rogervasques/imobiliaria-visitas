@@ -16,7 +16,7 @@ interface NovoLeadModalProps {
   initialEtapa?: EtapaCRM;
 }
 
-export function NovoLeadModal({ isOpen, onClose, initialEtapa = 'novo' }: NovoLeadModalProps) {
+export function NovoLeadModal({ isOpen, onClose, initialEtapa = 'novos_leads' }: NovoLeadModalProps) {
   const { adicionarCliente, imoveis } = useData();
 
   const [nome, setNome] = useState('');
@@ -45,8 +45,15 @@ export function NovoLeadModal({ isOpen, onClose, initialEtapa = 'novo' }: NovoLe
       const imovelSelecionado = imoveis.find((i) => i.id === imovelId);
 
       let statusCliente: StatusCliente = 'ativo';
-      if (etapaCrm === 'fechado') statusCliente = 'fechado';
-      else if (etapaCrm === 'proposta') statusCliente = 'negociando';
+      if (etapaCrm === 'venda_concluida') {
+        statusCliente = 'fechado';
+      } else if (
+        etapaCrm === 'proposta_negociacao' ||
+        etapaCrm === 'documentacao_credito' ||
+        etapaCrm === 'fechamento_contrato'
+      ) {
+        statusCliente = 'negociando';
+      }
 
       await adicionarCliente({
         nome: nome.trim(),
@@ -125,11 +132,13 @@ export function NovoLeadModal({ isOpen, onClose, initialEtapa = 'novo' }: NovoLe
             value={etapaCrm}
             onChange={(e) => setEtapaCrm(e.target.value as EtapaCRM)}
           >
-            <option value="novo">1. Novos Leads</option>
-            <option value="em_atendimento">2. Em Atendimento</option>
-            <option value="visita_agendada">3. Visita Agendada</option>
-            <option value="proposta">4. Proposta / Em Negociação</option>
-            <option value="fechado">5. Fechado</option>
+            <option value="novos_leads">1. Novos Leads</option>
+            <option value="qualificacao">2. Qualificação</option>
+            <option value="agendamento_visita">3. Agendamento de Visita</option>
+            <option value="proposta_negociacao">4. Proposta / Negociação</option>
+            <option value="documentacao_credito">5. Documentação / Análise de Crédito</option>
+            <option value="fechamento_contrato">6. Fechamento / Contrato</option>
+            <option value="venda_concluida">7. Venda Concluída</option>
           </Select>
 
           <Select
