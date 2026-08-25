@@ -447,7 +447,7 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
             </div>
           </div>
 
-          {/* Endereço & Botão de Traçar Rota no Mapa */}
+          {/* Endereço & Botão de Mapa */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-800">
             <div className="flex items-center gap-2 text-sm text-slate-300">
               <MapPin className="w-4 h-4 text-emerald-500 shrink-0" />

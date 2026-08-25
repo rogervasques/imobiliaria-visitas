@@ -50,6 +50,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Share2,
+  MoreVertical,
 } from 'lucide-react';
 import { formatCurrency, formatPhone, formatDateTime, getWhatsAppDirectLink } from '@/lib/utils';
 import { getGoogleMapsSearchUrl, getGoogleMapsDirectionsUrl } from '@/lib/maps';
@@ -97,6 +98,7 @@ export function ImovelDetalhesModal({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isCompartilharOpen, setIsCompartilharOpen] = useState(false);
+  const [showMenuAcoes, setShowMenuAcoes] = useState(false);
 
   // Estados de Edição
   const [codigo, setCodigo] = useState('');
@@ -736,8 +738,8 @@ export function ImovelDetalhesModal({
                 </button>
               </div>
 
-              {/* Botões de Ação do Imóvel: [ 📲 Compartilhar ] [ ✏️ Editar ] e [ 🗑️ Excluir ] */}
-              <div className="flex items-center gap-1.5 flex-wrap">
+              {/* Botões de Ação do Imóvel: [ 📲 Compartilhar ] e Menu [ ... ] */}
+              <div className="flex items-center gap-1.5">
                 <Button
                   type="button"
                   variant="primary"
@@ -747,29 +749,50 @@ export function ImovelDetalhesModal({
                   title="Compartilhar link público e enviar mensagem pronta para cliente no WhatsApp"
                 >
                   <Share2 className="w-3.5 h-3.5 mr-1" />
-                  Compartilhar Imóvel
+                  <span>Compartilhar Imóvel</span>
                 </Button>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditing(true)}
-                  className="font-bold text-xs shadow-xs text-slate-700 dark:text-slate-200"
-                >
-                  <Pencil className="w-3.5 h-3.5 mr-1 text-emerald-500" />
-                  Editar
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsConfirmingDelete(true)}
-                  className="font-bold text-xs shadow-xs text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                >
-                  <Trash2 className="w-3.5 h-3.5 mr-1" />
-                  Excluir
-                </Button>
+                {/* Menu de 3 Pontos para Editar e Excluir */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowMenuAcoes((prev) => !prev)}
+                    className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-xs"
+                    title="Mais opções do imóvel"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+
+                  {showMenuAcoes && (
+                    <div
+                      className="absolute right-0 top-full mt-1.5 z-30 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMenuAcoes(false);
+                          setIsEditing(true);
+                        }}
+                        className="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Editar Imóvel</span>
+                      </button>
+                      <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMenuAcoes(false);
+                          setIsConfirmingDelete(true);
+                        }}
+                        className="w-full text-left px-3.5 py-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                        <span>Excluir Imóvel</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -844,35 +867,24 @@ export function ImovelDetalhesModal({
                       </>
                     )}
 
-                    {/* Badges Topo Esquerda */}
+                    {/* Badges Topo Esquerda: Apenas Código */}
                     <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
-                      <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-white font-mono text-xs font-bold">
+                      <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-white font-mono text-xs font-bold shadow-md">
                         {imovel.codigo || 'SEM-COD'}
                       </span>
-                      <Badge variant={statusColors[imovel.status] || 'default'} size="sm">
-                        {imovel.status.toUpperCase()}
-                      </Badge>
                     </div>
 
-                    {/* Contador Topo Direita */}
-                    {fotosList.length > 1 && (
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-white font-mono text-xs font-bold shadow-md z-10">
-                        <Images className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>{activePhotoIndex + 1} / {fotosList.length}</span>
-                      </div>
-                    )}
-
-                    {/* Badges Inferior Esquerda */}
-                    <div className="absolute bottom-3 left-3 flex items-center gap-2 z-10">
-                      <span className="px-3 py-1 rounded-xl bg-emerald-600/95 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider">
-                        {imovel.tipo} • {imovel.finalidade}
-                      </span>
-                      {imovel.aceita_pet !== undefined && (
-                        <span className="px-2.5 py-1 rounded-xl bg-slate-900/85 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1">
-                          <PawPrint className="w-3.5 h-3.5 text-emerald-400" />
-                          {imovel.aceita_pet ? 'Aceita Pet' : 'Não Aceita Pet'}
-                        </span>
+                    {/* Badges Topo Direita: Status / Disponível e Contador */}
+                    <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+                      {fotosList.length > 1 && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/75 backdrop-blur-md text-white font-mono text-xs font-bold shadow-md">
+                          <Images className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>{activePhotoIndex + 1} / {fotosList.length}</span>
+                        </div>
                       )}
+                      <Badge variant={statusColors[imovel.status] || 'default'} size="sm" className="shadow-md">
+                        {imovel.status.toUpperCase()}
+                      </Badge>
                     </div>
 
                     {/* Botão de Zoom no Canto Inferior Direito */}
@@ -880,6 +892,19 @@ export function ImovelDetalhesModal({
                       <Eye className="w-3.5 h-3.5 text-emerald-400" />
                       <span className="hidden sm:inline">Zoom</span>
                     </div>
+                  </div>
+
+                  {/* Tags Principais do Imóvel: Tipo, Finalidade e Pet (Movidas para abaixo da foto) */}
+                  <div className="flex items-center gap-2 flex-wrap pt-1">
+                    <span className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider">
+                      {imovel.tipo} • {imovel.finalidade}
+                    </span>
+                    {imovel.aceita_pet !== undefined && (
+                      <span className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5">
+                        <PawPrint className="w-3.5 h-3.5 text-emerald-500" />
+                        {imovel.aceita_pet ? 'Aceita Pet' : 'Não Aceita Pet'}
+                      </span>
+                    )}
                   </div>
 
                   {/* Faixa de Miniaturas Navegáveis */}
@@ -1021,23 +1046,14 @@ export function ImovelDetalhesModal({
 
                   <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
                     <a
-                      href={getGoogleMapsSearchUrl(imovel)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-colors shadow-xs"
-                    >
-                      <MapPin className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>📍 Abrir no Mapa</span>
-                    </a>
-
-                    <a
                       href={getGoogleMapsDirectionsUrl(imovel)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-xs border border-blue-200 dark:border-blue-800 transition-colors shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-colors shadow-2xs"
+                      title="Abrir no Google Maps / GPS"
                     >
-                      <Navigation className="w-3.5 h-3.5 text-blue-500" />
-                      <span>🚗 Traçar Rota</span>
+                      <MapPin className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>📍 Mapa</span>
                     </a>
                   </div>
                 </div>

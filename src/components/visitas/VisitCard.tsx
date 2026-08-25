@@ -278,20 +278,8 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-[11px] border border-blue-200 dark:border-blue-800 transition-colors shadow-xs"
-                    title="Traçar rota no Google Maps até o imóvel"
-                  >
-                    <Navigation className="w-3 h-3 text-blue-500" />
-                    <span>🚗 Traçar Rota</span>
-                  </a>
-
-                  <a
-                    href={getGoogleMapsSearchUrl(visita.imovel)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] border border-slate-200 dark:border-slate-700 transition-colors shadow-xs"
-                    title="Abrir no Google Maps"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] border border-slate-200 dark:border-slate-700 transition-colors shadow-2xs"
+                    title="Abrir no Google Maps / GPS"
                   >
                     <MapPin className="w-3 h-3 text-emerald-500" />
                     <span>📍 Mapa</span>
