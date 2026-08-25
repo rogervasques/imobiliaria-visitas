@@ -321,8 +321,47 @@ export default function RelatoriosPage() {
             </CardContent>
           </Card>
 
-          {/* ── Cards de Métricas Principais (Compactos) ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+          {/* ── Cards de Métricas Principais: Pílulas Compactas no Mobile (< 768px) e Cards no Desktop (>= 768px) ── */}
+          {/* 1. Mobile (< 768px): 5 Pílulas 100% Visíveis (3 no topo, 2 embaixo) */}
+          <div className="grid grid-cols-6 gap-1.5 md:hidden">
+            {/* Total */}
+            <div className="col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs shadow-2xs truncate">
+              <BarChart3 className="w-3.5 h-3.5 shrink-0 text-slate-500" />
+              <span className="font-black tabular-nums text-slate-900 dark:text-slate-100">{totalVisitas}</span>
+              <span className="text-[11px] font-semibold truncate">Total</span>
+            </div>
+
+            {/* Confirmadas */}
+            <div className="col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300 text-xs shadow-2xs truncate">
+              <CalendarCheck2 className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <span className="font-black tabular-nums text-emerald-700 dark:text-emerald-300">{confirmadas}</span>
+              <span className="text-[11px] font-semibold truncate">Confirmadas</span>
+            </div>
+
+            {/* Agendadas */}
+            <div className="col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-amber-50/90 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800/80 text-amber-800 dark:text-amber-300 text-xs shadow-2xs truncate">
+              <Hourglass className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span className="font-black tabular-nums text-amber-700 dark:text-amber-300">{agendadas}</span>
+              <span className="text-[11px] font-semibold truncate">Agendadas</span>
+            </div>
+
+            {/* Concluídas */}
+            <div className="col-span-3 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-purple-50/90 dark:bg-purple-950/60 border border-purple-200/80 dark:border-purple-800/80 text-purple-800 dark:text-purple-300 text-xs shadow-2xs truncate">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-purple-600 dark:text-purple-400" />
+              <span className="font-black tabular-nums text-purple-700 dark:text-purple-300">{concluidas}</span>
+              <span className="text-[11px] font-semibold truncate">Concluídas</span>
+            </div>
+
+            {/* Canceladas */}
+            <div className="col-span-3 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-rose-50/90 dark:bg-rose-950/60 border border-rose-200/80 dark:border-rose-800/80 text-rose-800 dark:text-rose-300 text-xs shadow-2xs truncate">
+              <Ban className="w-3.5 h-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
+              <span className="font-black tabular-nums text-rose-700 dark:text-rose-400">{canceladas}</span>
+              <span className="text-[11px] font-semibold truncate">Canceladas</span>
+            </div>
+          </div>
+
+          {/* 2. Desktop (>= 768px): Cards Grandes Detalhados */}
+          <div className="hidden md:grid md:grid-cols-5 gap-2.5 sm:gap-3">
             {/* Total */}
             <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
               <CardContent className="p-3 sm:p-4">

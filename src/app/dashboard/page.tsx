@@ -675,109 +675,165 @@ export default function DashboardHojePage() {
           </div>
         </div>
 
-        {/* ── Cards de Métricas como Filtros Clicáveis (Layout Compacto & Fluido) ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
-          {metricCards.map((card) => {
-            // Configuração visual por cor
-            const visualMap: Record<string, {
-              icon: React.ReactNode;
-              iconBg: string;
-              iconColor: string;
-              numColor: string;
-              barGradient: string;
-              barActiveGradient: string;
-              ring: string;
-            }> = {
-              slate: {
-                icon: <CalendarDays className="w-4 h-4" />,
-                iconBg: 'bg-slate-100 dark:bg-slate-800',
-                iconColor: 'text-slate-600 dark:text-slate-400',
-                numColor: 'text-slate-900 dark:text-slate-100',
-                barGradient: 'from-slate-300 to-slate-400',
-                barActiveGradient: 'from-slate-500 via-slate-600 to-slate-700',
-                ring: 'ring-slate-300 dark:ring-slate-700',
-              },
-              emerald: {
-                icon: <CalendarCheck2 className="w-4 h-4" />,
-                iconBg: 'bg-emerald-50 dark:bg-emerald-950/60',
-                iconColor: 'text-emerald-600 dark:text-emerald-400',
-                numColor: 'text-emerald-700 dark:text-emerald-300',
-                barGradient: 'from-emerald-300 to-emerald-400',
-                barActiveGradient: 'from-emerald-400 via-emerald-500 to-teal-500',
-                ring: 'ring-emerald-300 dark:ring-emerald-800',
-              },
-              amber: {
-                icon: <Hourglass className="w-4 h-4" />,
-                iconBg: 'bg-amber-50 dark:bg-amber-950/60',
-                iconColor: 'text-amber-600 dark:text-amber-400',
-                numColor: 'text-amber-700 dark:text-amber-300',
-                barGradient: 'from-amber-300 to-amber-400',
-                barActiveGradient: 'from-amber-400 via-amber-500 to-orange-400',
-                ring: 'ring-amber-300 dark:ring-amber-800',
-              },
-              purple: {
-                icon: <CheckCircle2 className="w-4 h-4" />,
-                iconBg: 'bg-purple-50 dark:bg-purple-950/60',
-                iconColor: 'text-purple-600 dark:text-purple-400',
-                numColor: 'text-purple-700 dark:text-purple-300',
-                barGradient: 'from-purple-300 to-purple-400',
-                barActiveGradient: 'from-purple-400 via-purple-500 to-indigo-500',
-                ring: 'ring-purple-300 dark:ring-purple-800',
-              },
-              rose: {
-                icon: <Ban className="w-4 h-4" />,
-                iconBg: 'bg-rose-50 dark:bg-rose-950/60',
-                iconColor: 'text-rose-600 dark:text-rose-400',
-                numColor: 'text-rose-700 dark:text-rose-400',
-                barGradient: 'from-rose-300 to-rose-400',
-                barActiveGradient: 'from-rose-400 via-rose-500 to-pink-500',
-                ring: 'ring-rose-300 dark:ring-rose-800',
-              },
-            };
+        {/* ── Cards de Métricas: Pílulas Compactas no Mobile (< 768px) e Cards Grandes no Desktop (>= 768px) ── */}
+        {(() => {
+          // Configuração visual por cor
+          const visualMap: Record<string, {
+            icon: React.ReactNode;
+            iconMini: React.ReactNode;
+            iconBg: string;
+            iconColor: string;
+            numColor: string;
+            barGradient: string;
+            barActiveGradient: string;
+            ring: string;
+            mobileBg: string;
+            activeMobileBg: string;
+          }> = {
+            slate: {
+              icon: <CalendarDays className="w-4 h-4" />,
+              iconMini: <CalendarDays className="w-3.5 h-3.5" />,
+              iconBg: 'bg-slate-100 dark:bg-slate-800',
+              iconColor: 'text-slate-600 dark:text-slate-400',
+              numColor: 'text-slate-900 dark:text-slate-100',
+              barGradient: 'from-slate-300 to-slate-400',
+              barActiveGradient: 'from-slate-500 via-slate-600 to-slate-700',
+              ring: 'ring-slate-300 dark:ring-slate-700',
+              mobileBg: 'bg-slate-100/90 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300',
+              activeMobileBg: 'bg-slate-200 dark:bg-slate-700 border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-50',
+            },
+            emerald: {
+              icon: <CalendarCheck2 className="w-4 h-4" />,
+              iconMini: <CalendarCheck2 className="w-3.5 h-3.5" />,
+              iconBg: 'bg-emerald-50 dark:bg-emerald-950/60',
+              iconColor: 'text-emerald-600 dark:text-emerald-400',
+              numColor: 'text-emerald-700 dark:text-emerald-300',
+              barGradient: 'from-emerald-300 to-emerald-400',
+              barActiveGradient: 'from-emerald-400 via-emerald-500 to-teal-500',
+              ring: 'ring-emerald-300 dark:ring-emerald-800',
+              mobileBg: 'bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-200/80 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300',
+              activeMobileBg: 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-900 dark:text-emerald-100',
+            },
+            amber: {
+              icon: <Hourglass className="w-4 h-4" />,
+              iconMini: <Hourglass className="w-3.5 h-3.5" />,
+              iconBg: 'bg-amber-50 dark:bg-amber-950/60',
+              iconColor: 'text-amber-600 dark:text-amber-400',
+              numColor: 'text-amber-700 dark:text-amber-300',
+              barGradient: 'from-amber-300 to-amber-400',
+              barActiveGradient: 'from-amber-400 via-amber-500 to-orange-400',
+              ring: 'ring-amber-300 dark:ring-amber-800',
+              mobileBg: 'bg-amber-50/90 dark:bg-amber-950/60 border-amber-200/80 dark:border-amber-800/80 text-amber-800 dark:text-amber-300',
+              activeMobileBg: 'bg-amber-100 dark:bg-amber-900/90 border-amber-500 text-amber-900 dark:text-amber-100',
+            },
+            purple: {
+              icon: <CheckCircle2 className="w-4 h-4" />,
+              iconMini: <CheckCircle2 className="w-3.5 h-3.5" />,
+              iconBg: 'bg-purple-50 dark:bg-purple-950/60',
+              iconColor: 'text-purple-600 dark:text-purple-400',
+              numColor: 'text-purple-700 dark:text-purple-300',
+              barGradient: 'from-purple-300 to-purple-400',
+              barActiveGradient: 'from-purple-400 via-purple-500 to-indigo-500',
+              ring: 'ring-purple-300 dark:ring-purple-800',
+              mobileBg: 'bg-purple-50/90 dark:bg-purple-950/60 border-purple-200/80 dark:border-purple-800/80 text-purple-800 dark:text-purple-300',
+              activeMobileBg: 'bg-purple-100 dark:bg-purple-900/90 border-purple-500 text-purple-900 dark:text-purple-100',
+            },
+            rose: {
+              icon: <Ban className="w-4 h-4" />,
+              iconMini: <Ban className="w-3.5 h-3.5" />,
+              iconBg: 'bg-rose-50 dark:bg-rose-950/60',
+              iconColor: 'text-rose-600 dark:text-rose-400',
+              numColor: 'text-rose-700 dark:text-rose-400',
+              barGradient: 'from-rose-300 to-rose-400',
+              barActiveGradient: 'from-rose-400 via-rose-500 to-pink-500',
+              ring: 'ring-rose-300 dark:ring-rose-800',
+              mobileBg: 'bg-rose-50/90 dark:bg-rose-950/60 border-rose-200/80 dark:border-rose-800/80 text-rose-800 dark:text-rose-300',
+              activeMobileBg: 'bg-rose-100 dark:bg-rose-900/90 border-rose-500 text-rose-900 dark:text-rose-100',
+            },
+          };
 
-            const v = visualMap[card.color];
+          return (
+            <>
+              {/* ── 1. Versão Mobile (< 768px): Grid de 5 Pílulas Compactas (3 em cima, 2 embaixo, 100% visíveis) ── */}
+              <div className="grid grid-cols-6 gap-1.5 md:hidden">
+                {metricCards.map((card, idx) => {
+                  const v = visualMap[card.color];
+                  const isTopRow = idx < 3; // idx 0, 1, 2 -> 3 colunas (col-span-2 cada); idx 3, 4 -> 2 colunas (col-span-3 cada)
+                  const labelCurto = card.key === null ? 'Total' : card.label;
 
-            return (
-              <button
-                key={String(card.key)}
-                type="button"
-                onClick={() => setFilterStatus(card.key)}
-                className={`
-                  relative flex items-center gap-2 sm:gap-3 px-3 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-white dark:bg-slate-900
-                  border border-slate-200 dark:border-slate-800 text-left
-                  transition-all duration-200 overflow-hidden cursor-pointer
-                  hover:shadow-md hover:-translate-y-0.5
-                  ${card.active ? `ring-2 ${v.ring} shadow-xs bg-slate-50/50 dark:bg-slate-800/40` : 'shadow-xs'}
-                `}
-              >
-                {/* Ícone à esquerda */}
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${v.iconBg} ${v.iconColor}`}>
-                  {v.icon}
-                </div>
+                  return (
+                    <button
+                      key={String(card.key)}
+                      type="button"
+                      onClick={() => setFilterStatus(card.key)}
+                      className={`
+                        ${isTopRow ? 'col-span-2' : 'col-span-3'}
+                        flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl
+                        border transition-all text-xs cursor-pointer truncate
+                        ${card.active
+                          ? `ring-2 ${v.ring} shadow-xs font-black ${v.activeMobileBg}`
+                          : `${v.mobileBg} shadow-2xs font-semibold hover:scale-[1.02]`
+                        }
+                      `}
+                    >
+                      <span className={`shrink-0 ${v.iconColor}`}>{v.iconMini}</span>
+                      <span className={`tabular-nums font-black text-xs ${v.numColor}`}>{card.value}</span>
+                      <span className={`text-[11px] truncate ${card.active ? 'font-black' : 'font-medium'}`}>
+                        {labelCurto}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-                {/* Número e Rótulo */}
-                <div className="min-w-0 flex-1">
-                  <div className={`text-base sm:text-xl font-black tabular-nums leading-tight ${v.numColor}`}>
-                    {card.value}
-                  </div>
-                  <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight text-slate-500 dark:text-slate-400 truncate">
-                    {card.label}
-                  </div>
-                </div>
+              {/* ── 2. Versão Desktop (>= 768px): Cards Grandes e Detalhados ── */}
+              <div className="hidden md:grid md:grid-cols-5 gap-2.5">
+                {metricCards.map((card) => {
+                  const v = visualMap[card.color];
+                  return (
+                    <button
+                      key={String(card.key)}
+                      type="button"
+                      onClick={() => setFilterStatus(card.key)}
+                      className={`
+                        relative flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-white dark:bg-slate-900
+                        border border-slate-200 dark:border-slate-800 text-left
+                        transition-all duration-200 overflow-hidden cursor-pointer
+                        hover:shadow-md hover:-translate-y-0.5
+                        ${card.active ? `ring-2 ${v.ring} shadow-xs bg-slate-50/50 dark:bg-slate-800/40` : 'shadow-xs'}
+                      `}
+                    >
+                      {/* Ícone à esquerda */}
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${v.iconBg} ${v.iconColor}`}>
+                        {v.icon}
+                      </div>
 
-                {/* Linha gradiente inferior sutil */}
-                <div
-                  className={`
-                    absolute bottom-0 left-0 right-0 bg-gradient-to-r
-                    ${card.active ? v.barActiveGradient : v.barGradient}
-                    transition-all duration-300
-                    ${card.active ? 'h-0.5 sm:h-1' : 'h-0.5 opacity-30'}
-                  `}
-                />
-              </button>
-            );
-          })}
-        </div>
+                      {/* Número e Rótulo */}
+                      <div className="min-w-0 flex-1">
+                        <div className={`text-xl font-black tabular-nums leading-tight ${v.numColor}`}>
+                          {card.value}
+                        </div>
+                        <div className="text-[11px] font-bold uppercase tracking-tight text-slate-500 dark:text-slate-400 truncate">
+                          {card.label}
+                        </div>
+                      </div>
+
+                      {/* Linha gradiente inferior sutil */}
+                      <div
+                        className={`
+                          absolute bottom-0 left-0 right-0 bg-gradient-to-r
+                          ${card.active ? v.barActiveGradient : v.barGradient}
+                          transition-all duration-300
+                          ${card.active ? 'h-1 opacity-100' : 'h-0.5 opacity-30 hover:opacity-60'}
+                        `}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
 
         {/* ── Layout 2 Colunas ── */}
         <div className="flex flex-col lg:flex-row gap-5 items-start w-full overflow-x-hidden">
