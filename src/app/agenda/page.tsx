@@ -180,17 +180,23 @@ export default function AgendaPage() {
       text: 'text-amber-950 dark:text-amber-100',
       label: 'Agendada',
     },
-    cancelada: {
-      bg: 'bg-rose-100/95 dark:bg-rose-950/80 hover:bg-rose-200/90 dark:hover:bg-rose-900/90',
-      border: 'border border-rose-300 dark:border-rose-700/60',
-      text: 'text-rose-950 dark:text-rose-100',
-      label: 'Cancelada',
+    concluida: {
+      bg: 'bg-purple-100/95 dark:bg-purple-950/80 hover:bg-purple-200/90 dark:hover:bg-purple-900/90',
+      border: 'border border-purple-300 dark:border-purple-700/60',
+      text: 'text-purple-950 dark:text-purple-100',
+      label: 'Concluída',
     },
     reagendada: {
       bg: 'bg-purple-100/95 dark:bg-purple-950/80 hover:bg-purple-200/90 dark:hover:bg-purple-900/90',
       border: 'border border-purple-300 dark:border-purple-700/60',
       text: 'text-purple-950 dark:text-purple-100',
       label: 'Concluída',
+    },
+    cancelada: {
+      bg: 'bg-rose-100/95 dark:bg-rose-950/80 hover:bg-rose-200/90 dark:hover:bg-rose-900/90',
+      border: 'border border-rose-300 dark:border-rose-700/60',
+      text: 'text-rose-950 dark:text-rose-100',
+      label: 'Cancelada',
     },
   };
 
@@ -638,16 +644,6 @@ export default function AgendaPage() {
                   ))}
                 </div>
               )}
-
-              {/* Botão Ver Lista Completa do Dia */}
-              <button
-                type="button"
-                onClick={() => setViewMode('lista')}
-                className="w-full mt-2 py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
-              >
-                <span>Ver lista completa do dia</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
             </CardContent>
           </Card>
 

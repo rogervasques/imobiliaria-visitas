@@ -11,7 +11,7 @@ import {
   MessageCircle, MoreVertical, CheckCircle2, XCircle,
   RotateCcw, Pencil, Trash2, AlertTriangle, MapPin, Phone,
   Building2, CalendarDays, Timer, ChevronLeft, ChevronRight,
-  Clock, CalendarCheck2, Hourglass, Ban, User,
+  Clock, CalendarCheck2, Hourglass, Ban, User, ChevronDown,
 } from 'lucide-react';
 import {
   formatPhone, formatTime, getWhatsAppDirectLink,
@@ -20,30 +20,41 @@ import { WhatsAppStatusBadge } from '@/components/layout/WhatsAppStatusBadge';
 
 // ─── Constantes de Status ────────────────────────────────────────────────────
 
-const STATUS_CFG: Record<StatusVisita, { label: string; dot: string; badge: string; line: string }> = {
+const STATUS_CFG: Record<StatusVisita, { label: string; dot: string; dotPure: string; badge: string; line: string }> = {
   confirmada: {
     label: 'Confirmada',
     dot: 'bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-950',
-    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
-    line: 'border-l-emerald-400',
+    dotPure: 'bg-emerald-500',
+    badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    line: 'border-l-emerald-500',
   },
   agendada: {
     label: 'Agendada',
     dot: 'bg-amber-400 ring-4 ring-amber-100 dark:ring-amber-950',
-    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+    dotPure: 'bg-amber-400',
+    badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
     line: 'border-l-amber-400',
+  },
+  concluida: {
+    label: 'Concluída',
+    dot: 'bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-950',
+    dotPure: 'bg-purple-500',
+    badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+    line: 'border-l-purple-500',
+  },
+  reagendada: {
+    label: 'Concluída',
+    dot: 'bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-950',
+    dotPure: 'bg-purple-500',
+    badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+    line: 'border-l-purple-500',
   },
   cancelada: {
     label: 'Cancelada',
     dot: 'bg-rose-500 ring-4 ring-rose-100 dark:ring-rose-950',
-    badge: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
-    line: 'border-l-rose-400',
-  },
-  reagendada: {
-    label: 'Reagendada',
-    dot: 'bg-slate-400 ring-4 ring-slate-100 dark:ring-slate-800',
-    badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-    line: 'border-l-slate-400',
+    dotPure: 'bg-rose-500',
+    badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+    line: 'border-l-rose-500',
   },
 };
 
@@ -138,8 +149,9 @@ function MiniCalendario({
   const dotColors: Record<StatusVisita, string> = {
     confirmada: 'bg-emerald-500',
     agendada: 'bg-amber-400',
+    concluida: 'bg-purple-500',
     cancelada: 'bg-rose-500',
-    reagendada: 'bg-slate-400',
+    reagendada: 'bg-purple-400',
   };
 
   return (
@@ -311,14 +323,19 @@ function TimelineCard({
 }) {
   const { atualizarStatusVisita, removerVisita, showToast } = useData();
   const [showMenu, setShowMenu] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const cfg = STATUS_CFG[visita.status] ?? STATUS_CFG.agendada;
 
+  // Regra por Horário: Se atingir/ultrapassar o horário e não estiver Concluída ou Cancelada
+  const isHorarioAtingido = new Date(visita.data_hora_visita).getTime() <= Date.now();
+  const podeConcluir = isHorarioAtingido && visita.status !== 'concluida' && visita.status !== 'reagendada' && visita.status !== 'cancelada';
+
   const handleStatus = async (s: StatusVisita) => {
-    setShowMenu(false);
+    setShowStatusDropdown(false);
     await atualizarStatusVisita(visita.id, s);
   };
 
@@ -353,7 +370,7 @@ function TimelineCard({
         aria-label={`Ver detalhes da visita ao ${visita.imovel?.titulo}`}
       >
         <div className="p-3 sm:p-4">
-          {/* Header: thumb + info + badge */}
+          {/* Header: thumb + info + status badge dropdown interativo */}
           <div className="flex items-start gap-3">
             <div
               className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
@@ -379,10 +396,62 @@ function TimelineCard({
                     </span>
                   )}
                 </div>
-                <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${cfg.badge}`}>
-                  {cfg.label}
-                </span>
+
+                {/* ─── 1. Pílula de Status Interativa com Dropdown ─── */}
+                <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    onClick={() => setShowStatusDropdown(v => !v)}
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full ${cfg.badge} border transition-all hover:scale-105 shadow-xs cursor-pointer`}
+                    title="Clique para alterar o status"
+                  >
+                    <div className={`w-2 h-2 rounded-full ${cfg.dotPure}`} />
+                    <span>{cfg.label}</span>
+                    <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
+                  </button>
+
+                  {showStatusDropdown && (
+                    <div className="absolute right-0 top-full mt-1.5 z-40 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150">
+                      <div className="px-3 py-1 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                        Alterar Status
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleStatus('agendada')}
+                        className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
+                        <span>Agendada</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleStatus('confirmada')}
+                        className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 border border-emerald-500 shrink-0" />
+                        <span>Confirmada</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleStatus('concluida')}
+                        className="w-full text-left px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <div className="w-2.5 h-2.5 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
+                        <span>Concluída</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleStatus('cancelada')}
+                        className="w-full text-left px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <div className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-rose-400 shrink-0" />
+                        <span>Cancelada</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
+
               <div className="flex items-center gap-1 mt-1 text-xs text-slate-500 dark:text-slate-400">
                 <MapPin className="w-3 h-3 text-emerald-500 shrink-0" />
                 <span className="truncate">
@@ -412,9 +481,22 @@ function TimelineCard({
             </div>
           </div>
 
-          {/* Rodapé: botões WhatsApp + menu — flex-wrap no mobile */}
+          {/* Rodapé: Botão Concluir Visita + botões WhatsApp + menu de 3 pontos simplificado */}
           <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-2 flex-wrap" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 flex-wrap">
+              {/* ─── 2. Botão Dinâmico "Concluir Visita" por Horário ─── */}
+              {podeConcluir && (
+                <button
+                  type="button"
+                  onClick={() => handleStatus('concluida')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer animate-in fade-in"
+                  title="Concluir visita agendada"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Concluir Visita</span>
+                </button>
+              )}
+
               <a href={waCliente} target="_blank" rel="noopener noreferrer">
                 <button type="button" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors whitespace-nowrap border border-emerald-200/60 dark:border-emerald-800/60">
                   <MessageCircle className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
@@ -430,33 +512,34 @@ function TimelineCard({
               </a>
             </div>
 
-            {/* Menu ⋯ */}
+            {/* ─── 3. Menu de 3 Pontos Simplificado (Apenas Editar e Excluir) ─── */}
             <div className="relative">
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setShowMenu(v => !v); }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Mais opções"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
               {showMenu && (
-                <div className="absolute right-0 bottom-8 z-30 w-52 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
-                  <div className="px-3 py-1.5 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">Alterar Status</div>
-                  <button type="button" onClick={() => handleStatus('agendada')} className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium flex items-center gap-2">
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-500" /> Marcar como Agendada
-                  </button>
-                  <button type="button" onClick={() => handleStatus('confirmada')} className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Marcar Confirmada
-                  </button>
-                  <button type="button" onClick={() => handleStatus('cancelada')} className="w-full text-left px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-medium flex items-center gap-2">
-                    <XCircle className="w-3.5 h-3.5 text-rose-500" /> Cancelar Visita
+                <div className="absolute right-0 bottom-8 z-30 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    onClick={() => { setShowMenu(false); setIsEditOpen(true); }}
+                    className="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Editar Visita</span>
                   </button>
                   <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
-                  <button type="button" onClick={() => { setShowMenu(false); setIsEditOpen(true); }} className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2">
-                    <Pencil className="w-3.5 h-3.5 text-slate-500" /> Editar Visita
-                  </button>
-                  <button type="button" onClick={() => { setShowMenu(false); setIsDeleteOpen(true); }} className="w-full text-left px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-medium flex items-center gap-2">
-                    <Trash2 className="w-3.5 h-3.5 text-rose-500" /> Excluir Visita
+                  <button
+                    type="button"
+                    onClick={() => { setShowMenu(false); setIsDeleteOpen(true); }}
+                    className="w-full text-left px-3.5 py-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Excluir Visita</span>
                   </button>
                 </div>
               )}
@@ -517,7 +600,11 @@ export default function DashboardHojePage() {
   // Visitas filtradas + ordenadas por horário
   const visitasFiltradas = useMemo(() =>
     visitasDoDia
-      .filter(v => filterStatus === null || v.status === filterStatus)
+      .filter(v => {
+        if (filterStatus === null) return true;
+        if (filterStatus === 'concluida') return v.status === 'concluida' || v.status === 'reagendada';
+        return v.status === filterStatus;
+      })
       .sort((a, b) => new Date(a.data_hora_visita).getTime() - new Date(b.data_hora_visita).getTime()),
     [visitasDoDia, filterStatus]
   );
@@ -527,6 +614,7 @@ export default function DashboardHojePage() {
     total: visitasDoDia.length,
     confirmadas: visitasDoDia.filter(v => v.status === 'confirmada').length,
     agendadas: visitasDoDia.filter(v => v.status === 'agendada').length,
+    concluidas: visitasDoDia.filter(v => v.status === 'concluida' || v.status === 'reagendada').length,
     canceladas: visitasDoDia.filter(v => v.status === 'cancelada').length,
   }), [visitasDoDia]);
 
@@ -549,6 +637,7 @@ export default function DashboardHojePage() {
     { key: null, label: 'Total no Dia', value: metricasDia.total, color: 'slate', active: filterStatus === null },
     { key: 'confirmada' as StatusVisita, label: 'Confirmadas', value: metricasDia.confirmadas, color: 'emerald', active: filterStatus === 'confirmada' },
     { key: 'agendada' as StatusVisita, label: 'Agendadas', value: metricasDia.agendadas, color: 'amber', active: filterStatus === 'agendada' },
+    { key: 'concluida' as StatusVisita, label: 'Concluídas', value: metricasDia.concluidas, color: 'purple', active: filterStatus === 'concluida' || filterStatus === 'reagendada' },
     { key: 'cancelada' as StatusVisita, label: 'Canceladas', value: metricasDia.canceladas, color: 'rose', active: filterStatus === 'cancelada' },
   ];
 
@@ -573,7 +662,7 @@ export default function DashboardHojePage() {
         </div>
 
         {/* ── Cards de Métricas como Filtros Clicáveis (Layout Compacto & Fluido) ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
           {metricCards.map((card) => {
             // Configuração visual por cor
             const visualMap: Record<string, {
@@ -611,6 +700,15 @@ export default function DashboardHojePage() {
                 barGradient: 'from-amber-300 to-amber-400',
                 barActiveGradient: 'from-amber-400 via-amber-500 to-orange-400',
                 ring: 'ring-amber-300 dark:ring-amber-800',
+              },
+              purple: {
+                icon: <CheckCircle2 className="w-4 h-4" />,
+                iconBg: 'bg-purple-50 dark:bg-purple-950/60',
+                iconColor: 'text-purple-600 dark:text-purple-400',
+                numColor: 'text-purple-700 dark:text-purple-300',
+                barGradient: 'from-purple-300 to-purple-400',
+                barActiveGradient: 'from-purple-400 via-purple-500 to-indigo-500',
+                ring: 'ring-purple-300 dark:ring-purple-800',
               },
               rose: {
                 icon: <Ban className="w-4 h-4" />,

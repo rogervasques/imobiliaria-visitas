@@ -24,6 +24,7 @@ import {
   CheckCheck,
   User,
   Navigation,
+  ChevronDown,
 } from 'lucide-react';
 import {
   formatFriendlyDate,
@@ -42,22 +43,28 @@ interface VisitCardProps {
 export function VisitCard({ visita, onEdit }: VisitCardProps) {
   const { atualizarStatusVisita, removerVisita, showToast } = useData();
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const statusBadges: Record<
     StatusVisita,
-    { label: string; variant: 'warning' | 'success' | 'danger' | 'default' }
+    { label: string; variant: 'warning' | 'success' | 'danger' | 'purple' | 'default'; dotColor: string }
   > = {
-    agendada: { label: 'Agendada', variant: 'warning' },
-    confirmada: { label: 'Confirmada', variant: 'success' },
-    cancelada: { label: 'Cancelada', variant: 'danger' },
-    reagendada: { label: 'Reagendada', variant: 'default' },
+    agendada: { label: 'Agendada', variant: 'warning', dotColor: 'bg-amber-400 border-amber-500' },
+    confirmada: { label: 'Confirmada', variant: 'success', dotColor: 'bg-emerald-600 border-emerald-500' },
+    concluida: { label: 'Concluída', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
+    reagendada: { label: 'Concluída', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
+    cancelada: { label: 'Cancelada', variant: 'danger', dotColor: 'bg-rose-500 border-rose-400' },
   };
 
+  // Regra por Horário: Se atingir/ultrapassar o horário e não estiver Concluída ou Cancelada
+  const isHorarioAtingido = new Date(visita.data_hora_visita).getTime() <= Date.now();
+  const podeConcluir = isHorarioAtingido && visita.status !== 'concluida' && visita.status !== 'reagendada' && visita.status !== 'cancelada';
+
   const handleStatusChange = async (novoStatus: StatusVisita) => {
-    setShowStatusMenu(false);
+    setShowStatusDropdown(false);
     await atualizarStatusVisita(visita.id, novoStatus);
   };
 
@@ -117,62 +124,89 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                 {formatFriendlyDate(visita.data_hora_visita)}
               </span>
 
-              {/* Status da Visita */}
-              <Badge variant={statusBadges[visita.status]?.variant || 'default'}>
-                {statusBadges[visita.status]?.label || visita.status}
-              </Badge>
+              {/* ─── 1. Pílula de Status Interativa com Dropdown ─── */}
+              <div className="relative" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={() => setShowStatusDropdown(v => !v)}
+                  className="inline-flex items-center gap-1.5 cursor-pointer hover:scale-105 transition-all"
+                  title="Clique para alterar o status"
+                >
+                  <Badge variant={statusBadges[visita.status]?.variant || 'default'} size="sm" className="font-bold cursor-pointer">
+                    <div className={`w-2 h-2 rounded-full border ${statusBadges[visita.status]?.dotColor || 'bg-slate-400'}`} />
+                    <span>{statusBadges[visita.status]?.label || visita.status}</span>
+                    <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
+                  </Badge>
+                </button>
+
+                {showStatusDropdown && (
+                  <div
+                    className="absolute left-0 top-full mt-1.5 z-40 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="px-3 py-1 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                      Alterar Status
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange('agendada')}
+                      className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
+                      <span>Agendada</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange('confirmada')}
+                      className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 border border-emerald-500 shrink-0" />
+                      <span>Confirmada</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange('concluida')}
+                      className="w-full text-left px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
+                      <span>Concluída</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange('cancelada')}
+                      className="w-full text-left px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-rose-400 shrink-0" />
+                      <span>Cancelada</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Menu de Três Pontos (...) */}
+            {/* ─── 3. Menu de Três Pontos Simplificado (...) ─── */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowStatusMenu(!showStatusMenu)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                title="Opções da Visita"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Mais opções"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
 
               {showStatusMenu && (
-                <div className="absolute right-0 top-8 z-30 w-52 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150">
-                  <div className="px-3 py-1.5 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                    Alterar Status
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleStatusChange('agendada')}
-                    className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium flex items-center gap-2"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-500" /> Marcar como Agendada
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={() => handleStatusChange('confirmada')}
-                    className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Marcar Confirmada
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleStatusChange('cancelada')}
-                    className="w-full text-left px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-medium flex items-center gap-2"
-                  >
-                    <XCircle className="w-3.5 h-3.5 text-rose-500" /> Cancelar Visita
-                  </button>
-
-                  <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
-
+                <div className="absolute right-0 top-8 z-30 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150">
                   <button
                     type="button"
                     onClick={handleOpenEdit}
-                    className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2"
+                    className="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                   >
-                    <Pencil className="w-3.5 h-3.5 text-slate-500" /> Editar Visita
+                    <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Editar Visita</span>
                   </button>
+
+                  <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
 
                   <button
                     type="button"
@@ -180,9 +214,10 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                       setShowStatusMenu(false);
                       setIsDeleteModalOpen(true);
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-medium flex items-center gap-2"
+                    className="w-full text-left px-3.5 py-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5 text-rose-500" /> Excluir Visita
+                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Excluir Visita</span>
                   </button>
                 </div>
               )}
@@ -359,6 +394,22 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
               </span>
             </div>
           </div>
+
+          {/* ─── 2. Botão Dinâmico "Concluir Visita" por Horário ─── */}
+          {podeConcluir && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStatusChange('concluida');
+              }}
+              className="w-full mb-2.5 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
+              title="Concluir visita agendada"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Concluir Visita</span>
+            </button>
+          )}
 
           {/* Dois Botões Visualmente Idênticos de WhatsApp (Verde Oficial) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
