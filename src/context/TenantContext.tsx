@@ -162,7 +162,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     // Se o usuário for Admin, recupera a última imobiliária selecionada ou usa a padrão
     if (user.role === 'admin') {
       const savedTenantName = typeof window !== 'undefined' ? localStorage.getItem(TENANT_STORAGE_KEY) : null;
-      if (savedTenantName) {
+      if (savedTenantName && savedTenantName !== 'Administração' && savedTenantName !== 'Todas') {
         const match = imobiliarias.find(
           (i) => i.nome.toLowerCase() === savedTenantName.toLowerCase()
         );
@@ -172,7 +172,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Se o admin tiver uma imobiliária definida no perfil
+      // Se o admin tiver uma imobiliária definida no perfil (e não for Administração)
       if (user.imobiliaria && user.imobiliaria !== 'Administração') {
         const match = imobiliarias.find(
           (i) => i.nome.toLowerCase() === user.imobiliaria.toLowerCase()

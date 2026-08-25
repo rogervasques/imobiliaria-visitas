@@ -87,6 +87,29 @@ const sortProprietariosAlphabetically = (list: Proprietario[]): Proprietario[] =
 const sortClientesAlphabetically = (list: Cliente[]): Cliente[] =>
   [...list].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
 
+const TENANT_ITEM_MAP_STORAGE_KEY = 'easymob_item_tenants_map';
+
+const getItemTenantMap = (): Record<string, string> => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const saved = localStorage.getItem(TENANT_ITEM_MAP_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+};
+
+const setItemTenantInMap = (itemId: string, tenantName?: string | null) => {
+  if (typeof window === 'undefined' || !itemId || !tenantName) return;
+  try {
+    const map = getItemTenantMap();
+    map[itemId] = tenantName;
+    localStorage.setItem(TENANT_ITEM_MAP_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    // ignore
+  }
+};
+
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { currentTenant, imobiliarias } = useTenant();
@@ -112,31 +135,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // Filtro de multi-tenant: filtra os dados para exibir exclusivamente os registros da imobiliária selecionada
   const matchesTenant = useCallback(
-    (itemImobiliaria?: string) => {
-      const activeTenantName = (currentTenant?.nome || user?.imobiliaria || '').trim().toLowerCase();
-
-      // Se a imobiliária selecionada for 'todas' ou 'administração' geral
-      if (activeTenantName === 'administração' || activeTenantName === 'todas' || activeTenantName === '') {
-        return true;
-      }
-
+    (itemImobiliaria?: string | null) => {
+      const activeTenantName = (currentTenant?.nome || imobiliarias[0]?.nome || 'Lagom Imóveis').trim().toLowerCase();
       const itemTenant = (itemImobiliaria || '').trim().toLowerCase();
 
       // 1. Se o registro tiver a mesma imobiliária selecionada
-      if (itemTenant === activeTenantName) {
+      if (itemTenant && itemTenant === activeTenantName) {
         return true;
       }
 
-      // 2. Se o registro não tiver imobiliária explícita (dados base legados) ou for 'easymob imóveis':
-      // Ele pertence à imobiliária principal cadastrada
+      // 2. Registros legados sem imobiliária explícita ou com valor 'easymob imóveis' / 'easymob':
+      // Pertencem exclusivamente à imobiliária principal cadastrada (ex: Lagom Imóveis)
       const primaryTenantName = (imobiliarias[0]?.nome || 'Lagom Imóveis').trim().toLowerCase();
       if (!itemTenant || itemTenant === 'easymob imóveis' || itemTenant === 'easymob') {
-        return activeTenantName === primaryTenantName || activeTenantName === 'lagom imóveis';
+        return activeTenantName === primaryTenantName;
       }
 
       return false;
     },
-    [currentTenant, user, imobiliarias]
+    [currentTenant?.nome, imobiliarias]
   );
 
   // 1. Carregamento inicial (Supabase com fallback para LocalStorage e Mocks)
@@ -147,6 +164,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${key}`) ||
         localStorage.getItem(`imobiliaria_visitas_${key}`);
 
+      const tenantMap = getItemTenantMap();
+      const defaultTenantName = imobiliarias[0]?.nome || 'Lagom Imóveis';
+
       // Tenta buscar no Supabase
       const { data: dbImoveis, error: errImoveis } = await supabase.from('imoveis').select('*');
       const { data: dbProprietarios, error: errProprietarios } = await supabase.from('proprietarios').select('*');
@@ -156,7 +176,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       let loadedImoveis: Imovel[] = [];
       if (!errImoveis && dbImoveis && dbImoveis.length > 0) {
-        loadedImoveis = dbImoveis;
+        loadedImoveis = dbImoveis.map((im) => ({
+          ...im,
+          imobiliaria: im.imobiliaria || tenantMap[im.id] || defaultTenantName,
+        }));
       } else {
         const local = getLocalItem('imoveis');
         loadedImoveis = local ? JSON.parse(local) : mockImoveis;
@@ -167,7 +190,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       // Proprietários
       let loadedProprietarios: Proprietario[] = [];
       if (!errProprietarios && dbProprietarios && dbProprietarios.length > 0) {
-        loadedProprietarios = dbProprietarios;
+        loadedProprietarios = dbProprietarios.map((p) => ({
+          ...p,
+          imobiliaria: p.imobiliaria || tenantMap[p.id] || defaultTenantName,
+        }));
       } else {
         const local = getLocalItem('proprietarios');
         if (local) {
@@ -183,7 +209,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 nome: im.proprietario_nome,
                 telefone: im.proprietario_telefone,
                 email: im.proprietario_email,
-                imobiliaria: im.imobiliaria || 'EasyMob Imóveis',
+                imobiliaria: im.imobiliaria || defaultTenantName,
                 imobiliaria_id: im.imobiliaria_id,
                 criado_em: im.criado_em || new Date().toISOString(),
               });
@@ -197,7 +223,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       let loadedClientes: Cliente[] = [];
       if (!errClientes && dbClientes && dbClientes.length > 0) {
-        loadedClientes = dbClientes;
+        loadedClientes = dbClientes.map((c) => ({
+          ...c,
+          imobiliaria: c.imobiliaria || tenantMap[c.id] || defaultTenantName,
+        }));
       } else {
         const local = getLocalItem('clientes');
         loadedClientes = local ? JSON.parse(local) : mockClientes;
@@ -259,9 +288,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           clienteRef = sortedClientes[idx % sortedClientes.length];
         }
 
+        const visitaImobiliaria = v.imobiliaria || tenantMap[v.id] || imovelPrincipal?.imobiliaria || defaultTenantName;
+
         return {
           ...v,
-          imobiliaria: v.imobiliaria || imovelPrincipal?.imobiliaria || 'EasyMob Imóveis',
+          imobiliaria: visitaImobiliaria,
           imobiliaria_id: v.imobiliaria_id || imovelPrincipal?.imobiliaria_id,
           imovel_id: imovelPrincipal?.id || v.imovel_id,
           imoveis_ids: imoveisRoteiro.map((i) => i.id),
@@ -283,7 +314,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [imobiliarias]);
 
   useEffect(() => {
     carregarDados();
@@ -359,8 +390,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const adicionarProprietario = async (
     dados: Omit<Proprietario, 'id' | 'criado_em'>
   ): Promise<Proprietario> => {
-    const activeTenantName = currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis';
-    const activeTenantId = currentTenant?.id;
+    const activeTenantName = (currentTenant?.nome || imobiliarias[0]?.nome || 'Lagom Imóveis').trim();
+    const activeTenantId = currentTenant?.id || imobiliarias[0]?.id;
 
     const novoProp: Proprietario = {
       ...dados,
@@ -370,6 +401,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       criado_em: new Date().toISOString(),
       atualizado_em: new Date().toISOString(),
     };
+
+    setItemTenantInMap(novoProp.id, novoProp.imobiliaria);
 
     try {
       await supabase.from('proprietarios').insert(novoProp);
@@ -384,6 +417,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const atualizarProprietario = async (id: string, dados: Partial<Proprietario>) => {
+    if (dados.imobiliaria) {
+      setItemTenantInMap(id, dados.imobiliaria);
+    }
+
     try {
       await supabase.from('proprietarios').update(dados).eq('id', id);
     } catch (err) {
@@ -417,8 +454,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // CRUD IMÓVEIS & GATILHO DE EXCLUSÃO INTELIGENTE DE PROPRIETÁRIO
   // -------------------------------------------------------------
   const adicionarImovel = async (dados: Omit<Imovel, 'id' | 'criado_em'>): Promise<Imovel> => {
-    const activeTenantName = currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis';
-    const activeTenantId = currentTenant?.id;
+    const activeTenantName = (currentTenant?.nome || imobiliarias[0]?.nome || 'Lagom Imóveis').trim();
+    const activeTenantId = currentTenant?.id || imobiliarias[0]?.id;
     let finalPropId = dados.proprietario_id;
 
     // Se não tem proprietario_id, busca por telefone ou cria um novo proprietário automaticamente
@@ -451,6 +488,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       criado_em: new Date().toISOString(),
     };
 
+    setItemTenantInMap(novoImovel.id, novoImovel.imobiliaria);
+
     try {
       await supabase.from('imoveis').insert(novoImovel);
     } catch (err) {
@@ -465,6 +504,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const atualizarImovel = async (id: string, dados: Partial<Imovel>) => {
+    if (dados.imobiliaria) {
+      setItemTenantInMap(id, dados.imobiliaria);
+    }
+
     try {
       await supabase.from('imoveis').update(dados).eq('id', id);
     } catch (err) {
@@ -533,8 +576,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // CRUD CLIENTES
   // -------------------------------------------------------------
   const adicionarCliente = async (dados: Omit<Cliente, 'id' | 'criado_em'>): Promise<Cliente> => {
-    const activeTenantName = currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis';
-    const activeTenantId = currentTenant?.id;
+    const activeTenantName = (currentTenant?.nome || imobiliarias[0]?.nome || 'Lagom Imóveis').trim();
+    const activeTenantId = currentTenant?.id || imobiliarias[0]?.id;
 
     const novoCliente: Cliente = {
       ...dados,
@@ -543,6 +586,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       id: crypto.randomUUID ? crypto.randomUUID() : `cliente_${Date.now()}`,
       criado_em: new Date().toISOString(),
     };
+
+    setItemTenantInMap(novoCliente.id, novoCliente.imobiliaria);
 
     try {
       await supabase.from('clientes').insert(novoCliente);
@@ -558,6 +603,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const atualizarCliente = async (id: string, dados: Partial<Cliente>) => {
+    if (dados.imobiliaria) {
+      setItemTenantInMap(id, dados.imobiliaria);
+    }
+
     try {
       await supabase.from('clientes').update(dados).eq('id', id);
     } catch (err) {
@@ -618,8 +667,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const createdByUserId = dados.created_by_user_id || user?.id || 'user-admin-master';
     const createdByUserNome = dados.created_by_user_nome || user?.name || 'Roger Vasques Berchembrock';
-    const activeTenantName = currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis';
-    const activeTenantId = currentTenant?.id;
+    const activeTenantName = (currentTenant?.nome || imobiliarias[0]?.nome || 'Lagom Imóveis').trim();
+    const activeTenantId = currentTenant?.id || imobiliarias[0]?.id;
 
     const novaVisita: Visita = {
       ...dados,
@@ -647,6 +696,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       imoveis: imoveisRefs.length > 0 ? imoveisRefs : (imovelRef ? [imovelRef] : []),
       cliente: clienteRef,
     };
+
+    setItemTenantInMap(novaVisita.id, novaVisita.imobiliaria);
 
     // Disparo imediato de confirmação WhatsApp se habilitado e configurado
     if (enviarWhatsApp && notificarConfirmacao && configWhatsApp.ativo) {
@@ -1004,10 +1055,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         console.warn('Supabase update users offline:', err);
       }
 
-      // 2. Atualiza em memória e no localStorage todas as coleções
+      // 2. Atualiza tenantMap persistido
+      const tenantMap = getItemTenantMap();
+      let mapChanged = false;
+      Object.keys(tenantMap).forEach((id) => {
+        if (tenantMap[id]?.trim().toLowerCase() === antigoClean) {
+          tenantMap[id] = novoClean;
+          mapChanged = true;
+        }
+      });
+      if (mapChanged && typeof window !== 'undefined') {
+        localStorage.setItem(TENANT_ITEM_MAP_STORAGE_KEY, JSON.stringify(tenantMap));
+      }
+
+      // 3. Atualiza em memória e no localStorage todas as coleções
       setAllImoveis((prev) => {
         const next = prev.map((im) => {
-          if (!im.imobiliaria || im.imobiliaria.trim().toLowerCase() === antigoClean || im.imobiliaria.trim().toLowerCase() === 'easymob imóveis') {
+          if (im.imobiliaria && im.imobiliaria.trim().toLowerCase() === antigoClean) {
             return { ...im, imobiliaria: novoClean };
           }
           return im;
@@ -1018,7 +1082,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       setAllClientes((prev) => {
         const next = prev.map((cl) => {
-          if (!cl.imobiliaria || cl.imobiliaria.trim().toLowerCase() === antigoClean || cl.imobiliaria.trim().toLowerCase() === 'easymob imóveis') {
+          if (cl.imobiliaria && cl.imobiliaria.trim().toLowerCase() === antigoClean) {
             return { ...cl, imobiliaria: novoClean };
           }
           return cl;
@@ -1029,7 +1093,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       setAllProprietarios((prev) => {
         const next = prev.map((pr) => {
-          if (!pr.imobiliaria || pr.imobiliaria.trim().toLowerCase() === antigoClean || pr.imobiliaria.trim().toLowerCase() === 'easymob imóveis') {
+          if (pr.imobiliaria && pr.imobiliaria.trim().toLowerCase() === antigoClean) {
             return { ...pr, imobiliaria: novoClean };
           }
           return pr;
@@ -1040,7 +1104,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       setAllVisitas((prev) => {
         const next = prev.map((vs) => {
-          if (!vs.imobiliaria || vs.imobiliaria.trim().toLowerCase() === antigoClean || vs.imobiliaria.trim().toLowerCase() === 'easymob imóveis') {
+          if (vs.imobiliaria && vs.imobiliaria.trim().toLowerCase() === antigoClean) {
             return { ...vs, imobiliaria: novoClean };
           }
           return vs;
