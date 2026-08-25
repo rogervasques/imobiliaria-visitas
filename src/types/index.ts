@@ -96,6 +96,9 @@ export interface Cliente {
   etapa_crm?: EtapaCRM;
   imovel_interesse_id?: string;
   imovel_interesse_titulo?: string;
+  imovel_interesse_foto?: string;
+  prioridade?: 'alta' | 'media' | 'baixa';
+  tempo_parada_texto?: string;
   observacoes?: string;
   imobiliaria_id?: string;
   imobiliaria?: string;

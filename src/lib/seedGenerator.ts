@@ -309,7 +309,7 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
     });
   }
 
-  // 3. Gera 50 Clientes com preferências completas e 7 etapas de CRM
+  // 3. Gera 50 Clientes com preferências completas e distribuição de 2 a 3 leads por etapa no CRM
   const etapasCrmList: EtapaCRM[] = [
     'novos_leads',
     'qualificacao',
@@ -320,30 +320,100 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
     'venda_concluida',
   ];
 
+  const tagsPorEtapa: Record<EtapaCRM, string[]> = {
+    novos_leads: ['Sem contato há 2 dias', 'Novo lead (Hoje)', 'Aguardando 1º contato (1 dia)'],
+    qualificacao: ['Em atendimento (Hoje)', 'Sem retorno há 3 dias', 'Perfil enviado ontem'],
+    agendamento_visita: ['Visita marcada amanhã 14h', 'Visita marcada sábado 10h', 'Visita confirmada hoje'],
+    proposta_negociacao: ['Proposta enviada há 2 dias', 'Contraproposta em análise', 'Valores em negociação'],
+    documentacao_credito: ['Docs enviados para Caixa', 'Crédito pré-aprovado', 'Aguardando certidões'],
+    fechamento_contrato: ['Minuta em revisão', 'Assinatura agendada p/ sexta', 'Aguardando comprovante de sinal'],
+    venda_concluida: ['Contrato assinado & Sinal pago', 'Chaves entregues com sucesso', 'Comissão liberada'],
+  };
+
+  const prioridadesPorEtapa: Record<EtapaCRM, ('alta' | 'media' | 'baixa')[]> = {
+    novos_leads: ['alta', 'alta', 'media'],
+    qualificacao: ['alta', 'media', 'baixa'],
+    agendamento_visita: ['alta', 'alta', 'media'],
+    proposta_negociacao: ['alta', 'alta', 'media'],
+    documentacao_credito: ['alta', 'media', 'media'],
+    fechamento_contrato: ['alta', 'alta', 'media'],
+    venda_concluida: ['baixa', 'baixa', 'baixa'],
+  };
+
   const clientes: Cliente[] = CLIENTES_DATA.map((c, idx) => {
-    let etapaCrm: EtapaCRM = 'novos_leads';
-    if (c.status === 'fechado') {
-      etapaCrm = 'venda_concluida';
-    } else if (c.status === 'negociando') {
-      etapaCrm = idx % 2 === 0 ? 'proposta_negociacao' : 'documentacao_credito';
+    let etapaCrm: EtapaCRM;
+    let tempoParada: string;
+    let prioridade: 'alta' | 'media' | 'baixa';
+
+    // Garante distribuição exata de 3 leads por etapa para as primeiras 21 entradas
+    if (idx < 21) {
+      const etapaIndex = Math.floor(idx / 3);
+      etapaCrm = etapasCrmList[etapaIndex];
+      const subIdx = idx % 3;
+      tempoParada = tagsPorEtapa[etapaCrm][subIdx];
+      prioridade = prioridadesPorEtapa[etapaCrm][subIdx];
     } else {
-      etapaCrm = etapasCrmList[idx % 6]; // Distribui entre as 6 etapas ativas
+      // Distribui os demais nas etapas ativas
+      etapaCrm = etapasCrmList[idx % 6];
+      tempoParada = tagsPorEtapa[etapaCrm][idx % 3];
+      prioridade = idx % 2 === 0 ? 'alta' : 'media';
+    }
+
+    let statusCliente: StatusCliente = 'ativo';
+    if (etapaCrm === 'venda_concluida') statusCliente = 'fechado';
+    else if (etapaCrm === 'proposta_negociacao' || etapaCrm === 'documentacao_credito' || etapaCrm === 'fechamento_contrato') {
+      statusCliente = 'negociando';
+    }
+
+    // Primeiro lead é especificamente Carlos Eduardo Silva com Apto 3 Dorms — Até R$ 800k
+    let nomeCliente = c.nome;
+    let perfilCliente = c.perfil;
+    let orcamentoCliente = c.orcamento;
+    let telefoneCliente = c.telefone;
+
+    if (idx === 0) {
+      nomeCliente = 'Carlos Eduardo Silva';
+      telefoneCliente = '11987654321';
+      perfilCliente = 'Apto 3 Dorms — Até R$ 800k';
+      orcamentoCliente = 'Até R$ 800k';
+      tempoParada = 'Sem contato há 2 dias';
+      prioridade = 'alta';
+      etapaCrm = 'novos_leads';
+    } else if (idx === 1) {
+      nomeCliente = 'Mariana Albuquerque';
+      telefoneCliente = '11991234567';
+      perfilCliente = 'Cobertura Duplex — Até R$ 1.5M';
+      orcamentoCliente = 'Até R$ 1.5M';
+      tempoParada = 'Novo lead (Hoje)';
+      prioridade = 'alta';
+      etapaCrm = 'novos_leads';
+    } else if (idx === 2) {
+      nomeCliente = 'Lucas Ferreira Mendes';
+      telefoneCliente = '11977778888';
+      perfilCliente = 'Studio Jardins — Até R$ 450k';
+      orcamentoCliente = 'Até R$ 450k';
+      tempoParada = 'Aguardando 1º contato (1 dia)';
+      prioridade = 'media';
+      etapaCrm = 'novos_leads';
     }
 
     const imovelRef = imoveis[idx % imoveis.length];
 
     return {
       id: `cli-${String(idx + 1).padStart(3, '0')}`,
-      nome: c.nome,
-      telefone: c.telefone,
+      nome: nomeCliente,
+      telefone: telefoneCliente,
       email: c.email,
-      perfil_interesse: c.perfil,
-      faixa_orcamento: c.orcamento,
+      perfil_interesse: perfilCliente,
+      faixa_orcamento: orcamentoCliente,
       origem_lead: c.origem as OrigemLead,
-      status: c.status as StatusCliente,
+      status: statusCliente,
       etapa_crm: etapaCrm,
       imovel_interesse_id: imovelRef?.id,
       imovel_interesse_titulo: imovelRef?.titulo,
+      imovel_interesse_foto: imovelRef?.imagem_url,
+      prioridade,
+      tempo_parada_texto: tempoParada,
       observacoes: `Lead qualificado via ${c.origem}. Preferência de contato por WhatsApp.`,
       criado_em: new Date(now.getTime() - (45 - idx) * 86400000).toISOString(),
       atualizado_em: new Date().toISOString(),

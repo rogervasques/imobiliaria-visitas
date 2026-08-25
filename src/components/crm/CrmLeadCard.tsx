@@ -83,8 +83,10 @@ export function CrmLeadCard({
   const imovelInteresse = lead.imovel_interesse_id
     ? imoveis.find((i) => i.id === lead.imovel_interesse_id)
     : lead.imovel_interesse_titulo
-    ? { titulo: lead.imovel_interesse_titulo, codigo: undefined }
+    ? { titulo: lead.imovel_interesse_titulo, codigo: undefined, imagem_url: lead.imovel_interesse_foto, bairro: undefined, valor_venda: undefined, valor_locacao: undefined }
     : undefined;
+
+  const imovelFoto = (imovelInteresse as any)?.imagem_url || lead.imovel_interesse_foto;
 
   const origemConfig = lead.origem_lead ? ORIGEM_LABELS[lead.origem_lead] : null;
 
@@ -92,6 +94,13 @@ export function CrmLeadCard({
   const currentIndex = ETAPAS_ORDEM.findIndex((e) => e.id === etapaAtual);
   const prevEtapa = currentIndex > 0 ? ETAPAS_ORDEM[currentIndex - 1] : null;
   const nextEtapa = currentIndex < ETAPAS_ORDEM.length - 1 ? ETAPAS_ORDEM[currentIndex + 1] : null;
+
+  // Tempo de parada / tag de atenção
+  const tempoParada = lead.tempo_parada_texto || (lead.atualizado_em
+    ? `Atualizado ${new Date(lead.atualizado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
+    : 'Sem contato há 2 dias');
+
+  const isAlertaParada = tempoParada.toLowerCase().includes('sem contato') || tempoParada.toLowerCase().includes('sem retorno');
 
   return (
     <div
@@ -104,16 +113,16 @@ export function CrmLeadCard({
       onDragEnd={onDragEnd}
       onClick={() => onClickDetails(lead)}
       className={cn(
-        'group relative bg-white dark:bg-slate-900/90 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800',
+        'group relative bg-white dark:bg-slate-900/90 rounded-2xl p-3.5 border border-slate-200/80 dark:border-slate-800',
         'shadow-xs hover:shadow-md hover:border-emerald-500/40 dark:hover:border-emerald-500/40 transition-all duration-200 cursor-grab active:cursor-grabbing select-none',
         isDragging && 'opacity-40 ring-2 ring-emerald-500 scale-[0.98]'
       )}
     >
       {/* ─── TOPO: Avatar, Nome, Origem e Menu de 3 Pontos ─── */}
-      <div className="flex items-start justify-between gap-2.5">
+      <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Avatar com Iniciais */}
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold flex items-center justify-center text-xs shadow-sm shadow-emerald-600/20 shrink-0 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-extrabold flex items-center justify-center text-xs shadow-sm shadow-emerald-600/20 shrink-0 group-hover:scale-105 transition-transform">
             {getInitials(lead.nome)}
           </div>
 
@@ -121,8 +130,8 @@ export function CrmLeadCard({
             <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-tight truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
               {lead.nome}
             </h4>
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-              <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
+              <Phone className="w-3 h-3 text-emerald-500 shrink-0" />
               <span>{formatPhone(lead.telefone)}</span>
             </div>
           </div>
@@ -211,56 +220,81 @@ export function CrmLeadCard({
         </div>
       </div>
 
-      {/* ─── BADGES: Origem do Lead, Orçamento e Última Interação ─── */}
-      <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+      {/* ─── TAG VISUAL DE PRIORIDADE / TEMPO DE PARADA ─── */}
+      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+        <span
+          className={cn(
+            'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border',
+            isAlertaParada
+              ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800/70'
+              : 'bg-slate-100/80 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+          )}
+        >
+          <Clock className={cn('w-3 h-3', isAlertaParada ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400')} />
+          <span>{tempoParada}</span>
+        </span>
+
         {origemConfig && (
           <span className={cn('text-[10px] font-extrabold px-2 py-0.5 rounded-full', origemConfig.color)}>
             {origemConfig.label}
           </span>
         )}
 
-        {lead.faixa_orcamento && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-0.5">
-            <DollarSign className="w-3 h-3 text-emerald-500" />
-            {lead.faixa_orcamento}
+        {lead.prioridade === 'alta' && (
+          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 flex items-center gap-0.5">
+            <Sparkles className="w-2.5 h-2.5 text-rose-500" /> Alta
           </span>
         )}
-
-        {/* Tag de Última Interação / Atualização */}
-        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 flex items-center gap-1 ml-auto">
-          <Clock className="w-2.5 h-2.5" />
-          {lead.atualizado_em
-            ? new Date(lead.atualizado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-            : 'Recente'}
-        </span>
       </div>
 
-      {/* ─── INFORMAÇÕES DO INTERESSE DO LEAD ─── */}
-      <div className="mt-2.5 p-2.5 rounded-xl bg-slate-50/90 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80 text-xs space-y-1.5">
-        {lead.perfil_interesse && (
-          <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
-            <Tag className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-            <span className="line-clamp-2 leading-relaxed">{lead.perfil_interesse}</span>
+      {/* ─── PERFIL / ORÇAMENTO DO CLIENTE ─── */}
+      <div className="mt-2.5 p-2 rounded-xl bg-slate-50/90 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80 space-y-1">
+        <div className="flex items-start gap-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium">
+          <Tag className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+          <span className="line-clamp-2 leading-relaxed">
+            {lead.perfil_interesse || 'Perfil em qualificação'}
+          </span>
+        </div>
+
+        {lead.faixa_orcamento && (
+          <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 pt-1 border-t border-slate-200/40 dark:border-slate-800/60">
+            <DollarSign className="w-3 h-3 shrink-0" />
+            <span>Orçamento: {lead.faixa_orcamento}</span>
           </div>
         )}
+      </div>
 
-        {imovelInteresse && (
-          <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-semibold pt-1 border-t border-slate-200/50 dark:border-slate-800/80">
-            <Building2 className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-            <span className="truncate">{imovelInteresse.titulo}</span>
-          </div>
-        )}
+      {/* ─── IMÓVEL DE INTERESSE VINCULADO (COM MINIATURA E TÍTULO) ─── */}
+      {imovelInteresse && (
+        <div className="mt-2.5 flex items-center gap-2.5 p-2 rounded-xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
+          {imovelFoto ? (
+            <img
+              src={imovelFoto}
+              alt={imovelInteresse.titulo}
+              className="w-11 h-11 rounded-lg object-cover shrink-0 shadow-2xs border border-emerald-200/60 dark:border-emerald-800/60"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-11 h-11 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center shrink-0">
+              <Building2 className="w-5 h-5" />
+            </div>
+          )}
 
-        {proximaVisita && (
-          <div className="flex items-center gap-1.5 text-purple-700 dark:text-purple-400 font-semibold text-[11px] pt-1 border-t border-slate-200/50 dark:border-slate-800/80">
-            <CalendarCheck className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-            <span>
-              Visita: {new Date(proximaVisita.data_hora_visita).toLocaleDateString('pt-BR')} às{' '}
-              {new Date(proximaVisita.data_hora_visita).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          <div className="min-w-0 flex-1">
+            <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
+              Imóvel de Interesse
             </span>
+            <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate leading-tight mt-0.5">
+              {imovelInteresse.titulo}
+            </p>
+            {proximaVisita && (
+              <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1 mt-0.5">
+                <CalendarCheck className="w-2.5 h-2.5" /> Visita agendada
+              </span>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ─── RODAPÉ: Ações Rápidas (WhatsApp + Agendar Visita + Navegação de Etapa) ─── */}
       <div className="flex items-center justify-between gap-1.5 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>

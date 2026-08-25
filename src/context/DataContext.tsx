@@ -234,7 +234,59 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const local = getLocalItem('clientes');
         loadedClientes = local ? JSON.parse(local) : mockClientes;
       }
-      const sortedClientes = sortClientesAlphabetically(loadedClientes);
+
+      // Enriquecimento de Leads para as 7 etapas do CRM com miniaturas e tags
+      const etapasCrmFallback: EtapaCRM[] = [
+        'novos_leads',
+        'qualificacao',
+        'agendamento_visita',
+        'proposta_negociacao',
+        'documentacao_credito',
+        'fechamento_contrato',
+        'venda_concluida',
+      ];
+
+      const tagsFallback: Record<EtapaCRM, string[]> = {
+        novos_leads: ['Sem contato há 2 dias', 'Novo lead (Hoje)', 'Aguardando 1º contato (1 dia)'],
+        qualificacao: ['Em atendimento (Hoje)', 'Sem retorno há 3 dias', 'Perfil enviado ontem'],
+        agendamento_visita: ['Visita marcada amanhã 14h', 'Visita marcada sábado 10h', 'Visita confirmada hoje'],
+        proposta_negociacao: ['Proposta enviada há 2 dias', 'Contraproposta em análise', 'Valores em negociação'],
+        documentacao_credito: ['Docs enviados para Caixa', 'Crédito pré-aprovado', 'Aguardando certidões'],
+        fechamento_contrato: ['Minuta em revisão', 'Assinatura agendada p/ sexta', 'Aguardando sinal'],
+        venda_concluida: ['Contrato assinado & Sinal pago', 'Chaves entregues com sucesso', 'Comissão liberada'],
+      };
+
+      const enrichedClientes = loadedClientes.map((c, idx) => {
+        let etapa = c.etapa_crm;
+        if (!etapa || (etapa as any) === 'novo') etapa = 'novos_leads';
+        else if ((etapa as any) === 'em_atendimento') etapa = 'qualificacao';
+        else if ((etapa as any) === 'visita_agendada') etapa = 'agendamento_visita';
+        else if ((etapa as any) === 'proposta') etapa = 'proposta_negociacao';
+        else if ((etapa as any) === 'fechado') etapa = 'venda_concluida';
+
+        // Garante distribuição de 2 a 3 leads por etapa para as primeiras 21 entradas
+        if (idx < 21 && (!c.etapa_crm || c.etapa_crm === 'novos_leads' || c.etapa_crm === ('novo' as any))) {
+          etapa = etapasCrmFallback[Math.floor(idx / 3)];
+        }
+
+        const imovelRef = c.imovel_interesse_id
+          ? sortedImoveis.find((im) => im.id === c.imovel_interesse_id)
+          : sortedImoveis[idx % (sortedImoveis.length || 1)];
+
+        const tempoParada = c.tempo_parada_texto || tagsFallback[etapa][idx % 3];
+
+        return {
+          ...c,
+          etapa_crm: etapa,
+          imovel_interesse_id: c.imovel_interesse_id || imovelRef?.id,
+          imovel_interesse_titulo: c.imovel_interesse_titulo || imovelRef?.titulo,
+          imovel_interesse_foto: c.imovel_interesse_foto || imovelRef?.imagem_url,
+          tempo_parada_texto: tempoParada,
+          prioridade: c.prioridade || (idx % 2 === 0 ? 'alta' : 'media'),
+        };
+      });
+
+      const sortedClientes = sortClientesAlphabetically(enrichedClientes);
       setAllClientes(sortedClientes);
 
       if (!errConfig && dbConfig && dbConfig.api_url && !dbConfig.api_url.includes('exemplo-evolution')) {
