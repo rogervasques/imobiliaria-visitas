@@ -204,6 +204,7 @@ export interface ConfiguracaoWhatsApp {
   template_confirmacao_proprietario: string;
   template_lembrete_cliente: string;
   template_lembrete_proprietario: string;
+  template_comprovacao_proprietario?: string;
   template_pos_visita_cliente: string;
   criado_em?: string;
   atualizado_em?: string;
@@ -214,7 +215,7 @@ export interface WhatsAppLog {
   visita_id?: string;
   imobiliaria_id?: string;
   imobiliaria?: string;
-  tipo_mensagem: 'confirmacao_cliente' | 'confirmacao_proprietario' | 'lembrete_cliente' | 'lembrete_proprietario' | 'pos_visita_cliente' | 'avulsa';
+  tipo_mensagem: 'confirmacao_cliente' | 'confirmacao_proprietario' | 'lembrete_cliente' | 'lembrete_proprietario' | 'pos_visita_cliente' | 'comprovacao_proprietario' | 'avulsa';
   destinatario_nome: string;
   destinatario_telefone: string;
   tipo_destinatario: 'cliente' | 'proprietario' | 'corretor';

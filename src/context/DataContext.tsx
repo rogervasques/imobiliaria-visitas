@@ -953,14 +953,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       let propSuccessCount = 0;
       const uniquePropsTelefones = new Set<string>();
 
+      const templateComprovacao = configWhatsApp.template_comprovacao_proprietario ||
+        'Olá, {proprietario_nome}! Confirmamos que a visita ao seu imóvel *{imovel_titulo}* foi realizada com sucesso nesta data por intermédio do corretor *{corretor_nome}*, acompanhado do(a) cliente *{cliente_nome}*. Qualquer novidade sobre proposta, entraremos em contato!';
+
       for (const im of imoveisVisita) {
         if (!im || !im.proprietario_telefone) continue;
         if (uniquePropsTelefones.has(im.proprietario_telefone.trim())) continue;
         uniquePropsTelefones.add(im.proprietario_telefone.trim());
 
-        const msgProp =
-          `Olá, ${im.proprietario_nome || 'Proprietário'}! Informamos que a visita ao imóvel *"${im.titulo}"* com o cliente *${visita.cliente?.nome || 'Interessado'}* foi concluída com sucesso sob intermediação do corretor *${visita.corretor_nome || user?.name || 'Responsável'}*.\n\n` +
-          `Seguiremos acompanhando o cliente para eventuais propostas e feedbacks!`;
+        const propCtx: TemplateContext = {
+          ...ctx,
+          imovel_titulo: im.titulo,
+          imovel_codigo: im.codigo || '',
+          endereco: `${im.endereco}${im.numero ? `, ${im.numero}` : ''} - ${im.bairro}`,
+          proprietario_nome: im.proprietario_nome || 'Proprietário',
+          proprietario_telefone: im.proprietario_telefone,
+        };
+
+        const msgProp = compileTemplate(templateComprovacao, propCtx);
 
         const resProp = await sendWhatsAppMessage({
           toPhone: im.proprietario_telefone,
@@ -969,7 +979,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           instanceName: visitInstanceName,
           logInfo: {
             visitaId: visita.id,
-            tipoMensagem: 'confirmacao_proprietario',
+            tipoMensagem: 'comprovacao_proprietario',
             destinatarioNome: im.proprietario_nome || 'Proprietário',
             tipoDestinatario: 'proprietario',
           },

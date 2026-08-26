@@ -119,6 +119,10 @@ export function WhatsAppConfigForm() {
   const [templateConfProp, setTemplateConfProp] = useState(configWhatsApp.template_confirmacao_proprietario);
   const [templateLembCliente, setTemplateLembCliente] = useState(configWhatsApp.template_lembrete_cliente);
   const [templateLembProp, setTemplateLembProp] = useState(configWhatsApp.template_lembrete_proprietario);
+  const [templateComprovacaoProp, setTemplateComprovacaoProp] = useState(
+    configWhatsApp.template_comprovacao_proprietario ||
+    'Olá, {proprietario_nome}! Confirmamos que a visita ao seu imóvel *{imovel_titulo}* foi realizada com sucesso nesta data por intermédio do corretor *{corretor_nome}*, acompanhado do(a) cliente *{cliente_nome}*. Qualquer novidade sobre proposta, entraremos em contato!'
+  );
   const [templatePosVisita, setTemplatePosVisita] = useState(
     configWhatsApp.template_pos_visita_cliente ||
     '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*EasyMob - Gestão Imobiliária Inteligente*'
@@ -126,7 +130,7 @@ export function WhatsAppConfigForm() {
 
   const [activeTab, setActiveTab] = useState<'api' | 'templates' | 'automacao'>('api');
   const [selectedTemplateTab, setSelectedTemplateTab] = useState<
-    'conf_cliente' | 'conf_prop' | 'lemb_cliente' | 'lemb_prop' | 'pos_visita'
+    'conf_cliente' | 'conf_prop' | 'lemb_cliente' | 'lemb_prop' | 'comprovacao_prop' | 'pos_visita'
   >('conf_cliente');
   const templateTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
@@ -152,6 +156,9 @@ export function WhatsAppConfigForm() {
     } else if (selectedTemplateTab === 'lemb_prop') {
       currentText = templateLembProp;
       setTextFn = setTemplateLembProp;
+    } else if (selectedTemplateTab === 'comprovacao_prop') {
+      currentText = templateComprovacaoProp;
+      setTextFn = setTemplateComprovacaoProp;
     } else if (selectedTemplateTab === 'pos_visita') {
       currentText = templatePosVisita;
       setTextFn = setTemplatePosVisita;
@@ -387,6 +394,7 @@ export function WhatsAppConfigForm() {
         template_confirmacao_proprietario: templateConfProp,
         template_lembrete_cliente: templateLembCliente,
         template_lembrete_proprietario: templateLembProp,
+        template_comprovacao_proprietario: templateComprovacaoProp,
         template_pos_visita_cliente: templatePosVisita,
       });
       await checkStatus();
@@ -1125,7 +1133,8 @@ export function WhatsAppConfigForm() {
               { id: 'conf_prop' as const, label: '2. Confirmação Proprietário', icon: Bell },
               { id: 'lemb_cliente' as const, label: '3. Lembrete Cliente', icon: Clock },
               { id: 'lemb_prop' as const, label: '4. Lembrete Proprietário', icon: Clock },
-              { id: 'pos_visita' as const, label: '5. Pós-Visita Feedback', icon: Sparkles },
+              { id: 'comprovacao_prop' as const, label: '5. Comprovação de Visita (Proprietário)', icon: CheckCircle2 },
+              { id: 'pos_visita' as const, label: '6. Pós-Visita Feedback (Cliente)', icon: Sparkles },
             ].map((t) => {
               const Icon = t.icon;
               const isActive = selectedTemplateTab === t.id;
@@ -1180,10 +1189,16 @@ export function WhatsAppConfigForm() {
                             4. Lembrete 1 Hora Antes (Proprietário)
                           </>
                         )}
+                        {selectedTemplateTab === 'comprovacao_prop' && (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            5. Comprovação de Visita Realizada (Proprietário)
+                          </>
+                        )}
                         {selectedTemplateTab === 'pos_visita' && (
                           <>
                             <Sparkles className="w-4 h-4 text-purple-500" />
-                            5. Pós-Visita / Feedback (Cliente - 2 Horas Após)
+                            6. Pós-Visita / Feedback (Cliente - 2 Horas Após)
                           </>
                         )}
                       </CardTitle>
@@ -1196,6 +1211,8 @@ export function WhatsAppConfigForm() {
                           'Disparado automaticamente para o cliente 1 hora antes do horário marcado.'}
                         {selectedTemplateTab === 'lemb_prop' &&
                           'Disparado automaticamente para o proprietário 1 hora antes do horário marcado.'}
+                        {selectedTemplateTab === 'comprovacao_prop' &&
+                          'Disparado para o proprietário após a visita confirmando formalmente a realização do atendimento intermediado pelo corretor.'}
                         {selectedTemplateTab === 'pos_visita' &&
                           'Disparado para o cliente 2 horas após a visita para colher feedback e engajar nova proposta.'}
                       </p>
@@ -1224,6 +1241,8 @@ export function WhatsAppConfigForm() {
                           ? templateLembCliente
                           : selectedTemplateTab === 'lemb_prop'
                           ? templateLembProp
+                          : selectedTemplateTab === 'comprovacao_prop'
+                          ? templateComprovacaoProp
                           : templatePosVisita
                       }
                       onChange={(e) => {
@@ -1232,6 +1251,7 @@ export function WhatsAppConfigForm() {
                         else if (selectedTemplateTab === 'conf_prop') setTemplateConfProp(val);
                         else if (selectedTemplateTab === 'lemb_cliente') setTemplateLembCliente(val);
                         else if (selectedTemplateTab === 'lemb_prop') setTemplateLembProp(val);
+                        else if (selectedTemplateTab === 'comprovacao_prop') setTemplateComprovacaoProp(val);
                         else if (selectedTemplateTab === 'pos_visita') setTemplatePosVisita(val);
                       }}
                       className="w-full p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-sans leading-relaxed text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-y"
@@ -1320,6 +1340,8 @@ export function WhatsAppConfigForm() {
                             ? templateLembCliente
                             : selectedTemplateTab === 'lemb_prop'
                             ? templateLembProp
+                            : selectedTemplateTab === 'comprovacao_prop'
+                            ? templateComprovacaoProp
                             : templatePosVisita,
                           sampleContext
                         )

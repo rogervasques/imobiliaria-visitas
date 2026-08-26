@@ -22,6 +22,8 @@ export const mockConfigWhatsApp: ConfiguracaoWhatsApp = {
     '⏰ *Lembrete de Visita (em 1 hora)*\n\nOlá, {cliente_nome}! Lembramos que sua visita aos imóveis acontecerá hoje às *{horario}*.\n\n📍 *Roteiro:*\n{roteiro_imoveis}\n\n📍 *Como Chegar:* {link_curto_mapa}\n\n👤 *Corretor:* {corretor_nome} ({corretor_telefone})\n\nTe vejo lá!\n*EasyMob*',
   template_lembrete_proprietario:
     '⏰ *Lembrete de Visita (em 1 hora)*\n\nOlá, {proprietario_nome}! A *EasyMob* lembra que a visita ao seu imóvel *{imovel_titulo}* com o cliente {cliente_nome} acontecerá às *{horario}*.\n\n👤 *Corretor:* {corretor_nome}\n*EasyMob*',
+  template_comprovacao_proprietario:
+    'Olá, {proprietario_nome}! Confirmamos que a visita ao seu imóvel *{imovel_titulo}* foi realizada com sucesso nesta data por intermédio do corretor *{corretor_nome}*, acompanhado do(a) cliente *{cliente_nome}*. Qualquer novidade sobre proposta, entraremos em contato!',
   template_pos_visita_cliente:
     '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*EasyMob - Gestão Imobiliária Inteligente*',
 };
