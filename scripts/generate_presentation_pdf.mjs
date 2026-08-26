@@ -144,7 +144,7 @@ doc.text(splitSub, 25, 147);
 const cards = [
   { title: 'Régua de Notificações WhatsApp', desc: 'Disparos automáticos e individuais pelo número do próprio corretor.' },
   { title: 'Comprovante com Validade Jurídica', desc: 'Histórico auditável (48h) com criptografia AES-256 e PDF certificado.' },
-  { title: 'Roteiros Multi-Imóveis & Logística', desc: 'Agendamento de múltiplos imóveis, chaves, portarias e rotas no Waze/Maps.' },
+  { title: 'Roteiros Multi-Imóveis & Logística', desc: 'Agendamento de múltiplos imóveis, chaves, portarias e rotas no Google Maps.' },
   { title: 'Multi-Tenant & 100% Mobile (PWA)', desc: 'Instalável no iOS/Android sem App Store e isolamento por imobiliária.' }
 ];
 
@@ -218,7 +218,7 @@ autoTable(doc, {
     ],
     [
       'Logística de visitas confusa:\nVisitar múltiplos imóveis gera erros de rota, atrasos e perda de informações de portaria.',
-      'Roteiro de Visitas Inteligente:\nAgrupamento de múltiplos imóveis, integração nativa com Waze/Maps e dados de portaria/chaves.',
+      'Roteiro de Visitas Inteligente:\nAgrupamento de múltiplos imóveis, integração nativa com Google Maps e dados de portaria/chaves.',
       'Economia de até 40%\nno tempo de deslocamento.'
     ]
   ],
@@ -297,8 +297,8 @@ const pCols = [
     desc: 'Permite selecionar 1, 2, 3 ou mais imóveis para o mesmo cliente, gerando um roteiro sequencial com foto, endereço, valores e dados de chaves.'
   },
   {
-    title: 'Navegação Waze & Maps',
-    desc: 'Botões de 1 clique para traçar a melhor rota no Waze ou Google Maps diretamente no celular do corretor, sem precisar digitar endereços.'
+    title: 'Navegação Google Maps',
+    desc: 'Botão de 1 clique para traçar a melhor rota no Google Maps diretamente no celular do corretor, sem precisar digitar endereços.'
   },
   {
     title: 'Chaves & Portaria',
@@ -669,7 +669,7 @@ doc.setTextColor(226, 232, 240);
 const pwaLines = [
   '• Experiência de Aplicativo Nativo: Adicione o ícone da EasyMob na tela de início do seu iPhone ou Android diretamente pelo Safari/Chrome.',
   '• Sem Necessidade de App Store: Sem burocracia de download ou atualizações manuais; a equipe sempre acessa a versão mais recente.',
-  '• Acesso Ágil em Campo: Corretores consultam roteiros, acionam o Waze e enviam WhatsApps mesmo durante o deslocamento entre imóveis.'
+  '• Acesso Ágil em Campo: Corretores consultam roteiros, acionam o mapa e enviam WhatsApps mesmo durante o deslocamento entre imóveis.'
 ];
 let pwaLineY = pwaY + 16;
 pwaLines.forEach(pl => {

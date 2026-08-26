@@ -24,7 +24,6 @@ import {
   Volume2,
   Image as ImageIcon,
   Lock,
-  Navigation,
   Key,
   ChevronDown,
   ChevronUp,
@@ -461,10 +460,6 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
                 const waProp = im.proprietario_telefone
                   ? getWhatsAppDirectLink(im.proprietario_telefone, `Olá, ${im.proprietario_nome}! Sobre a visita agendada pela EasyMob ao imóvel "${im.titulo}".`)
                   : '#';
-                const linkWaze = `https://waze.com/ul?q=${encodeURIComponent(
-                  `${im.endereco}, ${im.numero || ''} ${im.bairro || ''} ${im.cidade || ''}`
-                )}`;
-
                 return (
                   <div
                     key={im.id || index}
@@ -504,17 +499,6 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
-                            <a
-                              href={linkWaze}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/50 hover:bg-sky-100 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-200 dark:border-sky-800 transition-colors"
-                              title="Abrir no Waze"
-                            >
-                              <Navigation className="w-3.5 h-3.5 text-sky-500" />
-                              <span>Waze</span>
-                            </a>
                             <a
                               href={getGoogleMapsSearchUrl(im)}
                               target="_blank"
