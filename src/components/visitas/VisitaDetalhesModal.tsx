@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
-import { Visita, Imovel, StatusDisparoWhatsApp, LogMensagem } from '@/types';
+import { Visita, Imovel, StatusDisparoWhatsApp, LogMensagem, ConfiguracaoWhatsApp } from '@/types';
 import { ImovelDetalhesModal } from '../imoveis/ImovelDetalhesModal';
 import { EditarVisitaModal } from './EditarVisitaModal';
 import {
@@ -28,10 +28,13 @@ import {
   Key,
   ChevronDown,
   ChevronUp,
+  MessageCircle,
 } from 'lucide-react';
 import { formatDateTime, formatPhone, getWhatsAppDirectLink, formatCurrency } from '@/lib/utils';
 import { getGoogleMapsSearchUrl } from '@/lib/maps';
 import { gerarRelatorioAtendimentoPdf, getVisitaLogs } from '@/lib/pdfDossieGenerator';
+import { buildTemplateContext, compileTemplate } from '@/lib/whatsapp';
+import { mockConfigWhatsApp } from '@/lib/mockData';
 import { useTenant } from '@/context/TenantContext';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
@@ -42,21 +45,109 @@ interface VisitaDetalhesModalProps {
   onClose: () => void;
 }
 
+/**
+ * Monta o link direto do WhatsApp com mensagem pronta preenchida para cada tipo de disparo
+ */
+function getManualWhatsAppLink(
+  visita: Visita,
+  tipo:
+    | 'confirmacao_cliente'
+    | 'confirmacao_proprietario'
+    | 'lembrete_cliente'
+    | 'lembrete_proprietario'
+    | 'pos_visita_cliente'
+    | 'comprovacao_proprietario',
+  configWhatsApp?: ConfiguracaoWhatsApp
+): string {
+  const isCliente = tipo.includes('cliente');
+  const telefone = isCliente
+    ? visita.cliente?.telefone
+    : (visita.imoveis?.[0]?.proprietario_telefone || visita.imovel?.proprietario_telefone);
+
+  if (!telefone) return '#';
+
+  const ctx = buildTemplateContext(visita);
+  let template = '';
+
+  switch (tipo) {
+    case 'confirmacao_cliente':
+      template = configWhatsApp?.template_confirmacao_cliente || mockConfigWhatsApp.template_confirmacao_cliente;
+      break;
+    case 'confirmacao_proprietario':
+      template = configWhatsApp?.template_confirmacao_proprietario || mockConfigWhatsApp.template_confirmacao_proprietario;
+      break;
+    case 'lembrete_cliente':
+      template = configWhatsApp?.template_lembrete_cliente || mockConfigWhatsApp.template_lembrete_cliente;
+      break;
+    case 'lembrete_proprietario':
+      template = configWhatsApp?.template_lembrete_proprietario || mockConfigWhatsApp.template_lembrete_proprietario;
+      break;
+    case 'pos_visita_cliente':
+      template = configWhatsApp?.template_pos_visita_cliente || mockConfigWhatsApp.template_pos_visita_cliente;
+      break;
+    case 'comprovacao_proprietario':
+      template =
+        configWhatsApp?.template_comprovacao_proprietario ||
+        mockConfigWhatsApp.template_comprovacao_proprietario ||
+        'Olá, {proprietario_nome}! Confirmamos que a visita ao seu imóvel *{imovel_titulo}* foi realizada com sucesso nesta data por intermédio do corretor *{corretor_nome}*, acompanhado do(a) cliente *{cliente_nome}*.';
+      break;
+  }
+
+  const mensagemFormatada = compileTemplate(template, ctx);
+  return getWhatsAppDirectLink(telefone, mensagemFormatada);
+}
+
 function RecipientStatusRow({
   label,
   status,
   ativo,
+  whatsappLink,
 }: {
   label: string;
   status?: StatusDisparoWhatsApp;
   ativo?: boolean;
+  whatsappLink?: string;
 }) {
+  const hasLink = Boolean(whatsappLink && whatsappLink !== '#');
+
+  const labelWithAction = (
+    <div className="flex items-center gap-1.5 min-w-0">
+      <span className="font-semibold text-slate-700 dark:text-slate-300">{label}:</span>
+      {hasLink && (
+        <a
+          href={whatsappLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center justify-center p-0.5 px-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all text-[10px] font-bold shadow-2xs shrink-0 cursor-pointer"
+          title={`Disparo Manual: Abrir WhatsApp com mensagem pré-formatada (${label})`}
+        >
+          <span className="text-[11px] leading-none">💬</span>
+        </a>
+      )}
+    </div>
+  );
+
   // 1. Inativo ou N/A (Desmarcado na criação da visita)
   if (ativo === false || status === 'ignorado' || status === 'inativo') {
     return (
       <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-        <span className="font-semibold text-slate-500 dark:text-slate-400">{label}:</span>
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="font-semibold text-slate-500 dark:text-slate-400">{label}:</span>
+          {hasLink && (
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center justify-center p-0.5 px-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all text-[10px] font-bold shadow-2xs shrink-0 cursor-pointer"
+              title={`Disparo Manual: Abrir WhatsApp com mensagem pré-formatada (${label})`}
+            >
+              <span className="text-[11px] leading-none">💬</span>
+            </a>
+          )}
+        </div>
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 dark:text-slate-500 shrink-0">
           <span className="text-[10px]">🚫</span> N/A
         </span>
       </div>
@@ -67,8 +158,8 @@ function RecipientStatusRow({
   if (status === 'falha') {
     return (
       <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-        <span className="font-semibold text-slate-700 dark:text-slate-300">{label}:</span>
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+        {labelWithAction}
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400 shrink-0">
           <AlertTriangle className="w-3 h-3 text-rose-500 shrink-0" /> Falha
         </span>
       </div>
@@ -79,8 +170,8 @@ function RecipientStatusRow({
   if (status === 'visualizado' || status === 'lido') {
     return (
       <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-        <span className="font-semibold text-slate-700 dark:text-slate-300">{label}:</span>
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 dark:text-sky-400">
+        {labelWithAction}
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 dark:text-sky-400 shrink-0">
           <CheckCheck className="w-3.5 h-3.5 text-sky-500 stroke-[2.5]" /> Visualizado
         </span>
       </div>
@@ -91,8 +182,8 @@ function RecipientStatusRow({
   if (status === 'entregue') {
     return (
       <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-        <span className="font-semibold text-slate-700 dark:text-slate-300">{label}:</span>
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300">
+        {labelWithAction}
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 shrink-0">
           <CheckCheck className="w-3.5 h-3.5 text-slate-400 stroke-[2.5]" /> Entregue
         </span>
       </div>
@@ -103,8 +194,8 @@ function RecipientStatusRow({
   if (status === 'enviado') {
     return (
       <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-        <span className="font-semibold text-slate-700 dark:text-slate-300">{label}:</span>
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+        {labelWithAction}
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
           <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[2.5]" /> Enviado
         </span>
       </div>
@@ -114,8 +205,8 @@ function RecipientStatusRow({
   // 6. Agendado / Pendente
   return (
     <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-      <span className="font-semibold text-slate-700 dark:text-slate-300">{label}:</span>
-      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+      {labelWithAction}
+      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 shrink-0">
         <span className="text-[10px]">⏳</span> Agendado
       </span>
     </div>
@@ -473,7 +564,7 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
             </div>
           </div>
 
-          {/* ── SEÇÃO 3: RÉGUA DE NOTIFICAÇÕES WHATSAPP (DESIGN CLEAN) ── */}
+          {/* ── SEÇÃO 3: RÉGUA DE NOTIFICAÇÕES WHATSAPP COM ATALHOS DE DISPARO MANUAL ── */}
           <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 space-y-3">
             <div className="flex items-center justify-between border-b border-emerald-200/60 dark:border-emerald-800/40 pb-2">
               <h4 className="text-xs font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-200 flex items-center gap-1.5">
@@ -501,11 +592,13 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
                     label="Cliente"
                     status={visita.whatsapp_confirmacao_cliente}
                     ativo={visita.notificar_confirmacao_cliente !== false && visita.notificar_confirmacao !== false}
+                    whatsappLink={getManualWhatsAppLink(visita, 'confirmacao_cliente', configWhatsApp)}
                   />
                   <RecipientStatusRow
                     label="Proprietário"
                     status={visita.whatsapp_confirmacao_proprietario}
                     ativo={visita.notificar_confirmacao_proprietario !== false && visita.notificar_confirmacao !== false}
+                    whatsappLink={getManualWhatsAppLink(visita, 'confirmacao_proprietario', configWhatsApp)}
                   />
                 </div>
               </div>
@@ -525,11 +618,13 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
                     label="Cliente"
                     status={visita.whatsapp_lembrete_cliente}
                     ativo={visita.notificar_lembrete_cliente !== false && visita.notificar_lembrete !== false}
+                    whatsappLink={getManualWhatsAppLink(visita, 'lembrete_cliente', configWhatsApp)}
                   />
                   <RecipientStatusRow
                     label="Proprietário"
                     status={visita.whatsapp_lembrete_proprietario}
                     ativo={visita.notificar_lembrete_proprietario !== false && visita.notificar_lembrete !== false}
+                    whatsappLink={getManualWhatsAppLink(visita, 'lembrete_proprietario', configWhatsApp)}
                   />
                 </div>
               </div>
@@ -549,11 +644,13 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
                     label="Cliente"
                     status={visita.whatsapp_pos_visita_cliente}
                     ativo={visita.notificar_pos_visita !== false}
+                    whatsappLink={getManualWhatsAppLink(visita, 'pos_visita_cliente', configWhatsApp)}
                   />
                   <RecipientStatusRow
                     label="Proprietário"
                     status={visita.whatsapp_comprovacao_proprietario}
                     ativo={visita.notificar_comprovacao_proprietario !== false}
+                    whatsappLink={getManualWhatsAppLink(visita, 'comprovacao_proprietario', configWhatsApp)}
                   />
                 </div>
               </div>
