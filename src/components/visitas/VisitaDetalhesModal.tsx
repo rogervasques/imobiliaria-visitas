@@ -28,7 +28,6 @@ import {
   Key,
   ChevronDown,
   ChevronUp,
-  MessageCircle,
 } from 'lucide-react';
 import { formatDateTime, formatPhone, getWhatsAppDirectLink, formatCurrency } from '@/lib/utils';
 import { getGoogleMapsSearchUrl } from '@/lib/maps';
@@ -43,6 +42,24 @@ interface VisitaDetalhesModalProps {
   visita: Visita | null;
   isOpen: boolean;
   onClose: () => void;
+}
+
+/**
+ * Ícone Oficial do WhatsApp em SVG
+ */
+function WhatsAppIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="1em"
+      height="1em"
+      className={className}
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.04 14.69 2 12.04 2ZM12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.04 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15ZM16.56 14.41C16.31 14.29 15.09 13.69 14.86 13.6C14.63 13.52 14.47 13.48 14.3 13.73C14.13 13.98 13.66 14.54 13.51 14.71C13.37 14.87 13.22 14.89 12.97 14.77C12.72 14.65 11.93 14.39 10.98 13.55C10.24 12.89 9.74 12.08 9.6 11.83C9.45 11.58 9.58 11.45 9.71 11.32C9.82 11.21 9.96 11.03 10.08 10.89C10.21 10.74 10.25 10.64 10.33 10.47C10.41 10.31 10.37 10.16 10.31 10.04C10.25 9.92 9.75 8.7 9.55 8.2C9.35 7.71 9.15 7.78 8.99 7.77C8.85 7.76 8.68 7.76 8.52 7.76C8.35 7.76 8.08 7.82 7.85 8.07C7.62 8.32 6.98 8.92 6.98 10.14C6.98 11.36 7.87 12.53 7.99 12.7C8.12 12.86 9.74 15.36 12.22 16.43C12.81 16.69 13.27 16.84 13.63 16.96C14.22 17.15 14.76 17.12 15.19 17.06C15.67 16.99 16.66 16.46 16.86 15.89C17.07 15.31 17.07 14.82 17.01 14.71C16.95 14.61 16.81 14.54 16.56 14.41Z" />
+    </svg>
+  );
 }
 
 /**
@@ -110,46 +127,32 @@ function RecipientStatusRow({
 }) {
   const hasLink = Boolean(whatsappLink && whatsappLink !== '#');
 
-  const labelWithAction = (
-    <div className="flex items-center gap-1.5 min-w-0">
-      <span className="font-semibold text-slate-700 dark:text-slate-300">{label}:</span>
-      {hasLink && (
-        <a
-          href={whatsappLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center justify-center p-0.5 px-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all text-[10px] font-bold shadow-2xs shrink-0 cursor-pointer"
-          title={`Disparo Manual: Abrir WhatsApp com mensagem pré-formatada (${label})`}
-        >
-          <span className="text-[11px] leading-none">💬</span>
-        </a>
-      )}
-    </div>
-  );
+  const waActionBtn = hasLink ? (
+    <a
+      href={whatsappLink}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#25D366] hover:bg-[#20ba59] active:scale-90 text-white transition-all shadow-2xs shrink-0 cursor-pointer"
+      title={`Disparo Manual: Abrir WhatsApp com mensagem preenchida (${label})`}
+    >
+      <WhatsAppIcon className="w-3 h-3 text-white fill-white" />
+    </a>
+  ) : null;
 
   // 1. Inativo ou N/A (Desmarcado na criação da visita)
   if (ativo === false || status === 'ignorado' || status === 'inativo') {
     return (
-      <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
+      <div className="flex items-center justify-between gap-2 text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="font-semibold text-slate-500 dark:text-slate-400">{label}:</span>
-          {hasLink && (
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center justify-center p-0.5 px-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all text-[10px] font-bold shadow-2xs shrink-0 cursor-pointer"
-              title={`Disparo Manual: Abrir WhatsApp com mensagem pré-formatada (${label})`}
-            >
-              <span className="text-[11px] leading-none">💬</span>
-            </a>
-          )}
+          <span className="font-semibold text-slate-500 dark:text-slate-400 truncate">{label}:</span>
+          {waActionBtn}
         </div>
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 dark:text-slate-500 shrink-0">
-          <span className="text-[10px]">🚫</span> N/A
-        </span>
+        <div className="shrink-0 flex items-center">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+            <span className="text-[10px]">🚫</span> N/A
+          </span>
+        </div>
       </div>
     );
   }
@@ -157,11 +160,16 @@ function RecipientStatusRow({
   // 2. Falha
   if (status === 'falha') {
     return (
-      <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-        {labelWithAction}
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400 shrink-0">
-          <AlertTriangle className="w-3 h-3 text-rose-500 shrink-0" /> Falha
-        </span>
+      <div className="flex items-center justify-between gap-2 text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">{label}:</span>
+          {waActionBtn}
+        </div>
+        <div className="shrink-0 flex items-center">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+            <AlertTriangle className="w-3 h-3 text-rose-500 shrink-0" /> Falha
+          </span>
+        </div>
       </div>
     );
   }
@@ -169,11 +177,16 @@ function RecipientStatusRow({
   // 3. Visualizado
   if (status === 'visualizado' || status === 'lido') {
     return (
-      <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-        {labelWithAction}
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 dark:text-sky-400 shrink-0">
-          <CheckCheck className="w-3.5 h-3.5 text-sky-500 stroke-[2.5]" /> Visualizado
-        </span>
+      <div className="flex items-center justify-between gap-2 text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">{label}:</span>
+          {waActionBtn}
+        </div>
+        <div className="shrink-0 flex items-center">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 dark:text-sky-400">
+            <CheckCheck className="w-3.5 h-3.5 text-sky-500 stroke-[2.5]" /> Visualizado
+          </span>
+        </div>
       </div>
     );
   }
@@ -181,11 +194,16 @@ function RecipientStatusRow({
   // 4. Entregue
   if (status === 'entregue') {
     return (
-      <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-        {labelWithAction}
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 shrink-0">
-          <CheckCheck className="w-3.5 h-3.5 text-slate-400 stroke-[2.5]" /> Entregue
-        </span>
+      <div className="flex items-center justify-between gap-2 text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">{label}:</span>
+          {waActionBtn}
+        </div>
+        <div className="shrink-0 flex items-center">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300">
+            <CheckCheck className="w-3.5 h-3.5 text-slate-400 stroke-[2.5]" /> Entregue
+          </span>
+        </div>
       </div>
     );
   }
@@ -193,22 +211,32 @@ function RecipientStatusRow({
   // 5. Enviado
   if (status === 'enviado') {
     return (
-      <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-        {labelWithAction}
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-          <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[2.5]" /> Enviado
-        </span>
+      <div className="flex items-center justify-between gap-2 text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">{label}:</span>
+          {waActionBtn}
+        </div>
+        <div className="shrink-0 flex items-center">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+            <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[2.5]" /> Enviado
+          </span>
+        </div>
       </div>
     );
   }
 
   // 6. Agendado / Pendente
   return (
-    <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
-      {labelWithAction}
-      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 shrink-0">
-        <span className="text-[10px]">⏳</span> Agendado
-      </span>
+    <div className="flex items-center justify-between gap-2 text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">{label}:</span>
+        {waActionBtn}
+      </div>
+      <div className="shrink-0 flex items-center">
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+          <span className="text-[10px]">⏳</span> Agendado
+        </span>
+      </div>
     </div>
   );
 }
@@ -381,7 +409,7 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
         onClose={onClose}
         title={imoveisLista.length > 1 ? `Roteiro de Visitas (${imoveisLista.length} Imóveis)` : 'Detalhes da Visita'}
         subtitle={imoveisLista.length > 1 ? `Cliente: ${cliente?.nome || '—'}` : (imoveisLista[0]?.titulo || 'Compromisso')}
-        maxWidth="2xl"
+        maxWidth="3xl"
         headerActions={
           <div className="flex items-center gap-2">
             <button
@@ -578,7 +606,7 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Card 1: Confirmação Imediata */}
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-xs">
+              <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-xs">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                   <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100">
                     1. Confirmação
@@ -604,7 +632,7 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
               </div>
 
               {/* Card 2: Lembrete (1h antes) */}
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-xs">
+              <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-xs">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                   <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100">
                     2. Lembrete
@@ -630,7 +658,7 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
               </div>
 
               {/* Card 3: Feedback Pós-Visita (Na Conclusão) */}
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-xs">
+              <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-xs">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                   <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100">
                     3. Pós-Visita
