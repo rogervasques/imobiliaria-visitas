@@ -9,6 +9,7 @@ interface TenantContextType {
   imobiliarias: Imobiliaria[];
   currentTenant: Imobiliaria;
   isAllTenantsSelected: boolean;
+  moduloCrmAtivo: boolean;
   setCurrentTenant: (tenantOrNome: Imobiliaria | string) => void;
   adicionarImobiliaria: (dados: Partial<Imobiliaria> | string, logoUrl?: string) => Promise<Imobiliaria>;
   atualizarImobiliaria: (id: string, dados: Partial<Imobiliaria>) => Promise<Imobiliaria>;
@@ -24,6 +25,7 @@ export const DEFAULT_IMOBILIARIAS: Imobiliaria[] = [
     slug: 'lagom-imoveis',
     telefone: '11999999999',
     email: 'contato@lagomimoveis.com.br',
+    modulo_crm_ativo: true,
     criado_em: new Date().toISOString(),
   },
   {
@@ -32,6 +34,7 @@ export const DEFAULT_IMOBILIARIAS: Imobiliaria[] = [
     slug: 'prime',
     telefone: '11988887777',
     email: 'contato@primeimoveis.com.br',
+    modulo_crm_ativo: true,
     criado_em: new Date().toISOString(),
   },
   {
@@ -40,6 +43,7 @@ export const DEFAULT_IMOBILIARIAS: Imobiliaria[] = [
     slug: 'nova-era',
     telefone: '11977776666',
     email: 'atendimento@novaera.com.br',
+    modulo_crm_ativo: true,
     criado_em: new Date().toISOString(),
   },
 ];
@@ -226,6 +230,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       const email = typeof dados === 'object' ? dados.email : undefined;
       const telefone = typeof dados === 'object' ? dados.telefone : undefined;
       const endereco = typeof dados === 'object' ? dados.endereco : undefined;
+      const modulo_crm_ativo = typeof dados === 'object' && dados.modulo_crm_ativo !== undefined ? dados.modulo_crm_ativo : true;
 
       const newTenant: Imobiliaria = {
         id: `tenant-${Date.now()}`,
@@ -235,6 +240,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         email,
         telefone,
         endereco,
+        modulo_crm_ativo,
         criado_em: new Date().toISOString(),
       };
 
@@ -378,12 +384,15 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     [currentTenant.id]
   );
 
+  const moduloCrmAtivo = currentTenant?.modulo_crm_ativo !== false;
+
   return (
     <TenantContext.Provider
       value={{
         imobiliarias,
         currentTenant,
         isAllTenantsSelected: false,
+        moduloCrmAtivo,
         setCurrentTenant,
         adicionarImobiliaria,
         atualizarImobiliaria,

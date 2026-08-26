@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
+import { useTenant } from '@/context/TenantContext';
 import { WhatsAppStatusBadge } from './WhatsAppStatusBadge';
 
 interface BottomNavProps {
@@ -34,6 +35,7 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
   const pathname = usePathname();
   const { metrics, proprietarios, clientes } = useData();
   const { user, logout } = useAuth();
+  const { moduloCrmAtivo } = useTenant();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const totalLeadsAtivosCrm = clientes.filter((c) => {
@@ -42,13 +44,17 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
   }).length;
 
   const moreItems = [
-    {
-      label: 'CRM (Kanban de Leads)',
-      href: '/crm',
-      icon: Kanban,
-      badge: totalLeadsAtivosCrm > 0 ? `${totalLeadsAtivosCrm}` : undefined,
-      description: 'Funil visual e gestão de negociações',
-    },
+    ...(moduloCrmAtivo
+      ? [
+          {
+            label: 'CRM (Kanban de Leads)',
+            href: '/crm',
+            icon: Kanban,
+            badge: totalLeadsAtivosCrm > 0 ? `${totalLeadsAtivosCrm}` : undefined,
+            description: 'Funil visual e gestão de negociações',
+          },
+        ]
+      : []),
     {
       label: 'Proprietários',
       href: '/proprietarios',

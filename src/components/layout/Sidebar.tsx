@@ -34,7 +34,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { metrics, proprietarios, clientes } = useData();
   const { user, logout } = useAuth();
-  const { imobiliarias, currentTenant, setCurrentTenant, adicionarImobiliaria } = useTenant();
+  const { imobiliarias, currentTenant, setCurrentTenant, adicionarImobiliaria, moduloCrmAtivo } = useTenant();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNewTenantModalOpen, setIsNewTenantModalOpen] = useState(false);
@@ -92,7 +92,9 @@ export function Sidebar() {
   const navItems = [
     { label: 'Hoje', href: '/dashboard', icon: LayoutDashboard, badge: metrics.totalVisitasHoje ? `${metrics.totalVisitasHoje}` : undefined },
     { label: 'Agenda', href: '/agenda', icon: CalendarDays },
-    { label: 'CRM', href: '/crm', icon: Kanban, badge: totalLeadsAtivosCrm > 0 ? `${totalLeadsAtivosCrm}` : undefined },
+    ...(moduloCrmAtivo
+      ? [{ label: 'CRM', href: '/crm', icon: Kanban, badge: totalLeadsAtivosCrm > 0 ? `${totalLeadsAtivosCrm}` : undefined }]
+      : []),
     { label: 'Imóveis', href: '/imoveis', icon: Building2, badge: `${metrics.totalImoveisAtivos}` },
     { label: 'Proprietários', href: '/proprietarios', icon: UserCheck, badge: `${proprietarios.length}` },
     { label: 'Clientes', href: '/clientes', icon: Users, badge: `${metrics.totalClientesAtivos}` },

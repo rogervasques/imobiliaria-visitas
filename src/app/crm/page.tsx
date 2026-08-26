@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useData } from '@/context/DataContext';
+import { useTenant } from '@/context/TenantContext';
 import { Cliente, EtapaCRM, Visita } from '@/types';
 import { KanbanColumn } from '@/components/crm/KanbanColumn';
 import { CrmLeadCard } from '@/components/crm/CrmLeadCard';
@@ -159,7 +161,17 @@ const ETAPAS_KEYS: EtapaCRM[] = [
 ];
 
 export default function CrmPage() {
-  const { clientes, moverEtapaCRM, removerCliente } = useData();
+  const router = useRouter();
+  const { moduloCrmAtivo, isLoadingTenants, currentTenant } = useTenant();
+  const { clientes, moverEtapaCRM, removerCliente, showToast } = useData();
+
+  // Proteção de Rota (/crm): Se modulo_crm_ativo === false, redireciona para a rota principal (/)
+  useEffect(() => {
+    if (!isLoadingTenants && !moduloCrmAtivo) {
+      showToast('O Módulo CRM está desativado para esta imobiliária.', 'info');
+      router.replace('/');
+    }
+  }, [isLoadingTenants, moduloCrmAtivo, router, showToast]);
 
   const [search, setSearch] = useState('');
   const [origemFilter, setOrigemFilter] = useState('todos');
@@ -265,6 +277,18 @@ export default function CrmPage() {
     moverEtapaCRM(leadId, targetEtapa);
     setDraggingLeadId(null);
   };
+
+  // Se o módulo estiver inativo para este tenant, exibe estado de redirecionamento
+  if (!isLoadingTenants && !moduloCrmAtivo) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3">
+        <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
+          Módulo CRM desativado para esta imobiliária. Redirecionando...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

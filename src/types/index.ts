@@ -11,6 +11,7 @@ export interface Imobiliaria {
   email?: string;
   endereco?: string;
   ativo?: boolean;
+  modulo_crm_ativo?: boolean;
   criado_em?: string;
   atualizado_em?: string;
 }
