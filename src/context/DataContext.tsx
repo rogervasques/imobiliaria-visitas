@@ -58,6 +58,7 @@ interface DataContextType {
   
   // Visitas
   adicionarVisita: (visita: Omit<Visita, 'id' | 'criado_em'>, enviarWhatsApp?: boolean) => Promise<Visita>;
+  concluirVisita: (id: string, opcoes?: { enviarPosVisitaCliente?: boolean; enviarComprovacaoProprietario?: boolean }) => Promise<void>;
   atualizarStatusVisita: (id: string, novoStatus: StatusVisita) => Promise<void>;
   atualizarVisita: (id: string, visita: Partial<Visita>) => Promise<void>;
   removerVisita: (id: string) => Promise<void>;
@@ -769,7 +770,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const clienteRef = clientes.find((c) => c.id === dados.cliente_id);
 
     const notificarConfirmacao = dados.notificar_confirmacao !== undefined ? dados.notificar_confirmacao : true;
+    const notificarConfirmacaoCliente = dados.notificar_confirmacao_cliente !== undefined ? dados.notificar_confirmacao_cliente : notificarConfirmacao;
+    const notificarConfirmacaoProprietario = dados.notificar_confirmacao_proprietario !== undefined ? dados.notificar_confirmacao_proprietario : notificarConfirmacao;
     const notificarLembrete = dados.notificar_lembrete !== undefined ? dados.notificar_lembrete : true;
+    const notificarLembreteCliente = dados.notificar_lembrete_cliente !== undefined ? dados.notificar_lembrete_cliente : notificarLembrete;
+    const notificarLembreteProprietario = dados.notificar_lembrete_proprietario !== undefined ? dados.notificar_lembrete_proprietario : notificarLembrete;
     const notificarPosVisita = dados.notificar_pos_visita !== undefined ? dados.notificar_pos_visita : true;
 
     const createdByUserId = dados.created_by_user_id || user?.id || 'user-admin-master';
@@ -789,14 +794,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       lembrete_agendado_para: reminderDate.toISOString(),
       pos_visita_agendado_para: posVisitaDate.toISOString(),
       notificar_confirmacao: notificarConfirmacao,
+      notificar_confirmacao_cliente: notificarConfirmacaoCliente,
+      notificar_confirmacao_proprietario: notificarConfirmacaoProprietario,
       notificar_lembrete: notificarLembrete,
+      notificar_lembrete_cliente: notificarLembreteCliente,
+      notificar_lembrete_proprietario: notificarLembreteProprietario,
       notificar_pos_visita: notificarPosVisita,
       gravar_logs: dados.gravar_logs !== undefined ? dados.gravar_logs : true,
       status: dados.status || 'agendada',
-      whatsapp_confirmacao_cliente: notificarConfirmacao ? 'pendente' : 'ignorado',
-      whatsapp_confirmacao_proprietario: notificarConfirmacao ? 'pendente' : 'ignorado',
-      whatsapp_lembrete_cliente: notificarLembrete ? 'pendente' : 'ignorado',
-      whatsapp_lembrete_proprietario: notificarLembrete ? 'pendente' : 'ignorado',
+      whatsapp_confirmacao_cliente: notificarConfirmacaoCliente ? 'pendente' : 'ignorado',
+      whatsapp_confirmacao_proprietario: notificarConfirmacaoProprietario ? 'pendente' : 'ignorado',
+      whatsapp_lembrete_cliente: notificarLembreteCliente ? 'pendente' : 'ignorado',
+      whatsapp_lembrete_proprietario: notificarLembreteProprietario ? 'pendente' : 'ignorado',
       whatsapp_pos_visita_cliente: notificarPosVisita ? 'pendente' : 'ignorado',
       criado_em: new Date().toISOString(),
       imovel: imovelRef,
@@ -811,8 +820,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const ctx = await buildTemplateContextAsync(novaVisita);
       const visitInstanceName = (novaVisita.created_by_user_id === user?.id ? user?.instance_name : null) || (novaVisita.created_by_user_id ? generateInstanceName(novaVisita.created_by_user_id) : configWhatsApp.instancia_nome || 'easymob');
 
-      // 1. Dispara para o Cliente (com roteiro completo de imóveis)
-      if (clienteRef?.telefone) {
+      // 1. Dispara para o Cliente (se opção de confirmação do cliente estiver ativa)
+      if (notificarConfirmacaoCliente && clienteRef?.telefone) {
         const msgCliente = compileTemplate(configWhatsApp.template_confirmacao_cliente, ctx);
         const resCliente = await sendWhatsAppMessage({
           toPhone: clienteRef.telefone,
@@ -829,41 +838,43 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         novaVisita.whatsapp_confirmacao_cliente = resCliente.success ? 'enviado' : 'falha';
       }
 
-      // 2. Dispara confirmação para os proprietários dos imóveis visitados
-      let propSuccessCount = 0;
-      const uniquePropsTelefones = new Set<string>();
+      // 2. Dispara confirmação para os proprietários dos imóveis visitados (se opção estiver ativa)
+      if (notificarConfirmacaoProprietario) {
+        let propSuccessCount = 0;
+        const uniquePropsTelefones = new Set<string>();
 
-      for (const im of (novaVisita.imoveis || [novaVisita.imovel])) {
-        if (!im || !im.proprietario_telefone) continue;
-        if (uniquePropsTelefones.has(im.proprietario_telefone.trim())) continue;
-        uniquePropsTelefones.add(im.proprietario_telefone.trim());
+        for (const im of (novaVisita.imoveis || [novaVisita.imovel])) {
+          if (!im || !im.proprietario_telefone) continue;
+          if (uniquePropsTelefones.has(im.proprietario_telefone.trim())) continue;
+          uniquePropsTelefones.add(im.proprietario_telefone.trim());
 
-        const propCtx: TemplateContext = {
-          ...ctx,
-          imovel_titulo: im.titulo,
-          imovel_codigo: im.codigo || '',
-          endereco: `${im.endereco}${im.numero ? `, ${im.numero}` : ''} - ${im.bairro}`,
-          proprietario_nome: im.proprietario_nome,
-          proprietario_telefone: im.proprietario_telefone,
-        };
+          const propCtx: TemplateContext = {
+            ...ctx,
+            imovel_titulo: im.titulo,
+            imovel_codigo: im.codigo || '',
+            endereco: `${im.endereco}${im.numero ? `, ${im.numero}` : ''} - ${im.bairro}`,
+            proprietario_nome: im.proprietario_nome,
+            proprietario_telefone: im.proprietario_telefone,
+          };
 
-        const msgProp = compileTemplate(configWhatsApp.template_confirmacao_proprietario, propCtx);
-        const resProp = await sendWhatsAppMessage({
-          toPhone: im.proprietario_telefone,
-          message: msgProp,
-          config: configWhatsApp,
-          instanceName: visitInstanceName,
-          logInfo: {
-            visitaId: novaVisita.id,
-            tipoMensagem: 'confirmacao_proprietario',
-            destinatarioNome: im.proprietario_nome,
-            tipoDestinatario: 'proprietario',
-          },
-        });
-        if (resProp.success) propSuccessCount++;
+          const msgProp = compileTemplate(configWhatsApp.template_confirmacao_proprietario, propCtx);
+          const resProp = await sendWhatsAppMessage({
+            toPhone: im.proprietario_telefone,
+            message: msgProp,
+            config: configWhatsApp,
+            instanceName: visitInstanceName,
+            logInfo: {
+              visitaId: novaVisita.id,
+              tipoMensagem: 'confirmacao_proprietario',
+              destinatarioNome: im.proprietario_nome,
+              tipoDestinatario: 'proprietario',
+            },
+          });
+          if (resProp.success) propSuccessCount++;
+        }
+
+        novaVisita.whatsapp_confirmacao_proprietario = propSuccessCount > 0 ? 'enviado' : 'falha';
       }
-
-      novaVisita.whatsapp_confirmacao_proprietario = propSuccessCount > 0 ? 'enviado' : 'falha';
     }
 
     try {
@@ -892,14 +903,124 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return novaVisita;
   };
 
-  const atualizarStatusVisita = async (id: string, novoStatus: StatusVisita) => {
+  const concluirVisita = async (
+    id: string,
+    opcoes?: { enviarPosVisitaCliente?: boolean; enviarComprovacaoProprietario?: boolean }
+  ) => {
+    const visita = allVisitas.find((v) => v.id === id);
+    if (!visita) return;
+
+    const agora = new Date();
+    // 48 horas contínuas de gravação de log após a conclusão
+    const fimGravacaoLogs = new Date(agora.getTime() + 48 * 60 * 60 * 1000).toISOString();
+
+    const visitInstanceName =
+      (visita.created_by_user_id === user?.id ? user?.instance_name : null) ||
+      (visita.created_by_user_id ? generateInstanceName(visita.created_by_user_id) : configWhatsApp.instancia_nome || 'easymob');
+
+    let statusPosVisita = visita.whatsapp_pos_visita_cliente;
+    let statusComprovacao = visita.whatsapp_comprovacao_proprietario;
+
+    const ctx = await buildTemplateContextAsync(visita);
+
+    // 1. Enviar mensagem pós-visita ao Cliente (Pedir feedback)
+    if (opcoes?.enviarPosVisitaCliente !== false && visita.cliente?.telefone && configWhatsApp.ativo) {
+      const templatePos = configWhatsApp.template_pos_visita_cliente ||
+        '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*{corretor_nome}*';
+
+      const msgCliente = compileTemplate(templatePos, ctx);
+      const resCliente = await sendWhatsAppMessage({
+        toPhone: visita.cliente.telefone,
+        message: msgCliente,
+        config: configWhatsApp,
+        instanceName: visitInstanceName,
+        logInfo: {
+          visitaId: visita.id,
+          tipoMensagem: 'pos_visita_cliente',
+          destinatarioNome: visita.cliente.nome,
+          tipoDestinatario: 'cliente',
+        },
+      });
+      statusPosVisita = resCliente.success ? 'enviado' : 'falha';
+    }
+
+    // 2. Enviar mensagem de comprovação ao Proprietário
+    if (opcoes?.enviarComprovacaoProprietario !== false && configWhatsApp.ativo) {
+      const imoveisVisita = visita.imoveis && visita.imoveis.length > 0
+        ? visita.imoveis
+        : visita.imovel ? [visita.imovel] : [];
+
+      let propSuccessCount = 0;
+      const uniquePropsTelefones = new Set<string>();
+
+      for (const im of imoveisVisita) {
+        if (!im || !im.proprietario_telefone) continue;
+        if (uniquePropsTelefones.has(im.proprietario_telefone.trim())) continue;
+        uniquePropsTelefones.add(im.proprietario_telefone.trim());
+
+        const msgProp =
+          `Olá, ${im.proprietario_nome || 'Proprietário'}! Informamos que a visita ao imóvel *"${im.titulo}"* com o cliente *${visita.cliente?.nome || 'Interessado'}* foi concluída com sucesso sob intermediação do corretor *${visita.corretor_nome || user?.name || 'Responsável'}*.\n\n` +
+          `Seguiremos acompanhando o cliente para eventuais propostas e feedbacks!`;
+
+        const resProp = await sendWhatsAppMessage({
+          toPhone: im.proprietario_telefone,
+          message: msgProp,
+          config: configWhatsApp,
+          instanceName: visitInstanceName,
+          logInfo: {
+            visitaId: visita.id,
+            tipoMensagem: 'confirmacao_proprietario',
+            destinatarioNome: im.proprietario_nome || 'Proprietário',
+            tipoDestinatario: 'proprietario',
+          },
+        });
+        if (resProp.success) propSuccessCount++;
+      }
+      statusComprovacao = propSuccessCount > 0 ? 'enviado' : 'falha';
+    }
+
+    const updates: Partial<Visita> = {
+      status: 'concluida',
+      fim_gravacao_logs_em: fimGravacaoLogs,
+      whatsapp_pos_visita_cliente: statusPosVisita,
+      whatsapp_comprovacao_proprietario: statusComprovacao,
+      atualizado_em: agora.toISOString(),
+    };
+
     try {
-      await supabase.from('visitas').update({ status: novoStatus }).eq('id', id);
+      await supabase.from('visitas').update(updates).eq('id', id);
+    } catch (err) {
+      console.warn('Supabase update concluir visita offline:', err);
+    }
+
+    const updated = allVisitas.map((v) => (v.id === id ? { ...v, ...updates } : v));
+    setAllVisitas(updated);
+    persistir('visitas', updated);
+    showToast('Visita concluída com sucesso! Histórico ativo por +48h.', 'success');
+  };
+
+  const atualizarStatusVisita = async (id: string, novoStatus: StatusVisita) => {
+    const agora = new Date();
+    const isEncerramento = novoStatus === 'concluida' || novoStatus === 'cancelada';
+    const fimGravacaoLogs = isEncerramento
+      ? new Date(agora.getTime() + 48 * 60 * 60 * 1000).toISOString()
+      : undefined;
+
+    const updates: { status: StatusVisita; atualizado_em: string; fim_gravacao_logs_em?: string } = {
+      status: novoStatus,
+      atualizado_em: agora.toISOString(),
+    };
+    if (fimGravacaoLogs) {
+      updates.fim_gravacao_logs_em = fimGravacaoLogs;
+    }
+
+    try {
+      await supabase.from('visitas').update(updates).eq('id', id);
     } catch (err) {
       console.warn('Supabase update status visita offline:', err);
     }
 
-    const updated = allVisitas.map((v) => (v.id === id ? { ...v, status: novoStatus, atualizado_em: new Date().toISOString() } : v));
+    const updated = allVisitas.map((v) => (v.id === id ? { ...v, ...updates } : v));
     setAllVisitas(updated);
     persistir('visitas', updated);
     showToast(`Status da visita alterado para "${novoStatus.toUpperCase()}"`, 'info');
@@ -1277,6 +1398,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         moverEtapaCRM,
         removerCliente,
         adicionarVisita,
+        concluirVisita,
         atualizarStatusVisita,
         atualizarVisita,
         removerVisita,

@@ -135,7 +135,9 @@ export async function POST(req: NextRequest) {
         }
 
         if (phone && texto) {
-          // Busca visitas ativas para esse telefone que tenham gravar_logs === true
+          const agora = new Date();
+
+          // 1. Busca por Clientes
           const { data: clientes } = await supabase
             .from('clientes')
             .select('id, nome, telefone')
@@ -145,31 +147,85 @@ export async function POST(req: NextRequest) {
             const clienteIds = clientes.map((c) => c.id);
             const { data: visitas } = await supabase
               .from('visitas')
-              .select('id, imobiliaria, gravar_logs')
+              .select('id, imobiliaria, gravar_logs, fim_gravacao_logs_em, status')
               .in('cliente_id', clienteIds)
               .order('data_hora_visita', { ascending: false })
               .limit(1);
 
             if (visitas && visitas.length > 0 && visitas[0].gravar_logs !== false) {
               const v = visitas[0];
-              const { encryptText } = await import('@/lib/crypto');
-              const encryptedText = encryptText(texto);
+              const prazoValido = !v.fim_gravacao_logs_em || new Date(v.fim_gravacao_logs_em) >= agora;
 
-              try {
-                await supabase.from('logs_mensagens').insert({
-                  visita_id: v.id,
-                  imobiliaria: v.imobiliaria,
-                  message_id: messageId,
-                  timestamp: new Date().toISOString(),
-                  remetente_tipo: fromMe ? 'CORRETOR' : 'CLIENTE',
-                  remetente_nome: fromMe ? 'Corretor' : clientes[0].nome,
-                  remetente_telefone: phone,
-                  conteudo_texto: encryptedText,
-                  tipo_midia: tipoMidia,
-                  midia_url: midiaUrl,
-                });
-              } catch {
-                // Silencia falha se tabela ainda não criada
+              if (prazoValido) {
+                const { encryptText } = await import('@/lib/crypto');
+                const encryptedText = encryptText(texto);
+
+                try {
+                  await supabase.from('logs_mensagens').insert({
+                    visita_id: v.id,
+                    imobiliaria: v.imobiliaria,
+                    message_id: messageId,
+                    timestamp: agora.toISOString(),
+                    remetente_tipo: fromMe ? 'CORRETOR' : 'CLIENTE',
+                    remetente_nome: fromMe ? 'Corretor' : clientes[0].nome,
+                    remetente_telefone: phone,
+                    conteudo_texto: encryptedText,
+                    tipo_midia: tipoMidia,
+                    midia_url: midiaUrl,
+                  });
+                } catch {
+                  // Silencia falha se tabela offline
+                }
+              }
+            }
+          }
+
+          // 2. Busca por Proprietários
+          const { data: proprietarios } = await supabase
+            .from('proprietarios')
+            .select('id, nome, telefone')
+            .ilike('telefone', `%${phone.slice(-8)}%`);
+
+          if (proprietarios && proprietarios.length > 0) {
+            const { data: imoveisProp } = await supabase
+              .from('imoveis')
+              .select('id')
+              .ilike('proprietario_telefone', `%${phone.slice(-8)}%`);
+
+            if (imoveisProp && imoveisProp.length > 0) {
+              const imovelIds = imoveisProp.map((i) => i.id);
+              const { data: visitasProp } = await supabase
+                .from('visitas')
+                .select('id, imobiliaria, gravar_logs, fim_gravacao_logs_em, status')
+                .in('imovel_id', imovelIds)
+                .order('data_hora_visita', { ascending: false })
+                .limit(1);
+
+              if (visitasProp && visitasProp.length > 0 && visitasProp[0].gravar_logs !== false) {
+                const vp = visitasProp[0];
+                const prazoValido = !vp.fim_gravacao_logs_em || new Date(vp.fim_gravacao_logs_em) >= agora;
+
+                if (prazoValido) {
+                  const { encryptText } = await import('@/lib/crypto');
+                  const encryptedText = encryptText(texto);
+
+                  try {
+                    await supabase.from('logs_mensagens').insert({
+                      visita_id: vp.id,
+                      imobiliaria: vp.imobiliaria,
+                      message_id: messageId,
+                      timestamp: agora.toISOString(),
+                      remetente_tipo: fromMe ? 'CORRETOR' : 'PROPRIETARIO',
+                      remetente_nome: fromMe ? 'Corretor' : proprietarios[0].nome,
+                      remetente_telefone: phone,
+                      conteudo_texto: encryptedText,
+                      tipo_midia: tipoMidia,
+                      midia_url: midiaUrl,
+                    });
+                  } catch {
+                    // Silencia falha se tabela offline
+                  }
+                }
               }
             }
           }

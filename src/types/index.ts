@@ -141,11 +141,17 @@ export interface Visita {
   created_by_user_id?: string;
   created_by_user_nome?: string;
 
-  // Preferências de Notificação & Compliance Jurídico
+  // Preferências de Notificação & Comprovante de Atendimento
   notificar_confirmacao?: boolean;
+  notificar_confirmacao_cliente?: boolean;
+  notificar_confirmacao_proprietario?: boolean;
   notificar_lembrete?: boolean;
+  notificar_lembrete_cliente?: boolean;
+  notificar_lembrete_proprietario?: boolean;
   notificar_pos_visita?: boolean;
-  gravar_logs?: boolean; // Gravar log de mensagens do atendimento para dossiê jurídico
+  notificar_comprovacao_proprietario?: boolean;
+  gravar_logs?: boolean; // Gravar histórico do atendimento (Ativo na criação até 48h após encerramento)
+  fim_gravacao_logs_em?: string; // Data limite da gravação contínua (+48h após conclusão/cancelamento)
 
   status: StatusVisita;
   whatsapp_confirmacao_cliente: StatusDisparoWhatsApp;
@@ -153,6 +159,7 @@ export interface Visita {
   whatsapp_lembrete_cliente: StatusDisparoWhatsApp;
   whatsapp_lembrete_proprietario: StatusDisparoWhatsApp;
   whatsapp_pos_visita_cliente?: StatusDisparoWhatsApp;
+  whatsapp_comprovacao_proprietario?: StatusDisparoWhatsApp;
   feedback_cliente?: string;
   feedback_proprietario?: string;
   observacoes?: string;
@@ -163,7 +170,7 @@ export interface Visita {
   imovel?: Imovel;
   imoveis?: Imovel[]; // Lista de imóveis do roteiro
   cliente?: Cliente;
-  logs_mensagens?: LogMensagem[]; // Histórico de mensagens gravadas
+  logs_mensagens?: LogMensagem[]; // Histórico de mensagens gravadas (Relatório de Atendimento)
 }
 
 export interface LogMensagem {

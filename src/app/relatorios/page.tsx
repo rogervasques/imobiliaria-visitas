@@ -850,7 +850,7 @@ export default function RelatoriosPage() {
                     </div>
 
                     <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Exporta data/hora, status, cliente, telefone, corretor, imóveis visitados, endereços, status de disparos de WhatsApp (confirmação, lembrete 1h, pós-visita) e log de dossiê.
+                      Exporta data/hora, status, cliente, telefone, corretor, imóveis visitados, endereços, status de disparos de WhatsApp (confirmação, lembrete 1h, pós-visita) e histórico do Relatório de Atendimento.
                     </p>
                   </div>
 

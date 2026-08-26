@@ -37,9 +37,18 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
   const [status, setStatus] = useState<StatusVisita>(visita.status || 'agendada');
   const [observacoes, setObservacoes] = useState(visita.observacoes || '');
 
-  const [notificarConfirmacao, setNotificarConfirmacao] = useState(visita.notificar_confirmacao !== false);
-  const [notificarLembrete, setNotificarLembrete] = useState(visita.notificar_lembrete !== false);
-  const [notificarPosVisita, setNotificarPosVisita] = useState(visita.notificar_pos_visita !== false);
+  const [notificarConfirmacaoCliente, setNotificarConfirmacaoCliente] = useState(
+    visita.notificar_confirmacao_cliente !== undefined ? visita.notificar_confirmacao_cliente : visita.notificar_confirmacao !== false
+  );
+  const [notificarConfirmacaoProprietario, setNotificarConfirmacaoProprietario] = useState(
+    visita.notificar_confirmacao_proprietario !== undefined ? visita.notificar_confirmacao_proprietario : visita.notificar_confirmacao !== false
+  );
+  const [notificarLembreteCliente, setNotificarLembreteCliente] = useState(
+    visita.notificar_lembrete_cliente !== undefined ? visita.notificar_lembrete_cliente : visita.notificar_lembrete !== false
+  );
+  const [notificarLembreteProprietario, setNotificarLembreteProprietario] = useState(
+    visita.notificar_lembrete_proprietario !== undefined ? visita.notificar_lembrete_proprietario : visita.notificar_lembrete !== false
+  );
   const [gravarLogs, setGravarLogs] = useState(visita.gravar_logs !== false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,9 +63,10 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
       setClienteId(visita.cliente_id);
       setStatus(visita.status || 'agendada');
       setObservacoes(visita.observacoes || '');
-      setNotificarConfirmacao(visita.notificar_confirmacao !== false);
-      setNotificarLembrete(visita.notificar_lembrete !== false);
-      setNotificarPosVisita(visita.notificar_pos_visita !== false);
+      setNotificarConfirmacaoCliente(visita.notificar_confirmacao_cliente !== undefined ? visita.notificar_confirmacao_cliente : visita.notificar_confirmacao !== false);
+      setNotificarConfirmacaoProprietario(visita.notificar_confirmacao_proprietario !== undefined ? visita.notificar_confirmacao_proprietario : visita.notificar_confirmacao !== false);
+      setNotificarLembreteCliente(visita.notificar_lembrete_cliente !== undefined ? visita.notificar_lembrete_cliente : visita.notificar_lembrete !== false);
+      setNotificarLembreteProprietario(visita.notificar_lembrete_proprietario !== undefined ? visita.notificar_lembrete_proprietario : visita.notificar_lembrete !== false);
       setGravarLogs(visita.gravar_logs !== false);
 
       if (visita.data_hora_visita) {
@@ -90,7 +100,7 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
   };
 
   const handleRemoveImovel = (id: string) => {
-    if (selectedImoveisIds.length === 1) return;
+    if (selectedImoveisIds.length <= 1) return;
     setSelectedImoveisIds(selectedImoveisIds.filter((item) => item !== id));
   };
 
@@ -100,6 +110,9 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
 
     setIsSubmitting(true);
     try {
+      const temConfirmacao = notificarConfirmacaoCliente || notificarConfirmacaoProprietario;
+      const temLembrete = notificarLembreteCliente || notificarLembreteProprietario;
+
       await atualizarVisita(visita.id, {
         imovel_id: selectedImoveisIds[0],
         imoveis_ids: selectedImoveisIds,
@@ -107,9 +120,12 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
         data_hora_visita: new Date(dataHora).toISOString(),
         status,
         observacoes,
-        notificar_confirmacao: notificarConfirmacao,
-        notificar_lembrete: notificarLembrete,
-        notificar_pos_visita: notificarPosVisita,
+        notificar_confirmacao: temConfirmacao,
+        notificar_confirmacao_cliente: notificarConfirmacaoCliente,
+        notificar_confirmacao_proprietario: notificarConfirmacaoProprietario,
+        notificar_lembrete: temLembrete,
+        notificar_lembrete_cliente: notificarLembreteCliente,
+        notificar_lembrete_proprietario: notificarLembreteProprietario,
         gravar_logs: gravarLogs,
       });
       onClose();
@@ -302,46 +318,55 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
             <Bell className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             Notificações via WhatsApp
           </span>
-          <div className="space-y-2 pt-1">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="space-y-2.5 pt-1">
+            <label className="flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={notificarConfirmacao}
-                onChange={(e) => setNotificarConfirmacao(e.target.checked)}
-                className="w-4 h-4 text-emerald-600 rounded"
+                checked={notificarConfirmacaoCliente}
+                onChange={(e) => setNotificarConfirmacaoCliente(e.target.checked)}
+                className="w-4 h-4 text-emerald-600 rounded mt-0.5"
               />
-              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Confirmar agendamento via WhatsApp (imediato)</span>
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Enviar confirmação ao Cliente</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={notificarLembrete}
-                onChange={(e) => setNotificarLembrete(e.target.checked)}
-                className="w-4 h-4 text-emerald-600 rounded"
+                checked={notificarConfirmacaoProprietario}
+                onChange={(e) => setNotificarConfirmacaoProprietario(e.target.checked)}
+                className="w-4 h-4 text-emerald-600 rounded mt-0.5"
               />
-              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Lembrete de visita via WhatsApp (1h antes)</span>
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Enviar confirmação ao Proprietário</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={notificarPosVisita}
-                onChange={(e) => setNotificarPosVisita(e.target.checked)}
-                className="w-4 h-4 text-emerald-600 rounded"
+                checked={notificarLembreteCliente}
+                onChange={(e) => setNotificarLembreteCliente(e.target.checked)}
+                className="w-4 h-4 text-emerald-600 rounded mt-0.5"
               />
-              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Pedir feedback pós-visita via WhatsApp (2h depois)</span>
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Enviar lembrete (1h antes) ao Cliente</span>
+            </label>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={notificarLembreteProprietario}
+                onChange={(e) => setNotificarLembreteProprietario(e.target.checked)}
+                className="w-4 h-4 text-emerald-600 rounded mt-0.5"
+              />
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Enviar lembrete (1h antes) ao Proprietário</span>
             </label>
             <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex items-start gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={gravarLogs}
                   onChange={(e) => setGravarLogs(e.target.checked)}
-                  className="w-4 h-4 text-emerald-600 rounded"
+                  className="w-4 h-4 text-emerald-600 rounded mt-0.5"
                 />
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  Gravar Log de Mensagens do Atendimento
-                  <span className="text-[9px] font-black uppercase tracking-wider px-1 py-0.2 rounded bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200">
-                    Jurídico
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
+                  Gravar Histórico do Atendimento (Cliente e Proprietário)
+                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200">
+                    Comprovante de Atendimento
                   </span>
                 </span>
               </label>

@@ -60,8 +60,8 @@ export default function LandingPage() {
       a: 'É extremamente simples e rápida: basta escanear um QR Code diretamente na tela de configurações com o seu aplicativo do WhatsApp, exatamente como você faz no WhatsApp Web. Não é necessário CNPJ de desenvolvedor nem aprovações burocráticas da Meta.',
     },
     {
-      q: 'Como o Dossiê em PDF protege minhas comissões (Art. 727 do Código Civil)?',
-      a: 'O EasyMob registra e carimba com data, hora e IP todo o histórico de interações, confirmações de visita, localização enviada e logs de mensagens trocadas com o cliente. O Dossiê gerado serve como robusto meio de prova da aproximação útil entre comprador e imóvel realizada pelo corretor.',
+      q: 'Como o Relatório de Atendimento em PDF protege minhas comissões (Art. 727 do Código Civil)?',
+      a: 'O EasyMob registra e carimba com data, hora e IP todo o histórico de interações, confirmações de visita, localização enviada e logs de mensagens trocadas com o cliente. O Relatório de Atendimento gerado serve como robusto meio de comprovação da aproximação útil entre comprador e imóvel realizada pelo corretor.',
     },
     {
       q: 'Posso usar o EasyMob sozinho ou com minha equipe de corretores?',
@@ -248,14 +248,14 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Card 3: Dossiê de Blindagem */}
+              {/* Card 3: Relatório de Atendimento */}
               <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Proteção Jurídica</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Comprovante de Atendimento</span>
                   <Scale className="w-4 h-4 text-teal-400" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs text-slate-300 font-semibold">Dossiê de Atendimento Pronto</p>
+                  <p className="text-xs text-slate-300 font-semibold">Relatório de Atendimento Pronto</p>
                   <p className="text-[11px] text-slate-400">Comprovação de aproximação útil (Art. 727 CC) com logs auditáveis.</p>
                 </div>
                 <div className="pt-1">
@@ -436,7 +436,7 @@ export default function LandingPage() {
                   <Scale className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-emerald-300 text-sm sm:text-base">Dossiê de Atendimento em PDF (Art. 727 do Código Civil)</h4>
+                  <h4 className="font-bold text-emerald-300 text-sm sm:text-base">Relatório de Atendimento em PDF (Art. 727 do Código Civil)</h4>
                   <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
                     Gere em 1 clique um relatório consolidado com data, hora, mensagens trocadas e imóveis visitados para comprovação de aproximação útil e suporte ao departamento jurídico em caso de disputa de honorários.
                   </p>
@@ -445,7 +445,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Lado Direito: Preview do Dossiê Jurídico & Mensagens */}
+          {/* Lado Direito: Preview do Relatório de Atendimento & Mensagens */}
           <div className="lg:col-span-6">
             <div className="rounded-3xl bg-gradient-to-tr from-slate-900 via-slate-900/90 to-emerald-950/50 border border-emerald-900/40 p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -454,16 +454,16 @@ export default function LandingPage() {
                     <FileText className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-extrabold text-white">Dossiê de Atendimento & Aproximação Útil</h4>
+                    <h4 className="text-sm font-extrabold text-white">Relatório de Atendimento & Aproximação Útil</h4>
                     <p className="text-[11px] text-slate-400">Documento Oficial Auditável — Art. 727 CC</p>
                   </div>
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-800">
-                  Válido Juridicamente
+                  Comprovante de Atendimento
                 </span>
               </div>
 
-              {/* Corpo Simulado do Dossiê */}
+              {/* Corpo Simulado do Relatório de Atendimento */}
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-3 text-xs text-slate-300">
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
                   <div>
@@ -625,7 +625,7 @@ export default function LandingPage() {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-2xl font-black text-white">Plano Pro</h3>
-                  <p className="text-xs text-emerald-300/90 mt-1">Organização total + Notificações automáticas + Dossiê de Atendimento.</p>
+                  <p className="text-xs text-emerald-300/90 mt-1">Organização total + Notificações automáticas + Relatório de Atendimento.</p>
                 </div>
 
                 <div className="py-2">
@@ -664,7 +664,7 @@ export default function LandingPage() {
                   </div>
                   <div className="flex items-start gap-2.5 font-semibold text-emerald-300">
                     <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                    <span><strong>Gerador de Dossiê de Atendimento em PDF</strong> (Art. 727 CC)</span>
+                    <span><strong>Gerador de Relatório de Atendimento em PDF</strong> (Art. 727 CC)</span>
                   </div>
                 </div>
               </div>

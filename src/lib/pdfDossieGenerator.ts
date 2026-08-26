@@ -123,7 +123,7 @@ export interface GeneratePdfOptions {
   whatsappOrigemNumero?: string;
 }
 
-export function gerarDossieJuridicoPdf({
+export function gerarRelatorioAtendimentoPdf({
   visita,
   imobiliariaNome,
   corretorTelefone,
@@ -325,3 +325,5 @@ export function gerarDossieJuridicoPdf({
   const fileName = `Relatorio_Atendimento_${sanitizedCliente}_${visita.id.slice(-6)}.pdf`;
   doc.save(fileName);
 }
+
+export const gerarDossieJuridicoPdf = gerarRelatorioAtendimentoPdf;

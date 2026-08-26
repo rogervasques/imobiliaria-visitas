@@ -152,7 +152,7 @@ export function exportarVisitasExcel(visitas: Visita[], filename = 'visitas_agen
       'WhatsApp Confirmação': v.whatsapp_confirmacao_cliente || 'pendente',
       'WhatsApp Lembrete 1h': v.whatsapp_lembrete_cliente || 'pendente',
       'WhatsApp Pós-Visita': v.whatsapp_pos_visita_cliente || 'pendente',
-      'Log Gravado (Dossiê)': v.gravar_logs !== false ? 'Sim' : 'Não',
+      'Histórico Gravado (Relatório de Atendimento)': v.gravar_logs !== false ? 'Sim' : 'Não',
       'Observações': v.observacoes || '',
     };
   });

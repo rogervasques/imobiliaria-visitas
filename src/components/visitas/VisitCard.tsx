@@ -7,6 +7,7 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { EditarVisitaModal } from './EditarVisitaModal';
+import { ConcluirVisitaModal } from './ConcluirVisitaModal';
 import {
   Clock,
   MapPin,
@@ -59,12 +60,18 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
     cancelada: { label: 'Cancelada', variant: 'danger', dotColor: 'bg-rose-500 border-rose-400' },
   };
 
+  const [isConcluirModalOpen, setIsConcluirModalOpen] = useState(false);
+
   // Regra por Horário: Se atingir/ultrapassar o horário e não estiver Concluída ou Cancelada
   const isHorarioAtingido = new Date(visita.data_hora_visita).getTime() <= Date.now();
   const podeConcluir = isHorarioAtingido && visita.status !== 'concluida' && visita.status !== 'reagendada' && visita.status !== 'cancelada';
 
   const handleStatusChange = async (novoStatus: StatusVisita) => {
     setShowStatusDropdown(false);
+    if (novoStatus === 'concluida') {
+      setIsConcluirModalOpen(true);
+      return;
+    }
     await atualizarStatusVisita(visita.id, novoStatus);
   };
 
@@ -392,7 +399,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                handleStatusChange('concluida');
+                setIsConcluirModalOpen(true);
               }}
               className="w-full mb-2.5 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
               title="Concluir visita agendada"
@@ -526,6 +533,13 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
           </div>
         </div>
       </Modal>
+
+      {/* Modal de Conclusão da Visita (com opções de WhatsApp e Comprovante de Atendimento) */}
+      <ConcluirVisitaModal
+        visita={visita}
+        isOpen={isConcluirModalOpen}
+        onClose={() => setIsConcluirModalOpen(false)}
+      />
     </>
   );
 }

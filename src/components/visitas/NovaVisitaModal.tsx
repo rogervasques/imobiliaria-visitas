@@ -45,10 +45,11 @@ export function NovaVisitaModal({
   const [status, setStatus] = useState<StatusVisita>('agendada');
   const [observacoes, setObservacoes] = useState('');
 
-  // 3 Checkboxes da Régua de Notificações WhatsApp (Pré-selecionados por padrão)
-  const [notificarConfirmacao, setNotificarConfirmacao] = useState(true);
-  const [notificarLembrete, setNotificarLembrete] = useState(true);
-  const [notificarPosVisita, setNotificarPosVisita] = useState(true);
+  // Checkboxes da Régua de Notificações WhatsApp (Pré-selecionados por padrão)
+  const [notificarConfirmacaoCliente, setNotificarConfirmacaoCliente] = useState(true);
+  const [notificarConfirmacaoProprietario, setNotificarConfirmacaoProprietario] = useState(true);
+  const [notificarLembreteCliente, setNotificarLembreteCliente] = useState(true);
+  const [notificarLembreteProprietario, setNotificarLembreteProprietario] = useState(true);
   const [gravarLogs, setGravarLogs] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,9 +72,10 @@ export function NovaVisitaModal({
       setDataHora('');
       setStatus('agendada');
       setObservacoes('');
-      setNotificarConfirmacao(true);
-      setNotificarLembrete(true);
-      setNotificarPosVisita(true);
+      setNotificarConfirmacaoCliente(true);
+      setNotificarConfirmacaoProprietario(true);
+      setNotificarLembreteCliente(true);
+      setNotificarLembreteProprietario(true);
       setGravarLogs(true);
       setImovelToAddId('');
     }
@@ -109,6 +111,9 @@ export function NovaVisitaModal({
 
     setIsSubmitting(true);
     try {
+      const temConfirmacao = notificarConfirmacaoCliente || notificarConfirmacaoProprietario;
+      const temLembrete = notificarLembreteCliente || notificarLembreteProprietario;
+
       await adicionarVisita(
         {
           imovel_id: selectedImoveisIds[0],
@@ -120,17 +125,21 @@ export function NovaVisitaModal({
           data_hora_visita: new Date(dataHora).toISOString(),
           status,
           observacoes,
-          notificar_confirmacao: notificarConfirmacao,
-          notificar_lembrete: notificarLembrete,
-          notificar_pos_visita: notificarPosVisita,
+          notificar_confirmacao: temConfirmacao,
+          notificar_confirmacao_cliente: notificarConfirmacaoCliente,
+          notificar_confirmacao_proprietario: notificarConfirmacaoProprietario,
+          notificar_lembrete: temLembrete,
+          notificar_lembrete_cliente: notificarLembreteCliente,
+          notificar_lembrete_proprietario: notificarLembreteProprietario,
+          notificar_pos_visita: true,
           gravar_logs: gravarLogs,
-          whatsapp_confirmacao_cliente: notificarConfirmacao ? 'pendente' : 'inativo',
-          whatsapp_confirmacao_proprietario: notificarConfirmacao ? 'pendente' : 'inativo',
-          whatsapp_lembrete_cliente: notificarLembrete ? 'pendente' : 'inativo',
-          whatsapp_lembrete_proprietario: notificarLembrete ? 'pendente' : 'inativo',
-          whatsapp_pos_visita_cliente: notificarPosVisita ? 'pendente' : 'inativo',
+          whatsapp_confirmacao_cliente: notificarConfirmacaoCliente ? 'pendente' : 'inativo',
+          whatsapp_confirmacao_proprietario: notificarConfirmacaoProprietario ? 'pendente' : 'inativo',
+          whatsapp_lembrete_cliente: notificarLembreteCliente ? 'pendente' : 'inativo',
+          whatsapp_lembrete_proprietario: notificarLembreteProprietario ? 'pendente' : 'inativo',
+          whatsapp_pos_visita_cliente: 'pendente',
         },
-        notificarConfirmacao
+        temConfirmacao
       );
       onClose();
     } catch (err) {
@@ -312,61 +321,79 @@ export function NovaVisitaModal({
           </div>
 
           <div className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
-            {/* Checkbox 1: Confirmar agendamento via WhatsApp (imediato) */}
+            {/* Checkbox 1: Enviar confirmação ao Cliente */}
             <label className="flex items-start gap-2.5 cursor-pointer group select-none">
               <input
                 type="checkbox"
-                checked={notificarConfirmacao}
-                onChange={(e) => setNotificarConfirmacao(e.target.checked)}
+                checked={notificarConfirmacaoCliente}
+                onChange={(e) => setNotificarConfirmacaoCliente(e.target.checked)}
                 className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
               />
               <div className="leading-snug flex-1">
                 <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
-                  Confirmar agendamento via WhatsApp (imediato)
+                  Enviar confirmação ao Cliente
                 </span>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Disparo automático com roteiro de imóveis e endereços no momento do salvamento.
+                  Disparo imediato via WhatsApp com dados do agendamento e link do Google Maps.
                 </p>
               </div>
             </label>
 
-            {/* Checkbox 2: Lembrete de visita via WhatsApp (1h antes) */}
+            {/* Checkbox 2: Enviar confirmação ao Proprietário */}
             <label className="flex items-start gap-2.5 cursor-pointer group select-none">
               <input
                 type="checkbox"
-                checked={notificarLembrete}
-                onChange={(e) => setNotificarLembrete(e.target.checked)}
+                checked={notificarConfirmacaoProprietario}
+                onChange={(e) => setNotificarConfirmacaoProprietario(e.target.checked)}
                 className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
               />
               <div className="leading-snug flex-1">
                 <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
-                  Lembrete de visita via WhatsApp (1h antes)
+                  Enviar confirmação ao Proprietário
                 </span>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Lembrete automático com antecedência de 1 hora para o cliente e proprietários.
+                  Notifica o proprietário sobre a visita agendada para o seu imóvel.
                 </p>
               </div>
             </label>
 
-            {/* Checkbox 3: Pedir feedback pós-visita via WhatsApp (2h depois) */}
+            {/* Checkbox 3: Enviar lembrete (1h antes) ao Cliente */}
             <label className="flex items-start gap-2.5 cursor-pointer group select-none">
               <input
                 type="checkbox"
-                checked={notificarPosVisita}
-                onChange={(e) => setNotificarPosVisita(e.target.checked)}
+                checked={notificarLembreteCliente}
+                onChange={(e) => setNotificarLembreteCliente(e.target.checked)}
                 className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
               />
               <div className="leading-snug flex-1">
                 <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
-                  Pedir feedback pós-visita via WhatsApp (2h depois)
+                  Enviar lembrete (1h antes) ao Cliente
                 </span>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Mensagem pós-visita para colher impressões dos imóveis visitados e proposta.
+                  Lembrete automático para prevenir atrasos e faltas do visitante.
                 </p>
               </div>
             </label>
 
-            {/* Checkbox 4: Gravar Log de Mensagens do Atendimento (Dossiê Jurídico & Compliance) */}
+            {/* Checkbox 4: Enviar lembrete (1h antes) ao Proprietário */}
+            <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+              <input
+                type="checkbox"
+                checked={notificarLembreteProprietario}
+                onChange={(e) => setNotificarLembreteProprietario(e.target.checked)}
+                className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+              />
+              <div className="leading-snug flex-1">
+                <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
+                  Enviar lembrete (1h antes) ao Proprietário
+                </span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Lembrete automático 1 hora antes para o proprietário preparar o imóvel.
+                </p>
+              </div>
+            </label>
+
+            {/* Checkbox 5: Gravar Histórico do Atendimento (Comprovante de Atendimento) */}
             <div className="pt-2.5 border-t border-emerald-200/60 dark:border-emerald-800/40">
               <label className="flex items-start gap-2.5 cursor-pointer group select-none">
                 <input
@@ -376,16 +403,16 @@ export function NovaVisitaModal({
                   className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                 />
                 <div className="leading-snug flex-1">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
-                      Gravar Log de Mensagens do Atendimento
+                      Gravar Histórico do Atendimento (Cliente e Proprietário)
                     </span>
-                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
-                      Validade Jurídica
+                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-200/90 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+                      Comprovante de Atendimento
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Registra as mensagens com IDs técnicos da Meta (WhatsApp) para emissão de dossiê comprobatório em PDF.
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    A gravação do histórico das conversas via WhatsApp (Evolution API) inicia imediatamente no momento da criação da visita e permanece ativa continuamente até 48 horas após o encerramento da visita (seja Concluída, Perdida ou Cancelada).
                   </p>
                 </div>
               </label>

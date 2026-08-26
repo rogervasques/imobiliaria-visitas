@@ -19,6 +19,7 @@ import {
 } from '@/lib/utils';
 import { getGoogleMapsSearchUrl } from '@/lib/maps';
 import { WhatsAppStatusBadge } from '@/components/layout/WhatsAppStatusBadge';
+import { ConcluirVisitaModal } from '@/components/visitas/ConcluirVisitaModal';
 
 // ─── Constantes de Status ────────────────────────────────────────────────────
 
@@ -329,6 +330,7 @@ function TimelineCard({
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isConcluirOpen, setIsConcluirOpen] = useState(false);
 
   const cfg = STATUS_CFG[visita.status] ?? STATUS_CFG.agendada;
 
@@ -338,6 +340,10 @@ function TimelineCard({
 
   const handleStatus = async (s: StatusVisita) => {
     setShowStatusDropdown(false);
+    if (s === 'concluida') {
+      setIsConcluirOpen(true);
+      return;
+    }
     await atualizarStatusVisita(visita.id, s);
   };
 
@@ -513,7 +519,7 @@ function TimelineCard({
             <div className="mt-3" onClick={e => e.stopPropagation()}>
               <button
                 type="button"
-                onClick={() => handleStatus('concluida')}
+                onClick={() => setIsConcluirOpen(true)}
                 className="w-full py-1.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
                 title="Concluir visita agendada"
               >
@@ -592,6 +598,13 @@ function TimelineCard({
           </div>
         </div>
       </Modal>
+
+      {/* Modal de Conclusão da Visita */}
+      <ConcluirVisitaModal
+        visita={visita}
+        isOpen={isConcluirOpen}
+        onClose={() => setIsConcluirOpen(false)}
+      />
     </>
   );
 }
