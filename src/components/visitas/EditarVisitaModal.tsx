@@ -49,7 +49,12 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
   const [notificarLembreteProprietario, setNotificarLembreteProprietario] = useState(
     visita.notificar_lembrete_proprietario !== undefined ? visita.notificar_lembrete_proprietario : visita.notificar_lembrete !== false
   );
-  const [gravarLogs, setGravarLogs] = useState(visita.gravar_logs !== false);
+  const [gravarLogsCliente, setGravarLogsCliente] = useState(
+    visita.gravar_logs_cliente !== undefined ? visita.gravar_logs_cliente : visita.gravar_logs !== false
+  );
+  const [gravarLogsProprietario, setGravarLogsProprietario] = useState(
+    visita.gravar_logs_proprietario !== undefined ? visita.gravar_logs_proprietario : visita.gravar_logs !== false
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,7 +72,8 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
       setNotificarConfirmacaoProprietario(visita.notificar_confirmacao_proprietario !== undefined ? visita.notificar_confirmacao_proprietario : visita.notificar_confirmacao !== false);
       setNotificarLembreteCliente(visita.notificar_lembrete_cliente !== undefined ? visita.notificar_lembrete_cliente : visita.notificar_lembrete !== false);
       setNotificarLembreteProprietario(visita.notificar_lembrete_proprietario !== undefined ? visita.notificar_lembrete_proprietario : visita.notificar_lembrete !== false);
-      setGravarLogs(visita.gravar_logs !== false);
+      setGravarLogsCliente(visita.gravar_logs_cliente !== undefined ? visita.gravar_logs_cliente : visita.gravar_logs !== false);
+      setGravarLogsProprietario(visita.gravar_logs_proprietario !== undefined ? visita.gravar_logs_proprietario : visita.gravar_logs !== false);
 
       if (visita.data_hora_visita) {
         const d = new Date(visita.data_hora_visita);
@@ -126,7 +132,9 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
         notificar_lembrete: temLembrete,
         notificar_lembrete_cliente: notificarLembreteCliente,
         notificar_lembrete_proprietario: notificarLembreteProprietario,
-        gravar_logs: gravarLogs,
+        gravar_logs: gravarLogsCliente || gravarLogsProprietario,
+        gravar_logs_cliente: gravarLogsCliente,
+        gravar_logs_proprietario: gravarLogsProprietario,
       });
       onClose();
     } catch (err) {
@@ -355,19 +363,31 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
               />
               <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Enviar lembrete (1h antes) ao Proprietário</span>
             </label>
-            <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40">
+            <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40 space-y-2">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block uppercase tracking-wider">
+                Comprovante de Atendimento (Gravação Contínua +48h)
+              </span>
               <label className="flex items-start gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={gravarLogs}
-                  onChange={(e) => setGravarLogs(e.target.checked)}
+                  checked={gravarLogsCliente}
+                  onChange={(e) => setGravarLogsCliente(e.target.checked)}
                   className="w-4 h-4 text-emerald-600 rounded mt-0.5"
                 />
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
-                  Gravar Histórico do Atendimento (Cliente e Proprietário)
-                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200">
-                    Comprovante de Atendimento
-                  </span>
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Gravar Histórico do Atendimento (Cliente)
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={gravarLogsProprietario}
+                  onChange={(e) => setGravarLogsProprietario(e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 rounded mt-0.5"
+                />
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Gravar Histórico do Atendimento (Proprietário)
                 </span>
               </label>
             </div>

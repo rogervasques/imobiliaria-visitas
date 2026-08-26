@@ -150,7 +150,9 @@ export interface Visita {
   notificar_lembrete_proprietario?: boolean;
   notificar_pos_visita?: boolean;
   notificar_comprovacao_proprietario?: boolean;
-  gravar_logs?: boolean; // Gravar histórico do atendimento (Ativo na criação até 48h após encerramento)
+  gravar_logs?: boolean; // Flag geral de gravação
+  gravar_logs_cliente?: boolean; // Gravar histórico do atendimento com o Cliente (Ativo na criação até +48h)
+  gravar_logs_proprietario?: boolean; // Gravar histórico do atendimento com o Proprietário (Ativo na criação até +48h)
   fim_gravacao_logs_em?: string; // Data limite da gravação contínua (+48h após conclusão/cancelamento)
 
   status: StatusVisita;

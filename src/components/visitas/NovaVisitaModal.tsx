@@ -16,6 +16,7 @@ import {
   X,
   Send,
   Bell,
+  ShieldCheck,
 } from 'lucide-react';
 import { StatusVisita, Imovel, Cliente } from '@/types';
 
@@ -50,7 +51,8 @@ export function NovaVisitaModal({
   const [notificarConfirmacaoProprietario, setNotificarConfirmacaoProprietario] = useState(true);
   const [notificarLembreteCliente, setNotificarLembreteCliente] = useState(true);
   const [notificarLembreteProprietario, setNotificarLembreteProprietario] = useState(true);
-  const [gravarLogs, setGravarLogs] = useState(true);
+  const [gravarLogsCliente, setGravarLogsCliente] = useState(true);
+  const [gravarLogsProprietario, setGravarLogsProprietario] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -76,7 +78,8 @@ export function NovaVisitaModal({
       setNotificarConfirmacaoProprietario(true);
       setNotificarLembreteCliente(true);
       setNotificarLembreteProprietario(true);
-      setGravarLogs(true);
+      setGravarLogsCliente(true);
+      setGravarLogsProprietario(true);
       setImovelToAddId('');
     }
   }, [imovelPreSelecionado, clientePreSelecionado, isOpen]);
@@ -132,7 +135,9 @@ export function NovaVisitaModal({
           notificar_lembrete_cliente: notificarLembreteCliente,
           notificar_lembrete_proprietario: notificarLembreteProprietario,
           notificar_pos_visita: true,
-          gravar_logs: gravarLogs,
+          gravar_logs: gravarLogsCliente || gravarLogsProprietario,
+          gravar_logs_cliente: gravarLogsCliente,
+          gravar_logs_proprietario: gravarLogsProprietario,
           whatsapp_confirmacao_cliente: notificarConfirmacaoCliente ? 'pendente' : 'inativo',
           whatsapp_confirmacao_proprietario: notificarConfirmacaoProprietario ? 'pendente' : 'inativo',
           whatsapp_lembrete_cliente: notificarLembreteCliente ? 'pendente' : 'inativo',
@@ -393,26 +398,50 @@ export function NovaVisitaModal({
               </div>
             </label>
 
-            {/* Checkbox 5: Gravar Histórico do Atendimento (Comprovante de Atendimento) */}
-            <div className="pt-2.5 border-t border-emerald-200/60 dark:border-emerald-800/40">
+            {/* Seção Comprovante de Atendimento (Gravação Separada Cliente / Proprietário) */}
+            <div className="pt-2.5 border-t border-emerald-200/60 dark:border-emerald-800/40 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-950 dark:text-emerald-200 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Gravação de Histórico (WhatsApp)
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-200/90 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+                  Comprovante de Atendimento
+                </span>
+              </div>
+
+              {/* Checkbox: Gravar Histórico do Cliente */}
               <label className="flex items-start gap-2.5 cursor-pointer group select-none">
                 <input
                   type="checkbox"
-                  checked={gravarLogs}
-                  onChange={(e) => setGravarLogs(e.target.checked)}
+                  checked={gravarLogsCliente}
+                  onChange={(e) => setGravarLogsCliente(e.target.checked)}
                   className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                 />
                 <div className="leading-snug flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
-                      Gravar Histórico do Atendimento (Cliente e Proprietário)
-                    </span>
-                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-200/90 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
-                      Comprovante de Atendimento
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                    A gravação do histórico das conversas via WhatsApp (Evolution API) inicia imediatamente no momento da criação da visita e permanece ativa continuamente até 48 horas após o encerramento da visita (seja Concluída, Perdida ou Cancelada).
+                  <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors text-xs">
+                    Gravar Histórico do Atendimento (Cliente)
+                  </span>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Registra as mensagens com o cliente desde o agendamento até 48h após a conclusão.
+                  </p>
+                </div>
+              </label>
+
+              {/* Checkbox: Gravar Histórico do Proprietário */}
+              <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                <input
+                  type="checkbox"
+                  checked={gravarLogsProprietario}
+                  onChange={(e) => setGravarLogsProprietario(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                />
+                <div className="leading-snug flex-1">
+                  <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors text-xs">
+                    Gravar Histórico do Atendimento (Proprietário)
+                  </span>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Registra as mensagens com os proprietários dos imóveis desde o agendamento até 48h após a conclusão.
                   </p>
                 </div>
               </label>

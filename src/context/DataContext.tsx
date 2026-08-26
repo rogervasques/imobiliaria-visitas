@@ -801,6 +801,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       notificar_lembrete_proprietario: notificarLembreteProprietario,
       notificar_pos_visita: notificarPosVisita,
       gravar_logs: dados.gravar_logs !== undefined ? dados.gravar_logs : true,
+      gravar_logs_cliente: dados.gravar_logs_cliente !== undefined ? dados.gravar_logs_cliente : (dados.gravar_logs !== false),
+      gravar_logs_proprietario: dados.gravar_logs_proprietario !== undefined ? dados.gravar_logs_proprietario : (dados.gravar_logs !== false),
       status: dados.status || 'agendada',
       whatsapp_confirmacao_cliente: notificarConfirmacaoCliente ? 'pendente' : 'ignorado',
       whatsapp_confirmacao_proprietario: notificarConfirmacaoProprietario ? 'pendente' : 'ignorado',

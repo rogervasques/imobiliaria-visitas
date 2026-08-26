@@ -597,10 +597,23 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
                         <User className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 truncate">
-                          👤 Histórico WhatsApp — Cliente {cliente?.nome ? `(${cliente.nome})` : ''}
-                        </h5>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 truncate">
+                            👤 Histórico WhatsApp — Cliente {cliente?.nome ? `(${cliente.nome})` : ''}
+                          </h5>
+                          <span
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                              visita.gravar_logs_cliente !== false && visita.gravar_logs !== false
+                                ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
+                                : 'text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                            }`}
+                          >
+                            {visita.gravar_logs_cliente !== false && visita.gravar_logs !== false
+                              ? 'Gravação Ativa'
+                              : 'Gravação Desativada'}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
                           {logsCliente.length} registro(s) auditáveis
                         </span>
                       </div>
@@ -652,10 +665,23 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
                         <Building2 className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 truncate">
-                          🏠 Histórico WhatsApp — Proprietário {visita.imovel?.proprietario_nome ? `(${visita.imovel.proprietario_nome})` : ''}
-                        </h5>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 truncate">
+                            🏠 Histórico WhatsApp — Proprietário {visita.imovel?.proprietario_nome ? `(${visita.imovel.proprietario_nome})` : ''}
+                          </h5>
+                          <span
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                              visita.gravar_logs_proprietario !== false && visita.gravar_logs !== false
+                                ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
+                                : 'text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                            }`}
+                          >
+                            {visita.gravar_logs_proprietario !== false && visita.gravar_logs !== false
+                              ? 'Gravação Ativa'
+                              : 'Gravação Desativada'}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
                           {logsProprietario.length} registro(s) auditáveis
                         </span>
                       </div>

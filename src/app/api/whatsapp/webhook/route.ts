@@ -147,12 +147,17 @@ export async function POST(req: NextRequest) {
             const clienteIds = clientes.map((c) => c.id);
             const { data: visitas } = await supabase
               .from('visitas')
-              .select('id, imobiliaria, gravar_logs, fim_gravacao_logs_em, status')
+              .select('id, imobiliaria, gravar_logs, gravar_logs_cliente, fim_gravacao_logs_em, status')
               .in('cliente_id', clienteIds)
               .order('data_hora_visita', { ascending: false })
               .limit(1);
 
-            if (visitas && visitas.length > 0 && visitas[0].gravar_logs !== false) {
+            if (
+              visitas &&
+              visitas.length > 0 &&
+              visitas[0].gravar_logs !== false &&
+              visitas[0].gravar_logs_cliente !== false
+            ) {
               const v = visitas[0];
               const prazoValido = !v.fim_gravacao_logs_em || new Date(v.fim_gravacao_logs_em) >= agora;
 
@@ -196,12 +201,17 @@ export async function POST(req: NextRequest) {
               const imovelIds = imoveisProp.map((i) => i.id);
               const { data: visitasProp } = await supabase
                 .from('visitas')
-                .select('id, imobiliaria, gravar_logs, fim_gravacao_logs_em, status')
+                .select('id, imobiliaria, gravar_logs, gravar_logs_proprietario, fim_gravacao_logs_em, status')
                 .in('imovel_id', imovelIds)
                 .order('data_hora_visita', { ascending: false })
                 .limit(1);
 
-              if (visitasProp && visitasProp.length > 0 && visitasProp[0].gravar_logs !== false) {
+              if (
+                visitasProp &&
+                visitasProp.length > 0 &&
+                visitasProp[0].gravar_logs !== false &&
+                visitasProp[0].gravar_logs_proprietario !== false
+              ) {
                 const vp = visitasProp[0];
                 const prazoValido = !vp.fim_gravacao_logs_em || new Date(vp.fim_gravacao_logs_em) >= agora;
 
