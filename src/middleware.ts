@@ -69,8 +69,8 @@ export async function middleware(req: NextRequest) {
 
   // 4. Se o Usuário ESTIVER autenticado:
   if (isAuthenticated) {
-    // Redireciona /login e /cadastrar para /dashboard
-    if (isAuthRoute) {
+    // Redireciona /login, /cadastrar e a rota raiz / para /dashboard (Hoje)
+    if (isAuthRoute || pathname === '/' || pathname === '/home') {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
 

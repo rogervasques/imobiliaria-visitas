@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import {
   ShieldCheck,
   CalendarDays,
@@ -33,8 +35,17 @@ import {
 import { EasyMobLogo } from '@/components/ui/EasyMobLogo';
 
 export default function LandingPage() {
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
   const [billingCycle, setBillingCycle] = useState<'mensal' | 'anual'>('mensal');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  // Redirecionamento de Usuário Autenticado: se já houver sessão ativa, vai direto para a rota principal (/dashboard - Hoje)
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, isLoading, router]);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -65,6 +76,18 @@ export default function LandingPage() {
       a: 'Não. O EasyMob é 100% web e na nuvem, acessível de qualquer computador, tablet ou smartphone. Ele também é um Progressive Web App (PWA), permitindo ser instalado na tela inicial do seu celular com 1 clique.',
     },
   ];
+
+  // Se estiver verificando a sessão ou já autenticado, exibe tela de transição suave e evita piscar a landing page
+  if (isLoading || user) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+          Acessando o sistema...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-white antialiased overflow-x-hidden font-sans">
