@@ -28,8 +28,10 @@ import {
   FileText,
   Sparkles,
   ChevronRight,
+  Home,
 } from 'lucide-react';
 import { formatCurrency, formatPhone, formatDateTime, getInitials, getWhatsAppDirectLink } from '@/lib/utils';
+import { EnviarImovelModal } from './EnviarImovelModal';
 
 interface ClienteDetalhesModalProps {
   cliente: Cliente | null;
@@ -51,6 +53,7 @@ export function ClienteDetalhesModal({
   const [isEditing, setIsEditing] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEnviarImovelOpen, setIsEnviarImovelOpen] = useState(false);
 
   // Estados de Edição
   const [nome, setNome] = useState('');
@@ -333,6 +336,17 @@ export function ClienteDetalhesModal({
                   WhatsApp
                 </a>
 
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEnviarImovelOpen(true)}
+                  className="font-bold text-xs shadow-xs border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                >
+                  <Home className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                  Enviar Imóvel
+                </Button>
+
                 {onAgendarVisita && (
                   <Button
                     type="button"
@@ -391,18 +405,6 @@ export function ClienteDetalhesModal({
                   <History className="w-3.5 h-3.5 text-emerald-500" />
                   Histórico de Visitas ({historicoVisitas.length})
                 </h4>
-                {onAgendarVisita && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onAgendarVisita(cliente);
-                    }}
-                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" /> Nova Visita
-                  </button>
-                )}
               </div>
 
               {historicoVisitas.length === 0 ? (
@@ -551,6 +553,13 @@ export function ClienteDetalhesModal({
           </div>
         </div>
       </Modal>
+
+      {/* Modal de Busca Rápida e Envio de Imóvel via WhatsApp */}
+      <EnviarImovelModal
+        cliente={cliente}
+        isOpen={isEnviarImovelOpen}
+        onClose={() => setIsEnviarImovelOpen(false)}
+      />
     </>
   );
 }

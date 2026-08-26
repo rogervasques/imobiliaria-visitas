@@ -26,11 +26,40 @@ import {
   Smartphone,
   Radio,
   Database,
+  Phone,
+  Video,
+  MoreVertical,
+  Smile,
+  Mic,
+  UserCheck,
+  User,
 } from 'lucide-react';
 import { ProvedorWhatsApp } from '@/types';
 import { compileTemplate } from '@/lib/whatsapp';
 import { useAuth } from '@/context/AuthContext';
 import { generateInstanceName } from '@/lib/auth';
+
+/**
+ * Renderiza o texto formatado no estilo do WhatsApp (negrito, itálico, riscado e quebras de linha)
+ */
+function renderWhatsAppFormattedHtml(rawText: string) {
+  if (!rawText) return null;
+  const lines = rawText.split('\n');
+  return lines.map((line, idx) => {
+    const formatted = line
+      .replace(/\*(.*?)\*/g, '<strong class="font-bold text-slate-950 dark:text-white">$1</strong>')
+      .replace(/_(.*?)_/g, '<em class="italic">$1</em>')
+      .replace(/~(.*?)~/g, '<del class="line-through opacity-75">$1</del>');
+
+    return (
+      <span
+        key={idx}
+        className="block min-h-[1.25em]"
+        dangerouslySetInnerHTML={{ __html: formatted || '&nbsp;' }}
+      />
+    );
+  });
+}
 
 export function WhatsAppConfigForm() {
   const { configWhatsApp, atualizarConfigWhatsApp, executarRotinaLembretes30m, showToast } = useData();
@@ -96,9 +125,54 @@ export function WhatsAppConfigForm() {
   );
 
   const [activeTab, setActiveTab] = useState<'api' | 'templates' | 'automacao'>('api');
+  const [selectedTemplateTab, setSelectedTemplateTab] = useState<
+    'conf_cliente' | 'conf_prop' | 'lemb_cliente' | 'lemb_prop' | 'pos_visita'
+  >('conf_cliente');
+  const templateTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+
   const [isExecutingCron, setIsExecutingCron] = useState(false);
   const [cronLogs, setCronLogs] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Inserção inteligente de tags na posição do cursor
+  const handleInsertTag = (tag: string) => {
+    const textarea = templateTextareaRef.current;
+    let currentText = '';
+    let setTextFn: (v: string) => void = () => {};
+
+    if (selectedTemplateTab === 'conf_cliente') {
+      currentText = templateConfCliente;
+      setTextFn = setTemplateConfCliente;
+    } else if (selectedTemplateTab === 'conf_prop') {
+      currentText = templateConfProp;
+      setTextFn = setTemplateConfProp;
+    } else if (selectedTemplateTab === 'lemb_cliente') {
+      currentText = templateLembCliente;
+      setTextFn = setTemplateLembCliente;
+    } else if (selectedTemplateTab === 'lemb_prop') {
+      currentText = templateLembProp;
+      setTextFn = setTemplateLembProp;
+    } else if (selectedTemplateTab === 'pos_visita') {
+      currentText = templatePosVisita;
+      setTextFn = setTemplatePosVisita;
+    }
+
+    if (textarea) {
+      const start = textarea.selectionStart ?? currentText.length;
+      const end = textarea.selectionEnd ?? currentText.length;
+      const before = currentText.substring(0, start);
+      const after = currentText.substring(end);
+      const newText = `${before}${tag}${after}`;
+      setTextFn(newText);
+
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + tag.length, start + tag.length);
+      }, 50);
+    } else {
+      setTextFn(`${currentText} ${tag}`);
+    }
+  };
 
   const isAdmin = user?.role === 'admin';
 
@@ -316,6 +390,9 @@ export function WhatsAppConfigForm() {
         template_pos_visita_cliente: templatePosVisita,
       });
       await checkStatus();
+      showToast('Templates do WhatsApp salvos com sucesso!', 'success');
+    } catch {
+      showToast('Erro ao salvar templates do WhatsApp.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -440,13 +517,13 @@ export function WhatsAppConfigForm() {
         <button
           type="button"
           onClick={() => setActiveTab('templates')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
             activeTab === 'templates'
               ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
               : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
-          Templates de Email
+          Templates WhatsApp
         </button>
         {isAdmin && (
           <button
@@ -1009,165 +1086,265 @@ export function WhatsAppConfigForm() {
         </div>
       )}
 
-      {/* ABA 2: TEMPLATES DE MENSAGENS */}
+      {/* ABA 2: TEMPLATES DE MENSAGENS (SPLIT SCREEN: EDITOR + PRÉVIA WHATSAPP) */}
       {activeTab === 'templates' && (
-        <form onSubmit={handleSave} className="space-y-6">
-          {/* Tags Auxiliares */}
-          <Card>
-            <CardContent className="p-4 space-y-2">
-              <div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <HelpCircle className="w-4 h-4 text-emerald-500" />
-                Tags dinâmicas disponíveis para interpolação:
+        <form onSubmit={handleSave} className="space-y-5">
+          {/* Tags Dinâmicas Clicáveis */}
+          <Card className="border-slate-200/90 dark:border-slate-800">
+            <CardContent className="p-4 space-y-2.5">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-emerald-500" />
+                  <span>Tags Dinâmicas (Clique para inserir no cursor):</span>
+                </div>
+                <span className="text-[11px] text-slate-400">
+                  💡 Clique em qualquer tag para adicioná-la instantaneamente ao texto
+                </span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+
+              <div className="flex flex-wrap gap-1.5 pt-1">
                 {tagsDisponiveis.map((tag) => (
-                  <span
+                  <button
                     key={tag}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono text-[11px] font-semibold border border-slate-200 dark:border-slate-700 select-all"
+                    type="button"
+                    onClick={() => handleInsertTag(tag)}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 dark:bg-slate-800 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 text-slate-700 dark:text-slate-300 font-mono text-[11px] font-semibold border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                    title={`Inserir ${tag} na posição do cursor`}
                   >
-                    {tag}
-                  </span>
+                    + {tag}
+                  </button>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Template 1: Confirmação Imediata - Cliente */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-1.5">
-                  <Bell className="w-4 h-4 text-emerald-500" />
-                  1. Confirmação Imediata (Cliente - Roteiro de Imóveis)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Textarea
-                  value={templateConfCliente}
-                  onChange={(e) => setTemplateConfCliente(e.target.value)}
-                  rows={4}
-                />
-                <div className="p-3.5 rounded-2xl bg-[#efeae2] border border-[#d1cdc7] shadow-inner">
-                  <span className="text-xs font-bold text-emerald-800 mb-2 block">PRÉVIA DO WHATSAPP:</span>
-                  <div className="bg-[#dcf8c6] text-[#111b21] p-4 rounded-lg shadow-sm max-w-[90%] font-sans text-xs whitespace-pre-wrap leading-relaxed border border-[#c3e6b5]">
-                    {compileTemplate(templateConfCliente, sampleContext)}
-                    <div className="flex items-center justify-end gap-1 mt-1.5 text-[10px] text-[#667781]">
-                      <span>14:30</span>
-                      <span className="text-[#53bdeb] font-bold">✓✓</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Template 2: Confirmação Imediata - Proprietário */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">2. Confirmação Imediata (Proprietário)</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Textarea
-                  value={templateConfProp}
-                  onChange={(e) => setTemplateConfProp(e.target.value)}
-                  rows={4}
-                />
-                <div className="p-3.5 rounded-2xl bg-[#efeae2] border border-[#d1cdc7] shadow-inner">
-                  <span className="text-xs font-bold text-emerald-800 mb-2 block">PRÉVIA DO WHATSAPP:</span>
-                  <div className="bg-[#dcf8c6] text-[#111b21] p-4 rounded-lg shadow-sm max-w-[90%] font-sans text-xs whitespace-pre-wrap leading-relaxed border border-[#c3e6b5]">
-                    {compileTemplate(templateConfProp, sampleContext)}
-                    <div className="flex items-center justify-end gap-1 mt-1.5 text-[10px] text-[#667781]">
-                      <span>14:30</span>
-                      <span className="text-[#53bdeb] font-bold">✓✓</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Template 3: Lembrete 1 Hora Antes - Cliente */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-sky-500" />
-                  3. Lembrete 1 Hora Antes (Cliente - Roteiro)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Textarea
-                  value={templateLembCliente}
-                  onChange={(e) => setTemplateLembCliente(e.target.value)}
-                  rows={4}
-                />
-                <div className="p-3.5 rounded-2xl bg-[#efeae2] border border-[#d1cdc7] shadow-inner">
-                  <span className="text-xs font-bold text-emerald-800 mb-2 block">PRÉVIA DO WHATSAPP:</span>
-                  <div className="bg-[#dcf8c6] text-[#111b21] p-4 rounded-lg shadow-sm max-w-[90%] font-sans text-xs whitespace-pre-wrap leading-relaxed border border-[#c3e6b5]">
-                    {compileTemplate(templateLembCliente, sampleContext)}
-                    <div className="flex items-center justify-end gap-1 mt-1.5 text-[10px] text-[#667781]">
-                      <span>14:30</span>
-                      <span className="text-[#53bdeb] font-bold">✓✓</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Template 4: Lembrete 1 Hora Antes - Proprietário */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">4. Lembrete 1 Hora Antes (Proprietário)</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Textarea
-                  value={templateLembProp}
-                  onChange={(e) => setTemplateLembProp(e.target.value)}
-                  rows={4}
-                />
-                <div className="p-3.5 rounded-2xl bg-[#efeae2] border border-[#d1cdc7] shadow-inner">
-                  <span className="text-xs font-bold text-emerald-800 mb-2 block">PRÉVIA DO WHATSAPP:</span>
-                  <div className="bg-[#dcf8c6] text-[#111b21] p-4 rounded-lg shadow-sm max-w-[90%] font-sans text-xs whitespace-pre-wrap leading-relaxed border border-[#c3e6b5]">
-                    {compileTemplate(templateLembProp, sampleContext)}
-                    <div className="flex items-center justify-end gap-1 mt-1.5 text-[10px] text-[#667781]">
-                      <span>14:30</span>
-                      <span className="text-[#53bdeb] font-bold">✓✓</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Template 5: Pós-Visita / Feedback - Cliente */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
-                  <Sparkles className="w-4 h-4" />
-                  5. Pós-Visita / Feedback (Cliente - 2 Horas Após)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Textarea
-                  value={templatePosVisita}
-                  onChange={(e) => setTemplatePosVisita(e.target.value)}
-                  rows={4}
-                />
-                <div className="p-3.5 rounded-2xl bg-[#efeae2] border border-[#d1cdc7] shadow-inner">
-                  <span className="text-xs font-bold text-emerald-800 mb-2 block">PRÉVIA DO WHATSAPP:</span>
-                  <div className="bg-[#dcf8c6] text-[#111b21] p-4 rounded-lg shadow-sm max-w-[90%] font-sans text-xs whitespace-pre-wrap leading-relaxed border border-[#c3e6b5]">
-                    {compileTemplate(templatePosVisita, sampleContext)}
-                    <div className="flex items-center justify-end gap-1 mt-1.5 text-[10px] text-[#667781]">
-                      <span>16:30</span>
-                      <span className="text-[#53bdeb] font-bold">✓✓</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Seletor de Templates (Abas no Topo do Editor) */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            {[
+              { id: 'conf_cliente' as const, label: '1. Confirmação Cliente', icon: Bell },
+              { id: 'conf_prop' as const, label: '2. Confirmação Proprietário', icon: Bell },
+              { id: 'lemb_cliente' as const, label: '3. Lembrete Cliente', icon: Clock },
+              { id: 'lemb_prop' as const, label: '4. Lembrete Proprietário', icon: Clock },
+              { id: 'pos_visita' as const, label: '5. Pós-Visita Feedback', icon: Sparkles },
+            ].map((t) => {
+              const Icon = t.icon;
+              const isActive = selectedTemplateTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setSelectedTemplateTab(t.id)}
+                  className={`px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+                    isActive
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-[1.02]'
+                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-emerald-500'}`} />
+                  <span>{t.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <Button type="submit" variant="primary" size="lg" isLoading={isSaving} className="shadow-lg">
-              <Save className="w-4 h-4 mr-2" />
-              Salvar Templates de Mensagem
-            </Button>
+          {/* Layout Split-Screen: Editor (Esquerda) + Prévia WhatsApp (Direita) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* LADO ESQUERDO: EDITOR */}
+            <div className="lg:col-span-7 space-y-4">
+              <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        {selectedTemplateTab === 'conf_cliente' && (
+                          <>
+                            <Bell className="w-4 h-4 text-emerald-500" />
+                            1. Confirmação Imediata (Cliente - Roteiro de Imóveis)
+                          </>
+                        )}
+                        {selectedTemplateTab === 'conf_prop' && (
+                          <>
+                            <Bell className="w-4 h-4 text-emerald-500" />
+                            2. Confirmação Imediata (Proprietário)
+                          </>
+                        )}
+                        {selectedTemplateTab === 'lemb_cliente' && (
+                          <>
+                            <Clock className="w-4 h-4 text-sky-500" />
+                            3. Lembrete 1 Hora Antes (Cliente - Roteiro)
+                          </>
+                        )}
+                        {selectedTemplateTab === 'lemb_prop' && (
+                          <>
+                            <Clock className="w-4 h-4 text-sky-500" />
+                            4. Lembrete 1 Hora Antes (Proprietário)
+                          </>
+                        )}
+                        {selectedTemplateTab === 'pos_visita' && (
+                          <>
+                            <Sparkles className="w-4 h-4 text-purple-500" />
+                            5. Pós-Visita / Feedback (Cliente - 2 Horas Após)
+                          </>
+                        )}
+                      </CardTitle>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {selectedTemplateTab === 'conf_cliente' &&
+                          'Disparado para o cliente visitante assim que o agendamento da visita ou roteiro é concluído.'}
+                        {selectedTemplateTab === 'conf_prop' &&
+                          'Disparado para o proprietário do imóvel notificando que haverá uma visita com cliente interessado.'}
+                        {selectedTemplateTab === 'lemb_cliente' &&
+                          'Disparado automaticamente para o cliente 1 hora antes do horário marcado.'}
+                        {selectedTemplateTab === 'lemb_prop' &&
+                          'Disparado automaticamente para o proprietário 1 hora antes do horário marcado.'}
+                        {selectedTemplateTab === 'pos_visita' &&
+                          'Disparado para o cliente 2 horas após a visita para colher feedback e engajar nova proposta.'}
+                      </p>
+                    </div>
+
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-800 shrink-0">
+                      {selectedTemplateTab.includes('prop') ? 'Proprietário' : 'Cliente'}
+                    </span>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Mensagem do Template:
+                    </label>
+                    <textarea
+                      ref={templateTextareaRef}
+                      rows={14}
+                      value={
+                        selectedTemplateTab === 'conf_cliente'
+                          ? templateConfCliente
+                          : selectedTemplateTab === 'conf_prop'
+                          ? templateConfProp
+                          : selectedTemplateTab === 'lemb_cliente'
+                          ? templateLembCliente
+                          : selectedTemplateTab === 'lemb_prop'
+                          ? templateLembProp
+                          : templatePosVisita
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (selectedTemplateTab === 'conf_cliente') setTemplateConfCliente(val);
+                        else if (selectedTemplateTab === 'conf_prop') setTemplateConfProp(val);
+                        else if (selectedTemplateTab === 'lemb_cliente') setTemplateLembCliente(val);
+                        else if (selectedTemplateTab === 'lemb_prop') setTemplateLembProp(val);
+                        else if (selectedTemplateTab === 'pos_visita') setTemplatePosVisita(val);
+                      }}
+                      className="w-full p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-sans leading-relaxed text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-y"
+                      placeholder="Digite o texto da mensagem..."
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                    <span>💡 Formatação WhatsApp: <code>*negrito*</code>, <code>_itálico_</code>, <code>~riscado~</code></span>
+                    <span>Modo de edição contínua</span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                      isLoading={isSaving}
+                      className="w-full sm:w-auto shadow-md font-bold text-xs"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Salvar Templates WhatsApp
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* LADO DIREITO: PRÉVIA EM TEMPO REAL (WHATSAPP MOCKUP) */}
+            <div className="lg:col-span-5 lg:sticky lg:top-6 space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <Smartphone className="w-4 h-4 text-emerald-500" />
+                  Prévia em Tempo Real (WhatsApp)
+                </span>
+                <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                  Live Sync
+                </span>
+              </div>
+
+              {/* Mockup do WhatsApp */}
+              <div className="rounded-3xl overflow-hidden border border-slate-300 dark:border-slate-800 shadow-xl bg-[#efeae2] dark:bg-[#0b141a] flex flex-col min-h-[480px]">
+                {/* Header do WhatsApp */}
+                <div className="bg-[#008069] dark:bg-[#1f2c34] text-white p-3.5 flex items-center justify-between shadow-md shrink-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-white/20 text-white font-bold flex items-center justify-center text-xs shrink-0 border border-white/30">
+                      {selectedTemplateTab.includes('prop') ? 'CE' : 'LF'}
+                    </div>
+                    <div className="min-w-0">
+                      <h5 className="font-bold text-xs leading-tight truncate text-white">
+                        {selectedTemplateTab.includes('prop')
+                          ? sampleContext.proprietario_nome
+                          : sampleContext.cliente_nome}
+                      </h5>
+                      <span className="text-[10px] text-emerald-100 dark:text-slate-400 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                        online
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-white/80 shrink-0">
+                    <Video className="w-4 h-4" />
+                    <Phone className="w-3.5 h-3.5" />
+                    <MoreVertical className="w-4 h-4" />
+                  </div>
+                </div>
+
+                {/* Área de Mensagens com Fundo WhatsApp */}
+                <div className="flex-1 p-3.5 flex flex-col justify-between space-y-3 overflow-y-auto">
+                  {/* Badge de Data */}
+                  <div className="self-center my-1 px-3 py-0.5 rounded-lg bg-white/80 dark:bg-slate-900/80 text-[10px] font-bold text-slate-500 dark:text-slate-400 shadow-2xs border border-black/5 dark:border-white/5">
+                    HOJE
+                  </div>
+
+                  {/* Balão de Mensagem Enviada */}
+                  <div className="self-end max-w-[94%] sm:max-w-[88%] rounded-2xl rounded-tr-xs bg-[#dcf8c6] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] p-3.5 shadow-sm border border-[#c3e6b5] dark:border-[#025144] space-y-1.5 relative">
+                    <div className="font-sans text-xs leading-relaxed break-words">
+                      {renderWhatsAppFormattedHtml(
+                        compileTemplate(
+                          selectedTemplateTab === 'conf_cliente'
+                            ? templateConfCliente
+                            : selectedTemplateTab === 'conf_prop'
+                            ? templateConfProp
+                            : selectedTemplateTab === 'lemb_cliente'
+                            ? templateLembCliente
+                            : selectedTemplateTab === 'lemb_prop'
+                            ? templateLembProp
+                            : templatePosVisita,
+                          sampleContext
+                        )
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-1 text-[10px] text-[#667781] dark:text-emerald-200/70 pt-0.5">
+                      <span>{selectedTemplateTab === 'pos_visita' ? '16:30' : '14:30'}</span>
+                      <span className="text-[#53bdeb] font-extrabold text-xs">✓✓</span>
+                    </div>
+                  </div>
+
+                  {/* Barra Simulada de Envio */}
+                  <div className="pt-2">
+                    <div className="p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                      <div className="flex items-center gap-2">
+                        <Smile className="w-4 h-4 text-slate-400" />
+                        <span className="text-[11px]">Mensagem...</span>
+                      </div>
+                      <Mic className="w-4 h-4 text-slate-400" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </form>
       )}
