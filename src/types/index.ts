@@ -90,6 +90,7 @@ export interface Cliente {
   nome: string;
   telefone: string;
   email?: string;
+  tipo_cliente?: 'comprador_inquilino' | 'proprietario';
   perfil_interesse?: string;
   faixa_orcamento?: string;
   origem_lead?: OrigemLead;
@@ -98,6 +99,8 @@ export interface Cliente {
   imovel_interesse_id?: string;
   imovel_interesse_titulo?: string;
   imovel_interesse_foto?: string;
+  corretor_responsavel_nome?: string;
+  corretor_responsavel_id?: string;
   prioridade?: 'alta' | 'media' | 'baixa';
   tempo_parada_texto?: string;
   observacoes?: string;

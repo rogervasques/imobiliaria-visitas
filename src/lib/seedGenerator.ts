@@ -398,12 +398,15 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
     }
 
     const imovelRef = imoveis[idx % imoveis.length];
+    const corretoresMock = ['João Silva', 'Roger Vasques', 'Carlos Mendes', 'Mariana Souza', 'Juliana Ramos'];
+    const corretorResp = corretoresMock[idx % corretoresMock.length];
 
     return {
       id: `cli-${String(idx + 1).padStart(3, '0')}`,
       nome: nomeCliente,
       telefone: telefoneCliente,
       email: c.email,
+      tipo_cliente: idx % 6 === 0 ? 'proprietario' : 'comprador_inquilino',
       perfil_interesse: perfilCliente,
       faixa_orcamento: orcamentoCliente,
       origem_lead: c.origem as OrigemLead,
@@ -412,6 +415,7 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
       imovel_interesse_id: imovelRef?.id,
       imovel_interesse_titulo: imovelRef?.titulo,
       imovel_interesse_foto: imovelRef?.imagem_url,
+      corretor_responsavel_nome: corretorResp,
       prioridade,
       tempo_parada_texto: tempoParada,
       observacoes: `Lead qualificado via ${c.origem}. Preferência de contato por WhatsApp.`,
