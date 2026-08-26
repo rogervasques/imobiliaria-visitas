@@ -121,6 +121,7 @@ export interface GeneratePdfOptions {
   corretorTelefone?: string;
   instanciaOrigem?: string;
   whatsappOrigemNumero?: string;
+  filtroDestinatario?: 'cliente' | 'proprietario' | 'todos';
 }
 
 export function gerarRelatorioAtendimentoPdf({
@@ -129,6 +130,7 @@ export function gerarRelatorioAtendimentoPdf({
   corretorTelefone,
   instanciaOrigem,
   whatsappOrigemNumero,
+  filtroDestinatario = 'todos',
 }: GeneratePdfOptions) {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -142,6 +144,7 @@ export function gerarRelatorioAtendimentoPdf({
 
   const tenantNome = sanitizePdfText(imobiliariaNome || visita.imobiliaria || 'EasyMob Imoveis');
   const clienteNome = sanitizePdfText(visita.cliente?.nome || 'Cliente Nao Informado');
+  const proprietarioNome = sanitizePdfText(visita.imovel?.proprietario_nome || 'Proprietario Nao Informado');
   const clienteTelefone = sanitizePdfText(visita.cliente?.telefone || 'Telefone Nao Informado');
   const corretorNome = sanitizePdfText(visita.created_by_user_nome || visita.corretor_nome || 'Corretor Responsavel');
   const corretorTelFormatado = sanitizePdfText(corretorTelefone || '(31) 99887-7665');
@@ -167,7 +170,16 @@ export function gerarRelatorioAtendimentoPdf({
       : 'Endereco nao informado'
   );
 
-  const logs = getVisitaLogs(visita);
+  const allLogs = getVisitaLogs(visita);
+  const logs = allLogs.filter((log) => {
+    if (filtroDestinatario === 'cliente') {
+      return log.remetente_tipo === 'CLIENTE' || log.remetente_tipo === 'SISTEMA' || (log.remetente_tipo === 'CORRETOR' && !log.remetente_nome?.toLowerCase().includes('propriet'));
+    }
+    if (filtroDestinatario === 'proprietario') {
+      return log.remetente_tipo === 'PROPRIETARIO' || (log.remetente_tipo === 'CORRETOR' && log.remetente_nome?.toLowerCase().includes('propriet'));
+    }
+    return true;
+  });
 
   // ─── 1. CABEÇALHO DO DOCUMENTO (DESIGN CORPORATIVO & LIMPO) ───
   // Faixa decorativa superior
@@ -322,7 +334,14 @@ export function gerarRelatorioAtendimentoPdf({
 
   // Salva o arquivo com nome comercial limpo
   const sanitizedCliente = clienteNome.replace(/[^a-zA-Z0-9]/g, '_');
-  const fileName = `Relatorio_Atendimento_${sanitizedCliente}_${visita.id.slice(-6)}.pdf`;
+  const sanitizedProprietario = proprietarioNome.replace(/[^a-zA-Z0-9]/g, '_');
+  const sufixoTipo =
+    filtroDestinatario === 'cliente'
+      ? `Cliente_${sanitizedCliente}`
+      : filtroDestinatario === 'proprietario'
+      ? `Proprietario_${sanitizedProprietario}`
+      : sanitizedCliente;
+  const fileName = `Relatorio_Atendimento_${sufixoTipo}_${visita.id.slice(-6)}.pdf`;
   doc.save(fileName);
 }
 
