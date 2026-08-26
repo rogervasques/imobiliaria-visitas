@@ -32,7 +32,7 @@ import {
   formatTime,
   getWhatsAppDirectLink,
 } from '@/lib/utils';
-import { getGoogleMapsDirectionsUrl, getGoogleMapsSearchUrl } from '@/lib/maps';
+import { getGoogleMapsSearchUrl } from '@/lib/maps';
 import { useData } from '@/context/DataContext';
 
 interface VisitCardProps {
@@ -106,8 +106,8 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
       )
     : '#';
 
-  // Link do Google Maps / Rotas
-  const directMapsUrl = visita.imovel ? getGoogleMapsDirectionsUrl(visita.imovel) : '#';
+  // Link do Google Maps / Localização Direta
+  const directMapsUrl = visita.imovel ? getGoogleMapsSearchUrl(visita.imovel) : '#';
 
   return (
     <>
@@ -274,20 +274,20 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
 
                 <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
                   <a
-                    href={getGoogleMapsDirectionsUrl(visita.imovel)}
+                    href={getGoogleMapsSearchUrl(visita.imovel)}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] border border-slate-200 dark:border-slate-700 transition-colors shadow-2xs"
-                    title="Abrir no Google Maps / GPS"
+                    title="Abrir localização no Google Maps"
                   >
                     <MapPin className="w-3 h-3 text-emerald-500" />
                     <span>📍 Mapa</span>
                   </a>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
-                <User className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                <User className="w-3 h-3 text-emerald-500 shrink-0" />
                 <span className="truncate">
                   Corretor: <strong className="text-slate-700 dark:text-slate-200 font-semibold">{visita.corretor_nome || visita.created_by_user_nome || 'Roger Vasques Berchembrock'}</strong>
                 </span>

@@ -150,7 +150,7 @@ export function ImovelCard({ imovel, onClick, onEdit, onAgendarVisita }: ImovelC
         {/* Tipo e Finalidade */}
         <div className="absolute bottom-3 left-3 z-10">
           <span className="px-2.5 py-1 rounded-lg bg-emerald-600/90 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider">
-            {imovel.tipo} • {imovel.finalidade}
+            {imovel.tipo} • {imovel.finalidade === 'ambos' ? 'VENDA E LOCAÇÃO' : imovel.finalidade}
           </span>
         </div>
       </div>

@@ -64,7 +64,6 @@ export function NovoImovelModal({ isOpen, onClose }: NovoImovelModalProps) {
   const [suites, setSuites] = useState('1');
   const [banheiros, setBanheiros] = useState('2');
   const [vagas, setVagas] = useState('2');
-  const [aceitaPet, setAceitaPet] = useState<boolean>(true);
 
   // 3. Descrição Comercial & Características
   const [descricaoComercial, setDescricaoComercial] = useState('');
@@ -131,7 +130,6 @@ export function NovoImovelModal({ isOpen, onClose }: NovoImovelModalProps) {
         suites: parseInt(suites, 10) || 0,
         banheiros: parseInt(banheiros, 10) || 0,
         vagas: parseInt(vagas, 10) || 0,
-        aceita_pet: aceitaPet,
         descricao_comercial: descricaoComercial,
         caracteristicas: caracteristicasSelecionadas,
         proprietario_id: proprietarioId || undefined,
@@ -187,7 +185,7 @@ export function NovoImovelModal({ isOpen, onClose }: NovoImovelModalProps) {
             >
               <option value="venda">Venda</option>
               <option value="locacao">Locação</option>
-              <option value="ambos">Venda & Locação</option>
+              <option value="ambos">Venda e Locação</option>
             </Select>
           </div>
 
@@ -328,7 +326,7 @@ export function NovoImovelModal({ isOpen, onClose }: NovoImovelModalProps) {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Banheiros"
               type="number"
@@ -343,14 +341,6 @@ export function NovoImovelModal({ isOpen, onClose }: NovoImovelModalProps) {
               value={vagas}
               onChange={(e) => setVagas(e.target.value)}
             />
-            <Select
-              label="Aceita Pet?"
-              value={aceitaPet ? 'sim' : 'nao'}
-              onChange={(e) => setAceitaPet(e.target.value === 'sim')}
-            >
-              <option value="sim">🐾 Sim, Aceita Pet</option>
-              <option value="nao">🚫 Não Aceita Pet</option>
-            </Select>
           </div>
         </div>
 

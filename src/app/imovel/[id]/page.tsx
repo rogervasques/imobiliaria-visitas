@@ -5,7 +5,7 @@ import { Imovel } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { mockImoveis } from '@/lib/mockData';
 import { ImovelGaleriaLightbox } from '@/components/imoveis/ImovelGaleriaLightbox';
-import { getGoogleMapsSearchUrl, getGoogleMapsDirectionsUrl } from '@/lib/maps';
+import { getGoogleMapsSearchUrl } from '@/lib/maps';
 import { formatCurrency, getWhatsAppDirectLink } from '@/lib/utils';
 import {
   Building2,
@@ -13,7 +13,6 @@ import {
   BedDouble,
   Bath,
   Car,
-  PawPrint,
   Maximize2,
   Sparkles,
   Share2,
@@ -375,7 +374,7 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
                 REF: {imovel.codigo || 'SEM-COD'}
               </span>
               <span className="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider">
-                {imovel.tipo} • {imovel.finalidade}
+                {imovel.tipo} • {imovel.finalidade === 'ambos' ? 'VENDA E LOCAÇÃO' : imovel.finalidade}
               </span>
             </div>
 
@@ -423,7 +422,7 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 block mb-1">
-                {imovel.finalidade === 'venda' ? 'Imóvel à Venda' : 'Imóvel para Locação'}
+                {imovel.finalidade === 'ambos' ? 'Imóvel para Venda e Locação' : imovel.finalidade === 'venda' ? 'Imóvel à Venda' : 'Imóvel para Locação'}
               </span>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 {imovel.titulo}
@@ -469,7 +468,7 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
         </div>
 
         {/* 3. Grade de Características Físicas */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-center space-y-1">
             <BedDouble className="w-5 h-5 text-slate-400 mx-auto" />
             <div className="text-lg font-black text-white">{imovel.quartos}</div>
@@ -498,14 +497,6 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
             <Maximize2 className="w-5 h-5 text-slate-400 mx-auto" />
             <div className="text-lg font-black text-white">{areaConstruidaOuUtil || '—'}</div>
             <span className="text-[11px] text-slate-400 uppercase font-bold">Área m²</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-center space-y-1">
-            <PawPrint className="w-5 h-5 text-emerald-400 mx-auto" />
-            <div className="text-sm font-black text-white pt-1">
-              {imovel.aceita_pet ? 'Sim' : 'Não'}
-            </div>
-            <span className="text-[11px] text-slate-400 uppercase font-bold">Aceita Pet</span>
           </div>
         </div>
 

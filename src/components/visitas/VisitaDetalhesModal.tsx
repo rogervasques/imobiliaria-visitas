@@ -30,7 +30,7 @@ import {
   Navigation,
 } from 'lucide-react';
 import { formatDateTime, formatPhone, getWhatsAppDirectLink, formatCurrency } from '@/lib/utils';
-import { getGoogleMapsSearchUrl, getGoogleMapsDirectionsUrl } from '@/lib/maps';
+import { getGoogleMapsSearchUrl } from '@/lib/maps';
 import { gerarDossieJuridicoPdf, getVisitaLogs } from '@/lib/pdfDossieGenerator';
 import { useTenant } from '@/context/TenantContext';
 import { useData } from '@/context/DataContext';
@@ -293,12 +293,12 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
 
                           <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
                             <a
-                              href={getGoogleMapsDirectionsUrl(im)}
+                              href={getGoogleMapsSearchUrl(im)}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-colors shadow-2xs"
-                              title="Abrir no Google Maps / GPS"
+                              title="Abrir localização no Google Maps"
                             >
                               <MapPin className="w-3.5 h-3.5 text-emerald-500" />
                               <span>📍 Mapa</span>

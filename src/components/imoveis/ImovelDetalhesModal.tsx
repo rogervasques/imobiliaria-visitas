@@ -23,7 +23,6 @@ import {
   Key,
   ShieldCheck,
   Check,
-  PawPrint,
   Maximize2,
   Trees,
   Sparkles,
@@ -53,7 +52,7 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { formatCurrency, formatPhone, formatDateTime, getWhatsAppDirectLink } from '@/lib/utils';
-import { getGoogleMapsSearchUrl, getGoogleMapsDirectionsUrl } from '@/lib/maps';
+import { getGoogleMapsSearchUrl } from '@/lib/maps';
 
 interface ImovelDetalhesModalProps {
   imovel: Imovel | null;
@@ -122,7 +121,6 @@ export function ImovelDetalhesModal({
   const [suites, setSuites] = useState('1');
   const [banheiros, setBanheiros] = useState('2');
   const [vagas, setVagas] = useState('2');
-  const [aceitaPet, setAceitaPet] = useState<boolean>(true);
   const [descricaoComercial, setDescricaoComercial] = useState('');
   const [caracteristicasSelecionadas, setCaracteristicasSelecionadas] = useState<string[]>([]);
   const [proprietarioId, setProprietarioId] = useState<string | null>(null);
@@ -167,7 +165,6 @@ export function ImovelDetalhesModal({
       setSuites(String(imovel.suites || 0));
       setBanheiros(String(imovel.banheiros || 0));
       setVagas(String(imovel.vagas || 0));
-      setAceitaPet(imovel.aceita_pet ?? true);
       setDescricaoComercial(imovel.descricao_comercial || '');
       setCaracteristicasSelecionadas(imovel.caracteristicas || []);
       setProprietarioId(imovel.proprietario_id || null);
@@ -314,7 +311,6 @@ export function ImovelDetalhesModal({
         suites: parseInt(suites, 10) || 0,
         banheiros: parseInt(banheiros, 10) || 0,
         vagas: parseInt(vagas, 10) || 0,
-        aceita_pet: aceitaPet,
         descricao_comercial: descricaoComercial,
         caracteristicas: caracteristicasSelecionadas,
         proprietario_id: proprietarioId || undefined,
@@ -404,7 +400,7 @@ export function ImovelDetalhesModal({
                 >
                   <option value="venda">Venda</option>
                   <option value="locacao">Locação</option>
-                  <option value="ambos">Venda & Locação</option>
+                  <option value="ambos">Venda e Locação</option>
                 </Select>
                 <Select
                   label="Status"
@@ -538,7 +534,7 @@ export function ImovelDetalhesModal({
                   onChange={(e) => setSuites(e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
                   label="Banheiros"
                   type="number"
@@ -551,14 +547,6 @@ export function ImovelDetalhesModal({
                   value={vagas}
                   onChange={(e) => setVagas(e.target.value)}
                 />
-                <Select
-                  label="Aceita Pet?"
-                  value={aceitaPet ? 'sim' : 'nao'}
-                  onChange={(e) => setAceitaPet(e.target.value === 'sim')}
-                >
-                  <option value="sim">🐾 Sim, Aceita Pet</option>
-                  <option value="nao">🚫 Não Aceita Pet</option>
-                </Select>
               </div>
             </div>
 
@@ -894,17 +882,11 @@ export function ImovelDetalhesModal({
                     </div>
                   </div>
 
-                  {/* Tags Principais do Imóvel: Tipo, Finalidade e Pet (Movidas para abaixo da foto) */}
+                  {/* Tags Principais do Imóvel: Tipo e Finalidade */}
                   <div className="flex items-center gap-2 flex-wrap pt-1">
                     <span className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider">
-                      {imovel.tipo} • {imovel.finalidade}
+                      {imovel.tipo} • {imovel.finalidade === 'ambos' ? 'VENDA E LOCAÇÃO' : imovel.finalidade}
                     </span>
-                    {imovel.aceita_pet !== undefined && (
-                      <span className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5">
-                        <PawPrint className="w-3.5 h-3.5 text-emerald-500" />
-                        {imovel.aceita_pet ? 'Aceita Pet' : 'Não Aceita Pet'}
-                      </span>
-                    )}
                   </div>
 
                   {/* Faixa de Miniaturas Navegáveis */}
@@ -1046,11 +1028,11 @@ export function ImovelDetalhesModal({
 
                   <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
                     <a
-                      href={getGoogleMapsDirectionsUrl(imovel)}
+                      href={getGoogleMapsSearchUrl(imovel)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-colors shadow-2xs"
-                      title="Abrir no Google Maps / GPS"
+                      title="Abrir localização no Google Maps"
                     >
                       <MapPin className="w-3.5 h-3.5 text-emerald-500" />
                       <span>📍 Mapa</span>

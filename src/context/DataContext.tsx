@@ -420,7 +420,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const clientes = React.useMemo(() => allClientes.filter((c) => matchesTenant(c.imobiliaria)), [allClientes, matchesTenant]);
   
   // Regra de Acesso à Agenda e Visitas:
-  // - Perfil Corretor: visualiza estritamente as visitas que ele mesmo criou (created_by_user_id === user.id)
+  // - Perfil Corretor: visualiza estritamente as visitas que ele mesmo criou ou é responsável
   // - Perfil Gestor: visualiza todas as visitas de toda a sua imobiliária
   // - Perfil Administrador: acesso global com alternância entre imobiliárias
   const visitas = React.useMemo(() => {
@@ -431,7 +431,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       // Se o usuário for Corretor, restringe a agenda apenas para suas próprias visitas
       if (user?.role === 'corretor') {
         if (!user.id) return false;
-        return v.created_by_user_id === user.id;
+        const matchesId = v.created_by_user_id === user.id;
+        const matchesNome = Boolean(
+          (v.corretor_nome && user.name && v.corretor_nome.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
+          (v.created_by_user_nome && user.name && v.created_by_user_nome.toLowerCase().trim() === user.name.toLowerCase().trim())
+        );
+        return matchesId || matchesNome;
       }
 
       // Gestores e Administradores visualizam todas as visitas da imobiliária

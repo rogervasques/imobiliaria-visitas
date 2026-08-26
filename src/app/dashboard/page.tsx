@@ -17,7 +17,7 @@ import {
 import {
   formatPhone, formatTime, getWhatsAppDirectLink,
 } from '@/lib/utils';
-import { getGoogleMapsDirectionsUrl } from '@/lib/maps';
+import { getGoogleMapsSearchUrl } from '@/lib/maps';
 import { WhatsAppStatusBadge } from '@/components/layout/WhatsAppStatusBadge';
 
 // ─── Constantes de Status ────────────────────────────────────────────────────
@@ -359,7 +359,7 @@ function TimelineCard({
   const waProprietario = visita.imovel?.proprietario_telefone
     ? getWhatsAppDirectLink(visita.imovel.proprietario_telefone, `Olá, ${visita.imovel.proprietario_nome}! Sobre a visita ao "${visita.imovel?.titulo || ''}".`)
     : '#';
-  const mapsUrl = visita.imovel ? getGoogleMapsDirectionsUrl(visita.imovel) : '#';
+  const mapsUrl = visita.imovel ? getGoogleMapsSearchUrl(visita.imovel) : '#';
 
   return (
     <>
@@ -488,6 +488,10 @@ function TimelineCard({
               <MapPin className="w-3 h-3 shrink-0 text-slate-400" />
               <span>{visita.imovel?.endereco || '—'}, {visita.imovel?.bairro || ''}</span>
             </p>
+            <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+              <User className="w-3 h-3 text-emerald-500 shrink-0" />
+              <span>Corretor: <strong className="text-slate-700 dark:text-slate-200 font-semibold">{visita.corretor_nome || visita.created_by_user_nome || 'Roger Vasques Berchembrock'}</strong></span>
+            </div>
           </div>
 
           {/* Cliente e Proprietário */}
@@ -547,14 +551,13 @@ function TimelineCard({
               </a>
 
               {/* Mapa / GPS */}
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="w-full" title="Abrir no Google Maps / GPS">
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="w-full" title="Abrir localização no Google Maps">
                 <button
                   type="button"
                   className="w-full flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-400 border border-sky-200/70 dark:border-sky-800/70 text-[11px] sm:text-xs font-bold transition-all cursor-pointer shadow-2xs truncate"
                 >
-                  <Navigation className="w-3.5 h-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
-                  <span className="hidden sm:inline">Abrir </span>
-                  <span>Mapa</span>
+                  <MapPin className="w-3.5 h-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
+                  <span>📍 Mapa</span>
                 </button>
               </a>
             </div>
