@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { buildTemplateContext, buildTemplateContextAsync, compileTemplate, sendWhatsAppMessage } from '@/lib/whatsapp';
 import { Visita } from '@/types';
+import { generateInstanceName } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
@@ -29,6 +30,27 @@ export async function GET(req: NextRequest) {
     let enviados = 0;
     const logs: string[] = [];
 
+    // Helper para descobrir a instância de WhatsApp da pessoa que criou a visita
+    const resolveVisitCreatorInstance = async (visita: Visita): Promise<string> => {
+      if (!visita.created_by_user_id) {
+        return config.instancia_nome || 'easymob';
+      }
+      try {
+        const { data: creatorUser } = await supabase
+          .from('users')
+          .select('instance_name')
+          .eq('id', visita.created_by_user_id)
+          .single();
+
+        if (creatorUser?.instance_name) {
+          return creatorUser.instance_name;
+        }
+        return generateInstanceName(visita.created_by_user_id);
+      } catch {
+        return generateInstanceName(visita.created_by_user_id);
+      }
+    };
+
     // 2. Busca visitas pendentes de lembrete (1h antes)
     const { data: visitasLembrete, error: errVisitas } = await supabase
       .from('visitas')
@@ -50,6 +72,7 @@ export async function GET(req: NextRequest) {
     if (visitasLembrete && visitasLembrete.length > 0) {
       for (const visita of visitasLembrete as unknown as Visita[]) {
         const ctx = await buildTemplateContextAsync(visita);
+        const creatorInstance = await resolveVisitCreatorInstance(visita);
 
         // Disparo para o Cliente
         if (visita.cliente?.telefone) {
@@ -58,6 +81,7 @@ export async function GET(req: NextRequest) {
             toPhone: visita.cliente.telefone,
             message: msg,
             config,
+            instanceName: creatorInstance,
             logInfo: {
               visitaId: visita.id,
               tipoMensagem: 'lembrete_cliente',
@@ -72,7 +96,7 @@ export async function GET(req: NextRequest) {
               .from('visitas')
               .update({ whatsapp_lembrete_cliente: 'enviado' })
               .eq('id', visita.id);
-            logs.push(`Lembrete 1h cliente enviado: ${visita.cliente.nome}`);
+            logs.push(`Lembrete 1h cliente enviado via [${creatorInstance}]: ${visita.cliente.nome}`);
           }
         }
 
@@ -83,6 +107,7 @@ export async function GET(req: NextRequest) {
             toPhone: visita.imovel.proprietario_telefone,
             message: msg,
             config,
+            instanceName: creatorInstance,
             logInfo: {
               visitaId: visita.id,
               tipoMensagem: 'lembrete_proprietario',
@@ -96,7 +121,7 @@ export async function GET(req: NextRequest) {
               .from('visitas')
               .update({ whatsapp_lembrete_proprietario: 'enviado' })
               .eq('id', visita.id);
-            logs.push(`Lembrete 1h proprietário enviado: ${visita.imovel.proprietario_nome}`);
+            logs.push(`Lembrete 1h proprietário enviado via [${creatorInstance}]: ${visita.imovel.proprietario_nome}`);
           }
         }
       }
@@ -120,11 +145,13 @@ export async function GET(req: NextRequest) {
       for (const visita of visitasPosVisita as unknown as Visita[]) {
         if (visita.cliente?.telefone && config.template_pos_visita_cliente) {
           const ctx = await buildTemplateContextAsync(visita);
+          const creatorInstance = await resolveVisitCreatorInstance(visita);
           const msg = compileTemplate(config.template_pos_visita_cliente, ctx);
           const res = await sendWhatsAppMessage({
             toPhone: visita.cliente.telefone,
             message: msg,
             config,
+            instanceName: creatorInstance,
             logInfo: {
               visitaId: visita.id,
               tipoMensagem: 'pos_visita_cliente',
@@ -139,7 +166,7 @@ export async function GET(req: NextRequest) {
               .from('visitas')
               .update({ whatsapp_pos_visita_cliente: 'enviado' })
               .eq('id', visita.id);
-            logs.push(`Pós-visita 2h feedback enviado: ${visita.cliente.nome}`);
+            logs.push(`Pós-visita cliente enviado via [${creatorInstance}]: ${visita.cliente.nome}`);
           }
         }
       }
