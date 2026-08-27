@@ -519,51 +519,79 @@ function TimelineCard({
 
           {/* ─── Botões de Desfecho & Ações Rápidas por Status (Agendada) ─── */}
           {visita.status === 'agendada' && (
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2" onClick={e => e.stopPropagation()}>
-              {/* [ Realizada ] */}
-              <button
-                type="button"
-                onClick={() => setIsConcluirOpen(true)}
-                className="w-full py-1.5 sm:py-2 px-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-[11px] sm:text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                title="Concluir visita e disparar pesquisas/comprovações"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                <span>Realizada</span>
-              </button>
+            new Date().getTime() < new Date(visita.data_hora_visita).getTime() ? (
+              /* Visita Futura (Antes do Horário Agendado): 2 Ações */
+              <div className="mt-3 grid grid-cols-2 gap-1.5 sm:gap-2" onClick={e => e.stopPropagation()}>
+                {/* [ Remarcar ] */}
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(true)}
+                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in truncate"
+                  title="Remarcar data e horário da visita"
+                >
+                  <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
+                  <span>Remarcar</span>
+                </button>
 
-              {/* [ Não Compareceu ] */}
-              <button
-                type="button"
-                onClick={() => handleStatus('nao_compareceu')}
-                className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-amber-300 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                title="Registrar que o cliente ou proprietário faltou"
-              >
-                <UserX className="w-3.5 h-3.5 shrink-0 text-amber-500" />
-                <span>Não Compareceu</span>
-              </button>
+                {/* [ Cancelar ] */}
+                <button
+                  type="button"
+                  onClick={() => handleStatus('cancelada')}
+                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in truncate"
+                  title="Cancelar visita"
+                >
+                  <XCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                  <span>Cancelar</span>
+                </button>
+              </div>
+            ) : (
+              /* Visita Passada/Em Andamento (Após o Horário Agendado): 4 Opções de Desfecho */
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2" onClick={e => e.stopPropagation()}>
+                {/* [ Realizada ] */}
+                <button
+                  type="button"
+                  onClick={() => setIsConcluirOpen(true)}
+                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-[11px] sm:text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
+                  title="Concluir visita e disparar pesquisas/comprovações"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Realizada</span>
+                </button>
 
-              {/* [ Remarcar ] */}
-              <button
-                type="button"
-                onClick={() => setIsEditOpen(true)}
-                className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                title="Remarcar data e horário da visita"
-              >
-                <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
-                <span>Remarcar</span>
-              </button>
+                {/* [ Não Compareceu ] */}
+                <button
+                  type="button"
+                  onClick={() => handleStatus('nao_compareceu')}
+                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-amber-300 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
+                  title="Registrar que o cliente ou proprietário faltou"
+                >
+                  <UserX className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+                  <span>Não Compareceu</span>
+                </button>
 
-              {/* [ Cancelar ] */}
-              <button
-                type="button"
-                onClick={() => handleStatus('cancelada')}
-                className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                title="Cancelar visita"
-              >
-                <XCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>Cancelar</span>
-              </button>
-            </div>
+                {/* [ Remarcar ] */}
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(true)}
+                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
+                  title="Remarcar data e horário da visita"
+                >
+                  <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
+                  <span>Remarcar</span>
+                </button>
+
+                {/* [ Cancelar ] */}
+                <button
+                  type="button"
+                  onClick={() => handleStatus('cancelada')}
+                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
+                  title="Cancelar visita"
+                >
+                  <XCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                  <span>Cancelar</span>
+                </button>
+              </div>
+            )
           )}
 
           {(visita.status === 'nao_compareceu' || visita.status === 'cancelada') && (

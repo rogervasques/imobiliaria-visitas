@@ -397,71 +397,109 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
 
           {/* ─── 2. Botões de Desfecho & Ações Rápidas por Status (Agendada) ─── */}
           {visita.status === 'agendada' && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mb-3">
-              {/* [ Realizada ] */}
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsConcluirModalOpen(true);
-                }}
-                className="w-full text-[11px] sm:text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center gap-1 py-2 rounded-xl shadow-xs cursor-pointer truncate"
-                title="Concluir visita e disparar pesquisas/comprovações"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                <span>Realizada</span>
-              </Button>
+            new Date().getTime() < new Date(visita.data_hora_visita).getTime() ? (
+              /* Visita Futura (Antes do Horário Agendado): 2 Ações */
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mb-3">
+                {/* [ Remarcar ] */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditModalOpen(true);
+                  }}
+                  className="w-full text-[11px] sm:text-xs font-bold border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 flex items-center justify-center gap-1.5 py-2 rounded-xl cursor-pointer truncate"
+                  title="Remarcar data e horário da visita"
+                >
+                  <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
+                  <span>Remarcar</span>
+                </Button>
 
-              {/* [ Não Compareceu ] */}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleStatusChange('nao_compareceu');
-                }}
-                className="w-full text-[11px] sm:text-xs font-bold border-amber-300 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
-                title="Registrar que o cliente ou proprietário faltou"
-              >
-                <UserX className="w-3.5 h-3.5 shrink-0 text-amber-500" />
-                <span>Não Compareceu</span>
-              </Button>
+                {/* [ Cancelar ] */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange('cancelada');
+                  }}
+                  className="w-full text-[11px] sm:text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1.5 py-2 rounded-xl cursor-pointer truncate"
+                  title="Cancelar visita"
+                >
+                  <XCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                  <span>Cancelar</span>
+                </Button>
+              </div>
+            ) : (
+              /* Visita Passada/Em Andamento (Após o Horário Agendado): 4 Opções de Desfecho */
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mb-3">
+                {/* [ Realizada ] */}
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsConcluirModalOpen(true);
+                  }}
+                  className="w-full text-[11px] sm:text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center gap-1 py-2 rounded-xl shadow-xs cursor-pointer truncate"
+                  title="Concluir visita e disparar pesquisas/comprovações"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Realizada</span>
+                </Button>
 
-              {/* [ Remarcar ] */}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditModalOpen(true);
-                }}
-                className="w-full text-[11px] sm:text-xs font-bold border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
-                title="Remarcar data e horário da visita"
-              >
-                <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
-                <span>Remarcar</span>
-              </Button>
+                {/* [ Não Compareceu ] */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange('nao_compareceu');
+                  }}
+                  className="w-full text-[11px] sm:text-xs font-bold border-amber-300 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
+                  title="Registrar que o cliente ou proprietário faltou"
+                >
+                  <UserX className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+                  <span>Não Compareceu</span>
+                </Button>
 
-              {/* [ Cancelar ] */}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleStatusChange('cancelada');
-                }}
-                className="w-full text-[11px] sm:text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
-                title="Cancelar visita"
-              >
-                <XCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>Cancelar</span>
-              </Button>
-            </div>
+                {/* [ Remarcar ] */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditModalOpen(true);
+                  }}
+                  className="w-full text-[11px] sm:text-xs font-bold border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
+                  title="Remarcar data e horário da visita"
+                >
+                  <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
+                  <span>Remarcar</span>
+                </Button>
+
+                {/* [ Cancelar ] */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange('cancelada');
+                  }}
+                  className="w-full text-[11px] sm:text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
+                  title="Cancelar visita"
+                >
+                  <XCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Cancelar</span>
+                </Button>
+              </div>
+            )
           )}
 
           {(visita.status === 'nao_compareceu' || visita.status === 'cancelada') && (
