@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import { Cliente, Imovel } from '@/types';
 import { Card, CardContent } from '../ui/Card';
-import { Button } from '../ui/Button';
 import {
   Phone,
   Tag,
@@ -57,15 +56,15 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
       className="hover:border-emerald-500/50 hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col justify-between overflow-hidden relative border-slate-200/90 dark:border-slate-800"
     >
       <CardContent className="p-4 sm:p-5 space-y-3.5">
-        {/* ─── 1. Topo: Avatar, Nome, Telefone + Tag de Visita Ativa ─── */}
-        <div className="flex items-start justify-between gap-2.5">
+        {/* ─── 1. Topo: Avatar, Nome, Telefone + Tag Compacta de Visita Ativa ─── */}
+        <div className="flex items-start justify-between gap-2">
           {/* Avatar e Identificação */}
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold flex items-center justify-center text-sm shadow-md shadow-emerald-600/20 shrink-0 group-hover:scale-105 transition-transform">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold flex items-center justify-center text-xs shadow-md shadow-emerald-600/20 shrink-0 group-hover:scale-105 transition-transform">
               {getInitials(cliente.nome)}
             </div>
             <div className="min-w-0 flex-1">
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base leading-snug truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                 {cliente.nome}
               </h4>
               <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -75,18 +74,18 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
             </div>
           </div>
 
-          {/* Canto Superior Direito: Somente Tag de Visita Ativa (se houver) */}
+          {/* Canto Superior Direito: Tag Compacta e Discreta de Visita Ativa */}
           {visitaAtiva && (
             <div className="shrink-0">
               <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold leading-tight ${
                   visitaAtiva.status === 'confirmada'
-                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                    : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80'
+                    : 'bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80'
                 }`}
               >
-                <span>📅</span>
-                <span>{visitaAtiva.label}</span>
+                <span className="text-[10px]">📅</span>
+                <span className="whitespace-nowrap">{visitaAtiva.label}</span>
               </span>
             </div>
           )}
@@ -124,46 +123,45 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
           </div>
         </div>
 
-        {/* ─── 3. Badge / Botão em Destaque de Match de Imóveis ─── */}
-        {imoveisCompativeis.length > 0 && (
-          <div onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => onOpenMatches?.(cliente, imoveisCompativeis)}
-              className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-all shadow-2xs hover:shadow-xs group/match cursor-pointer"
-              title="Visualizar imóveis compatíveis com este perfil"
-            >
-              <span className="flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500 animate-pulse" />
-                <span>{imoveisCompativeis.length} {imoveisCompativeis.length === 1 ? 'Imóvel Compatível' : 'Imóveis Compatíveis'}</span>
-              </span>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 group-hover/match:translate-x-0.5 transition-transform">
-                Ver opções →
-              </span>
-            </button>
-          </div>
-        )}
-
-        {/* ─── 4. Rodapé: Apenas o Botão de WhatsApp Isolado Alinhado à Direita ─── */}
+        {/* ─── 3. Rodapé Unificado Lado a Lado: Match de Imóveis (Esquerda) + Botão Compacto WhatsApp (Direita) ─── */}
         <div
-          className="flex items-center justify-end pt-1 border-t border-slate-100 dark:border-slate-800/80"
+          className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Esquerda: Match de Imóveis (se houver) */}
+          <div className="flex-1 min-w-0">
+            {imoveisCompativeis.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => onOpenMatches?.(cliente, imoveisCompativeis)}
+                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold transition-all shadow-2xs hover:shadow-xs group/match cursor-pointer truncate"
+                title="Visualizar imóveis compatíveis com este perfil"
+              >
+                <span className="flex items-center gap-1.5 truncate">
+                  <Zap className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500 shrink-0" />
+                  <span className="truncate">{imoveisCompativeis.length} {imoveisCompativeis.length === 1 ? 'Compatível' : 'Compatíveis'}</span>
+                </span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 group-hover/match:translate-x-0.5 transition-transform shrink-0 ml-1">
+                  Ver →
+                </span>
+              </button>
+            ) : (
+              <span className="text-[11px] text-slate-400 font-medium pl-1">
+                Sem imóveis sugeridos
+              </span>
+            )}
+          </div>
+
+          {/* Direita: Ícone/Botão Compacto do WhatsApp */}
           <a
             href={directWhatsApp}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
+            className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-xs hover:scale-105 transition-all cursor-pointer"
+            title="Conversar com o cliente no WhatsApp"
           >
-            <Button
-              type="button"
-              variant="whatsapp"
-              size="sm"
-              className="text-xs font-semibold shadow-xs hover:shadow-md cursor-pointer transition-all"
-            >
-              <MessageCircle className="w-3.5 h-3.5 mr-1" />
-              WhatsApp
-            </Button>
+            <MessageCircle className="w-4 h-4 fill-white/20" />
           </a>
         </div>
       </CardContent>

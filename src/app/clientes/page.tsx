@@ -12,13 +12,12 @@ import { VisitaDetalhesModal } from '@/components/visitas/VisitaDetalhesModal';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Users, Search, Plus, Filter, Key, UserCheck, Sparkles } from 'lucide-react';
+import { Users, Search, Plus } from 'lucide-react';
 
 export default function ClientesPage() {
-  const { clientes, proprietarios, imoveis, visitas } = useData();
+  const { clientes, imoveis, visitas } = useData();
   const [search, setSearch] = useState('');
-  const [tipoFiltro, setTipoFiltro] = useState<'todos' | 'compradores' | 'proprietarios'>('todos');
-  const [filtroVisita, setFiltroVisita] = useState<'todos' | 'com_visita' | 'confirmada' | 'agendada' | 'sem_visita'>('todos');
+  const [filtroVisita, setFiltroVisita] = useState<'todos' | 'com_visita'>('todos');
   const [isNovoClienteOpen, setIsNovoClienteOpen] = useState(false);
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
   const [clienteParaVisita, setClienteParaVisita] = useState<Cliente | null>(null);
@@ -27,34 +26,8 @@ export default function ClientesPage() {
   const [isNovaVisitaOpen, setIsNovaVisitaOpen] = useState(false);
   const [matchesModalData, setMatchesModalData] = useState<{ cliente: Cliente; matches: Imovel[] } | null>(null);
 
-  // Lista consolidada de contatos respeitando o tipo selecionado
-  const baseClientes = useMemo(() => {
-    if (tipoFiltro === 'compradores') {
-      return clientes.filter((c) => c.tipo_cliente !== 'proprietario');
-    }
-    if (tipoFiltro === 'proprietarios') {
-      // Clientes marcados como proprietários
-      const clientesProprietarios = clientes.filter((c) => c.tipo_cliente === 'proprietario');
-      if (clientesProprietarios.length > 0) return clientesProprietarios;
-      
-      // Se não houver clientes com essa flag, mapeia da base de proprietários para visualização unificada
-      return proprietarios.map((p) => ({
-        id: p.id,
-        nome: p.nome,
-        telefone: p.telefone,
-        email: p.email,
-        tipo_cliente: 'proprietario' as const,
-        status: 'ativo' as const,
-        perfil_interesse: p.imoveis_count ? `Proprietário de ${p.imoveis_count} imóvel(is)` : 'Proprietário de Imóvel',
-        tempo_parada_texto: 'Proprietário ativo',
-        criado_em: p.criado_em,
-      }));
-    }
-    return clientes;
-  }, [clientes, proprietarios, tipoFiltro]);
-
   const filteredClientes = useMemo(() => {
-    return baseClientes
+    return clientes
       .filter((cl) => {
         const matchSearch =
           search === '' ||
@@ -65,27 +38,15 @@ export default function ClientesPage() {
 
         if (!matchSearch) return false;
 
-        if (filtroVisita === 'todos') return true;
-
-        const visitasDoCliente = visitas.filter((v) => v.cliente_id === cl.id);
-        const temConfirmada = visitasDoCliente.some((v) => v.status === 'confirmada');
-        const temAgendada = visitasDoCliente.some((v) => v.status === 'agendada');
-
-        if (filtroVisita === 'confirmada') return temConfirmada;
-        if (filtroVisita === 'agendada') return temAgendada;
-        if (filtroVisita === 'com_visita') return temConfirmada || temAgendada;
-        if (filtroVisita === 'sem_visita') return !temConfirmada && !temAgendada;
+        if (filtroVisita === 'com_visita') {
+          const visitasDoCliente = visitas.filter((v) => v.cliente_id === cl.id);
+          return visitasDoCliente.some((v) => v.status === 'agendada' || v.status === 'confirmada');
+        }
 
         return true;
       })
       .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
-  }, [baseClientes, search, filtroVisita, visitas]);
-
-  const countCompradores = useMemo(() => clientes.filter((c) => c.tipo_cliente !== 'proprietario').length, [clientes]);
-  const countProprietarios = useMemo(() => {
-    const fromClientes = clientes.filter((c) => c.tipo_cliente === 'proprietario').length;
-    return fromClientes > 0 ? fromClientes : proprietarios.length;
-  }, [clientes, proprietarios]);
+  }, [clientes, search, filtroVisita, visitas]);
 
   const handleAgendarVisitaCliente = (cliente: Cliente, imovel?: Imovel) => {
     setClienteParaVisita(cliente);
@@ -115,58 +76,7 @@ export default function ClientesPage() {
         </Button>
       </div>
 
-      {/* ─── 1. Abas Primárias de Tipo de Contato ─── */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-        <button
-          type="button"
-          onClick={() => setTipoFiltro('todos')}
-          className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            tipoFiltro === 'todos'
-              ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-md scale-[1.02]'
-              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>Todos</span>
-          <span className={`text-[11px] px-2 py-0.5 rounded-full ${tipoFiltro === 'todos' ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-            {clientes.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setTipoFiltro('compradores')}
-          className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            tipoFiltro === 'compradores'
-              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-[1.02]'
-              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-          }`}
-        >
-          <UserCheck className="w-4 h-4" />
-          <span>Compradores / Inquilinos</span>
-          <span className={`text-[11px] px-2 py-0.5 rounded-full ${tipoFiltro === 'compradores' ? 'bg-emerald-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-            {countCompradores}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setTipoFiltro('proprietarios')}
-          className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            tipoFiltro === 'proprietarios'
-              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-[1.02]'
-              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-          }`}
-        >
-          <Key className="w-4 h-4" />
-          <span>Proprietários</span>
-          <span className={`text-[11px] px-2 py-0.5 rounded-full ${tipoFiltro === 'proprietarios' ? 'bg-emerald-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-            {countProprietarios}
-          </span>
-        </button>
-      </div>
-
-      {/* Busca e Filtros de Status */}
+      {/* Busca e Filtro Único de Visitas (Todos vs Com Visita Agendada) */}
       <Card>
         <CardContent className="p-4 space-y-3">
           <Input
@@ -176,28 +86,30 @@ export default function ClientesPage() {
             icon={<Search className="w-4 h-4" />}
           />
 
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Visitas:</span>
-            {[
-              { id: 'todos', label: 'Todos' },
-              { id: 'com_visita', label: 'Com Visita Ativa' },
-              { id: 'confirmada', label: 'Visita Confirmada' },
-              { id: 'agendada', label: 'Visita Agendada' },
-              { id: 'sem_visita', label: 'Sem Visita' },
-            ].map((sf) => (
-              <button
-                key={sf.id}
-                type="button"
-                onClick={() => setFiltroVisita(sf.id as any)}
-                className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  filtroVisita === sf.id
-                    ? 'bg-emerald-600 text-white shadow-xs font-bold'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                {sf.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setFiltroVisita('todos')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filtroVisita === 'todos'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              Todos ({clientes.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFiltroVisita('com_visita')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                filtroVisita === 'com_visita'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <span>📅 Com Visita Agendada</span>
+            </button>
           </div>
         </CardContent>
       </Card>
