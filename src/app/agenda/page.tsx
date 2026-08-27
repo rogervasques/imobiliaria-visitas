@@ -201,6 +201,89 @@ export default function AgendaPage() {
     },
   };
 
+  // Estilos de tag colorida por status no Mês
+  const statusMonthStyles: Record<
+    StatusVisita,
+    { bg: string; border: string; text: string }
+  > = {
+    confirmada: {
+      bg: 'bg-emerald-600 dark:bg-emerald-700',
+      border: 'border-emerald-500 dark:border-emerald-600',
+      text: 'text-white',
+    },
+    agendada: {
+      bg: 'bg-amber-100 dark:bg-amber-950/90',
+      border: 'border-amber-300 dark:border-amber-700/70',
+      text: 'text-amber-950 dark:text-amber-100',
+    },
+    concluida: {
+      bg: 'bg-purple-100 dark:bg-purple-950/90',
+      border: 'border-purple-300 dark:border-purple-700/70',
+      text: 'text-purple-950 dark:text-purple-100',
+    },
+    reagendada: {
+      bg: 'bg-purple-100 dark:bg-purple-950/90',
+      border: 'border-purple-300 dark:border-purple-700/70',
+      text: 'text-purple-950 dark:text-purple-100',
+    },
+    cancelada: {
+      bg: 'bg-rose-100 dark:bg-rose-950/90',
+      border: 'border-rose-300 dark:border-rose-700/70',
+      text: 'text-rose-950 dark:text-rose-100',
+    },
+  };
+
+  // Dias calculados matematicamente para a visualização em Mês (grid de semanas completas)
+  const monthDays = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDayOfMonth = new Date(year, month, 1);
+    const startingDay = firstDayOfMonth.getDay(); // 0 = Domingo
+    const lastDateOfMonth = new Date(year, month + 1, 0).getDate();
+
+    const totalDays = Math.ceil((startingDay + lastDateOfMonth) / 7) * 7;
+    const days: Date[] = [];
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(year, month, 1 - startingDay + i);
+      days.push(d);
+    }
+    return days;
+  }, [currentDate]);
+
+  // Visitas da lista agrupadas por dia com data explícita e contadores
+  const visitasListaAgrupadas = useMemo(() => {
+    const sorted = [...visitasDaSemana].sort(
+      (a, b) => new Date(a.data_hora_visita).getTime() - new Date(b.data_hora_visita).getTime()
+    );
+
+    const groups: { [dateStr: string]: { dateObj: Date; label: string; visitas: Visita[] } } = {};
+
+    sorted.forEach((v) => {
+      const d = new Date(v.data_hora_visita);
+      const ds = toDateStr(d);
+      if (!groups[ds]) {
+        const fullLabel = new Intl.DateTimeFormat('pt-BR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+        }).format(d);
+        const capitalized = fullLabel.charAt(0).toUpperCase() + fullLabel.slice(1);
+        groups[ds] = {
+          dateObj: d,
+          label: capitalized,
+          visitas: [],
+        };
+      }
+      groups[ds].visitas.push(v);
+    });
+
+    return Object.entries(groups).map(([ds, data]) => ({
+      dateStr: ds,
+      isHoje: ds === hojeStr,
+      ...data,
+    }));
+  }, [visitasDaSemana, hojeStr]);
+
   // Formatação do dia selecionado no painel lateral
   const selectedDayLabel = useMemo(() => {
     const [y, m, d] = selectedDayStr.split('-').map(Number);
@@ -447,55 +530,117 @@ export default function AgendaPage() {
 
           {/* Visão Lista Alternativa */}
           {viewMode === 'lista' && (
-            <Card>
-              <CardContent className="p-5 space-y-4">
+            <Card className="overflow-hidden shadow-sm">
+              <CardContent className="p-4 sm:p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <List className="w-5 h-5 text-emerald-500" />
                     Lista de Visitas da Semana ({weekLabel})
                   </h3>
-                  <span className="text-xs font-semibold text-slate-500">
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                     {visitasDaSemana.length} compromissos
                   </span>
                 </div>
 
                 {visitasDaSemana.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400 text-xs">
-                    Nenhuma visita agendada para esta semana.
+                  <div className="py-12 text-center text-slate-400 text-xs space-y-1">
+                    <CalendarDays className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                    <p className="font-semibold text-slate-600 dark:text-slate-300">
+                      Nenhuma visita agendada para esta semana.
+                    </p>
+                    <p className="text-[11px]">
+                      Navegue para outra semana ou crie um novo agendamento.
+                    </p>
                   </div>
                 ) : (
-                  <div className="space-y-2.5">
-                    {visitasDaSemana.map((v) => (
-                      <div
-                        key={v.id}
-                        onClick={() => setVisitaDetalhes(v)}
-                        className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 hover:border-emerald-400 transition-all cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-300 shrink-0">
-                            {formatTime(v.data_hora_visita)}
-                          </div>
-                          <div className="min-w-0">
-                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 truncate">
-                              {v.cliente?.nome || 'Cliente'}
+                  <div className="space-y-5">
+                    {visitasListaAgrupadas.map((grupo) => (
+                      <div key={grupo.dateStr} className="space-y-2.5">
+                        {/* Divisor do Dia com Cabeçalho */}
+                        <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-200 dark:border-slate-800">
+                          <div className="flex items-center gap-2">
+                            <CalendarIcon className="w-4 h-4 text-emerald-500" />
+                            <h4 className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+                              {grupo.label}
                             </h4>
-                            <p className="text-xs text-slate-500 truncate">
-                              {v.imovel?.titulo || 'Imóvel'} — {formatFriendlyDate(v.data_hora_visita)}
-                            </p>
+                            {grupo.isHoje && (
+                              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs">
+                                Hoje
+                              </span>
+                            )}
                           </div>
+                          <span className="text-[11px] font-semibold text-slate-400">
+                            {grupo.visitas.length} {grupo.visitas.length === 1 ? 'visita' : 'visitas'}
+                          </span>
                         </div>
 
-                        <span
-                          className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${
-                            v.status === 'confirmada'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : v.status === 'cancelada'
-                              ? 'bg-rose-100 text-rose-700'
-                              : 'bg-amber-100 text-amber-700'
-                          }`}
-                        >
-                          {v.status}
-                        </span>
+                        {/* Visitas daquele dia */}
+                        <div className="space-y-2">
+                          {grupo.visitas.map((v) => {
+                            const dateObj = new Date(v.data_hora_visita);
+                            const diaSemanaShort = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
+                              .format(dateObj)
+                              .replace('.', '')
+                              .toUpperCase();
+                            const diaMesStr = new Intl.DateTimeFormat('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                            }).format(dateObj);
+
+                            return (
+                              <div
+                                key={v.id}
+                                onClick={() => setVisitaDetalhes(v)}
+                                className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 hover:border-emerald-500/60 hover:shadow-md transition-all cursor-pointer group"
+                              >
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  {/* Bloco da Esquerda com Data e Hora Explícitas (ex: SEG, 24/08 • 09:00) */}
+                                  <div className="flex flex-col items-center justify-center min-w-[76px] sm:min-w-[88px] py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 text-center shrink-0 group-hover:border-emerald-500/40 transition-colors">
+                                    <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                      {diaSemanaShort}, {diaMesStr}
+                                    </span>
+                                    <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                                      {formatTime(v.data_hora_visita)}
+                                    </span>
+                                  </div>
+
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                      {v.cliente?.nome || 'Cliente'}
+                                    </h4>
+                                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                                      <span className="truncate flex items-center gap-1">
+                                        <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        {v.imovel?.titulo || 'Imóvel'}
+                                      </span>
+                                      {v.imovel?.bairro && (
+                                        <span className="hidden sm:inline text-slate-400">
+                                          • {v.imovel.bairro}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="shrink-0 flex items-center gap-2">
+                                  <span
+                                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                                      v.status === 'confirmada'
+                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                        : v.status === 'cancelada'
+                                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                                        : v.status === 'concluida' || v.status === 'reagendada'
+                                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
+                                        : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                                    }`}
+                                  >
+                                    {v.status.charAt(0).toUpperCase() + v.status.slice(1)}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -504,73 +649,131 @@ export default function AgendaPage() {
             </Card>
           )}
 
-          {/* Visão Mês Alternativa */}
+          {/* Visão Mês Alternativa com Cores Dinâmicas por Status */}
           {viewMode === 'mes' && (
-            <Card>
-              <CardContent className="p-5">
-                <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 mb-2">
+            <Card className="overflow-hidden shadow-sm">
+              <CardContent className="p-3 sm:p-5 space-y-3">
+                <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 mb-1">
                   {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d) => (
-                    <div key={d} className="py-1">
+                    <div key={d} className="py-1 uppercase tracking-wider text-[10px] sm:text-xs">
                       {d}
                     </div>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-7 gap-1.5">
-                  {Array.from({ length: 35 }).map((_, idx) => {
-                    const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), idx - 2);
+                <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+                  {monthDays.map((d) => {
                     const ds = toDateStr(d);
                     const isHoje = ds === hojeStr;
                     const isSelected = ds === selectedDayStr;
+                    const isCurrentMonth = d.getMonth() === currentDate.getMonth();
 
                     const visitasDesteDia = visitas.filter(
                       (v) => toDateStr(new Date(v.data_hora_visita)) === ds
                     );
 
                     return (
-                      <button
+                      <div
                         key={ds}
-                        type="button"
                         onClick={() => {
                           setSelectedDayStr(ds);
-                          setViewMode('semana');
                         }}
-                        className={`min-h-[80px] p-1.5 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                        className={`min-h-[85px] sm:min-h-[105px] p-1 sm:p-2 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/40'
+                            ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/40 ring-1 sm:ring-2 ring-emerald-500'
                             : isHoje
                             ? 'border-emerald-400 bg-emerald-50/20'
-                            : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+                            : isCurrentMonth
+                            ? 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850'
+                            : 'border-slate-100 dark:border-slate-800/40 bg-slate-50/40 dark:bg-slate-950/30 opacity-60'
                         }`}
                       >
-                        <span
-                          className={`text-xs font-bold ${
-                            isHoje ? 'text-emerald-600 font-black' : 'text-slate-600 dark:text-slate-400'
-                          }`}
-                        >
-                          {d.getDate()}
-                        </span>
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`text-xs font-bold leading-none ${
+                              isHoje
+                                ? 'w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black shadow-xs'
+                                : isCurrentMonth
+                                ? 'text-slate-700 dark:text-slate-300'
+                                : 'text-slate-400'
+                            }`}
+                          >
+                            {d.getDate()}
+                          </span>
 
-                        <div className="space-y-0.5 mt-1">
-                          {visitasDesteDia.slice(0, 2).map((v) => (
-                            <div
-                              key={v.id}
-                              className="text-[9px] font-bold truncate px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                            >
-                              {formatTime(v.data_hora_visita)} {v.cliente?.nome || 'Cliente'}
-                            </div>
-                          ))}
-                          {visitasDesteDia.length > 2 && (
-                            <div className="text-[9px] text-emerald-600 font-bold">
-                              +{visitasDesteDia.length - 2} mais
-                            </div>
+                          {visitasDesteDia.length > 0 && (
+                            <span className="text-[10px] font-bold text-slate-400">
+                              {visitasDesteDia.length}v
+                            </span>
                           )}
                         </div>
-                      </button>
+
+                        {/* Blocos de Visitas com Cores Dinâmicas por Status */}
+                        <div className="space-y-1 mt-1 w-full overflow-hidden">
+                          {visitasDesteDia.slice(0, 2).map((v) => {
+                            const style = statusMonthStyles[v.status] || statusMonthStyles.agendada;
+
+                            return (
+                              <button
+                                key={v.id}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setVisitaDetalhes(v);
+                                }}
+                                className={`w-full text-left px-1.5 py-0.5 rounded text-[9.5px] font-bold truncate border ${style.bg} ${style.border} ${style.text} shadow-2xs hover:scale-[1.02] transition-transform cursor-pointer block leading-tight`}
+                                title={`${formatTime(v.data_hora_visita)} - ${v.cliente?.nome || 'Cliente'} (${v.imovel?.titulo || 'Imóvel'})`}
+                              >
+                                <span className="font-mono mr-1 opacity-90">{formatTime(v.data_hora_visita)}</span>
+                                <span className="truncate">{v.cliente?.nome || 'Cliente'}</span>
+                              </button>
+                            );
+                          })}
+
+                          {visitasDesteDia.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedDayStr(ds);
+                                setViewMode('semana');
+                              }}
+                              className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold px-1 hover:underline block text-left"
+                            >
+                              +{visitasDesteDia.length - 2} mais
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
               </CardContent>
+
+              {/* Legenda de Cores no Rodapé do Mês */}
+              <div className="p-3.5 bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider">
+                  Legenda:
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                    <div className="w-3 h-3 rounded-full bg-emerald-600 border border-emerald-500 shrink-0" />
+                    <span className="font-semibold">Confirmada</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                    <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
+                    <span className="font-semibold">Agendada</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                    <div className="w-3 h-3 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
+                    <span className="font-semibold">Concluída</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                    <div className="w-3 h-3 rounded-full bg-rose-500 border border-rose-400 shrink-0" />
+                    <span className="font-semibold">Cancelada</span>
+                  </div>
+                </div>
+              </div>
             </Card>
           )}
         </div>
