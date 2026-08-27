@@ -429,21 +429,23 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
           )}
 
           {visita.status === 'confirmada' && (
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsConcluirModalOpen(true);
-                }}
-                className="w-full text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center gap-1.5 py-2 rounded-xl shadow-xs cursor-pointer"
-                title="Concluir visita e disparar pesquisas/comprovações"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Concluir Visita</span>
-              </Button>
+            <div className={`gap-2 mb-3 ${podeConcluir ? 'grid grid-cols-2' : 'flex justify-end'}`}>
+              {podeConcluir && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsConcluirModalOpen(true);
+                  }}
+                  className="w-full text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center gap-1.5 py-2 rounded-xl shadow-xs cursor-pointer"
+                  title="Concluir visita e disparar pesquisas/comprovações"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Concluir Visita</span>
+                </Button>
+              )}
 
               <Button
                 type="button"
@@ -453,7 +455,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                   e.stopPropagation();
                   handleStatusChange('cancelada');
                 }}
-                className="w-full text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1.5 py-2 rounded-xl cursor-pointer"
+                className={`${podeConcluir ? 'w-full' : 'w-full'} text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1.5 py-2 rounded-xl cursor-pointer`}
                 title="Cancelar visita"
               >
                 <XCircle className="w-3.5 h-3.5" />

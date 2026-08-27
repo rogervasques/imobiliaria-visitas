@@ -514,17 +514,53 @@ function TimelineCard({
             </div>
           </div>
 
-          {/* ─── Botão Dinâmico "Concluir Visita" por Horário ─── */}
-          {podeConcluir && (
-            <div className="mt-3" onClick={e => e.stopPropagation()}>
+          {/* ─── Botões de Ação Rápida por Status (Agendada / Confirmada) ─── */}
+          {visita.status === 'agendada' && (
+            <div className="mt-3 grid grid-cols-2 gap-2" onClick={e => e.stopPropagation()}>
               <button
                 type="button"
-                onClick={() => setIsConcluirOpen(true)}
-                className="w-full py-1.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
-                title="Concluir visita agendada"
+                onClick={() => handleStatus('confirmada')}
+                className="w-full py-1.5 sm:py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
+                title="Confirmar visita"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Concluir Visita</span>
+                <span>Confirmar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleStatus('cancelada')}
+                className="w-full py-1.5 sm:py-2 px-3 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
+                title="Cancelar visita"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Cancelar</span>
+              </button>
+            </div>
+          )}
+
+          {visita.status === 'confirmada' && (
+            <div className={`mt-3 ${podeConcluir ? 'grid grid-cols-2 gap-2' : 'flex justify-end'}`} onClick={e => e.stopPropagation()}>
+              {podeConcluir && (
+                <button
+                  type="button"
+                  onClick={() => setIsConcluirOpen(true)}
+                  className="w-full py-1.5 sm:py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
+                  title="Concluir visita agendada"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Concluir Visita</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => handleStatus('cancelada')}
+                className={`${podeConcluir ? 'w-full' : 'w-full'} py-1.5 sm:py-2 px-3 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in`}
+                title="Cancelar visita"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Cancelar</span>
               </button>
             </div>
           )}
