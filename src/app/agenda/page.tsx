@@ -250,39 +250,12 @@ export default function AgendaPage() {
     return days;
   }, [currentDate]);
 
-  // Visitas da lista agrupadas por dia com data explícita e contadores
-  const visitasListaAgrupadas = useMemo(() => {
-    const sorted = [...visitasDaSemana].sort(
+  // Visitas da lista ordenadas cronologicamente em fluxo único
+  const visitasListaOrdenadas = useMemo(() => {
+    return [...visitasDaSemana].sort(
       (a, b) => new Date(a.data_hora_visita).getTime() - new Date(b.data_hora_visita).getTime()
     );
-
-    const groups: { [dateStr: string]: { dateObj: Date; label: string; visitas: Visita[] } } = {};
-
-    sorted.forEach((v) => {
-      const d = new Date(v.data_hora_visita);
-      const ds = toDateStr(d);
-      if (!groups[ds]) {
-        const fullLabel = new Intl.DateTimeFormat('pt-BR', {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-        }).format(d);
-        const capitalized = fullLabel.charAt(0).toUpperCase() + fullLabel.slice(1);
-        groups[ds] = {
-          dateObj: d,
-          label: capitalized,
-          visitas: [],
-        };
-      }
-      groups[ds].visitas.push(v);
-    });
-
-    return Object.entries(groups).map(([ds, data]) => ({
-      dateStr: ds,
-      isHoje: ds === hojeStr,
-      ...data,
-    }));
-  }, [visitasDaSemana, hojeStr]);
+  }, [visitasDaSemana]);
 
   // Formatação do dia selecionado no painel lateral
   const selectedDayLabel = useMemo(() => {
@@ -553,96 +526,71 @@ export default function AgendaPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-5">
-                    {visitasListaAgrupadas.map((grupo) => (
-                      <div key={grupo.dateStr} className="space-y-2.5">
-                        {/* Divisor do Dia com Cabeçalho */}
-                        <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-200 dark:border-slate-800">
-                          <div className="flex items-center gap-2">
-                            <CalendarIcon className="w-4 h-4 text-emerald-500" />
-                            <h4 className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
-                              {grupo.label}
-                            </h4>
-                            {grupo.isHoje && (
-                              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs">
-                                Hoje
+                  <div className="space-y-2.5">
+                    {visitasListaOrdenadas.map((v) => {
+                      const dateObj = new Date(v.data_hora_visita);
+                      const diaSemanaShort = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
+                        .format(dateObj)
+                        .replace('.', '')
+                        .toUpperCase();
+                      const diaMesStr = new Intl.DateTimeFormat('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                      }).format(dateObj);
+
+                      return (
+                        <div
+                          key={v.id}
+                          onClick={() => setVisitaDetalhes(v)}
+                          className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 hover:border-emerald-500/60 hover:shadow-md transition-all cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {/* Bloco da Esquerda com Data e Hora Explícitas (ex: QUI, 27/08 • 09:00) */}
+                            <div className="flex flex-col items-center justify-center min-w-[76px] sm:min-w-[88px] py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 text-center shrink-0 group-hover:border-emerald-500/40 transition-colors">
+                              <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                {diaSemanaShort}, {diaMesStr}
                               </span>
-                            )}
-                          </div>
-                          <span className="text-[11px] font-semibold text-slate-400">
-                            {grupo.visitas.length} {grupo.visitas.length === 1 ? 'visita' : 'visitas'}
-                          </span>
-                        </div>
+                              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                                {formatTime(v.data_hora_visita)}
+                              </span>
+                            </div>
 
-                        {/* Visitas daquele dia */}
-                        <div className="space-y-2">
-                          {grupo.visitas.map((v) => {
-                            const dateObj = new Date(v.data_hora_visita);
-                            const diaSemanaShort = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
-                              .format(dateObj)
-                              .replace('.', '')
-                              .toUpperCase();
-                            const diaMesStr = new Intl.DateTimeFormat('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                            }).format(dateObj);
-
-                            return (
-                              <div
-                                key={v.id}
-                                onClick={() => setVisitaDetalhes(v)}
-                                className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 hover:border-emerald-500/60 hover:shadow-md transition-all cursor-pointer group"
-                              >
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                  {/* Bloco da Esquerda com Data e Hora Explícitas (ex: SEG, 24/08 • 09:00) */}
-                                  <div className="flex flex-col items-center justify-center min-w-[76px] sm:min-w-[88px] py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 text-center shrink-0 group-hover:border-emerald-500/40 transition-colors">
-                                    <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                      {diaSemanaShort}, {diaMesStr}
-                                    </span>
-                                    <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
-                                      {formatTime(v.data_hora_visita)}
-                                    </span>
-                                  </div>
-
-                                  <div className="min-w-0 flex-1">
-                                    <h4 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                                      {v.cliente?.nome || 'Cliente'}
-                                    </h4>
-                                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                                      <span className="truncate flex items-center gap-1">
-                                        <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                        {v.imovel?.titulo || 'Imóvel'}
-                                      </span>
-                                      {v.imovel?.bairro && (
-                                        <span className="hidden sm:inline text-slate-400">
-                                          • {v.imovel.bairro}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="shrink-0 flex items-center gap-2">
-                                  <span
-                                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                                      v.status === 'confirmada'
-                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                                        : v.status === 'cancelada'
-                                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-                                        : v.status === 'concluida' || v.status === 'reagendada'
-                                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
-                                        : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                                    }`}
-                                  >
-                                    {v.status.charAt(0).toUpperCase() + v.status.slice(1)}
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                {v.cliente?.nome || 'Cliente'}
+                              </h4>
+                              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                                <span className="truncate flex items-center gap-1">
+                                  <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  {v.imovel?.titulo || 'Imóvel'}
+                                </span>
+                                {v.imovel?.bairro && (
+                                  <span className="hidden sm:inline text-slate-400">
+                                    • {v.imovel.bairro}
                                   </span>
-                                </div>
+                                )}
                               </div>
-                            );
-                          })}
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-2">
+                            <span
+                              className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                                v.status === 'confirmada'
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                  : v.status === 'cancelada'
+                                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                                  : v.status === 'concluida' || v.status === 'reagendada'
+                                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
+                                  : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                              }`}
+                            >
+                              {v.status.charAt(0).toUpperCase() + v.status.slice(1)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
