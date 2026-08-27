@@ -391,24 +391,20 @@ export default function AgendaPage() {
                                       {formatTime(visita.data_hora_visita)}
                                     </div>
 
-                                    {/* Imóvel (Máximo 2 linhas com reticências) */}
+                                    {/* Nome do Cliente (Título Principal em Destaque) */}
                                     <div
-                                      className="text-[8.5px] sm:text-[11px] font-semibold leading-tight my-0.5 line-clamp-2 break-words"
-                                      style={{
-                                        display: '-webkit-box',
-                                        WebkitLineClamp: 2,
-                                        WebkitBoxOrient: 'vertical',
-                                        overflow: 'hidden',
-                                      }}
-                                    >
-                                      {visita.imovel?.titulo || 'Imóvel'}
-                                    </div>
-
-                                    {/* Cliente (Máximo 1 linha com reticências) */}
-                                    <div
-                                      className="text-[7.5px] sm:text-[10px] opacity-75 truncate leading-none whitespace-nowrap overflow-hidden text-ellipsis hidden sm:block"
+                                      className="text-[8.5px] sm:text-[11.5px] font-black leading-tight my-0.5 line-clamp-1 break-words truncate"
+                                      title={visita.cliente?.nome || 'Cliente'}
                                     >
                                       {visita.cliente?.nome || 'Cliente'}
+                                    </div>
+
+                                    {/* Título do Imóvel (Informação Secundária / Subtexto) */}
+                                    <div
+                                      className="text-[7.5px] sm:text-[10px] opacity-80 truncate leading-none whitespace-nowrap overflow-hidden text-ellipsis hidden sm:block"
+                                      title={visita.imovel?.titulo || 'Imóvel'}
+                                    >
+                                      {visita.imovel?.titulo || 'Imóvel'}
                                     </div>
                                   </button>
                                 );
@@ -480,11 +476,11 @@ export default function AgendaPage() {
                             {formatTime(v.data_hora_visita)}
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">
-                              {v.imovel?.titulo || 'Imóvel'}
+                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 truncate">
+                              {v.cliente?.nome || 'Cliente'}
                             </h4>
                             <p className="text-xs text-slate-500 truncate">
-                              {v.cliente?.nome} — {formatFriendlyDate(v.data_hora_visita)}
+                              {v.imovel?.titulo || 'Imóvel'} — {formatFriendlyDate(v.data_hora_visita)}
                             </p>
                           </div>
                         </div>
@@ -559,9 +555,9 @@ export default function AgendaPage() {
                           {visitasDesteDia.slice(0, 2).map((v) => (
                             <div
                               key={v.id}
-                              className="text-[9px] font-semibold truncate px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                              className="text-[9px] font-bold truncate px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                             >
-                              {formatTime(v.data_hora_visita)} {v.imovel?.titulo}
+                              {formatTime(v.data_hora_visita)} {v.cliente?.nome || 'Cliente'}
                             </div>
                           ))}
                           {visitasDesteDia.length > 2 && (
@@ -634,12 +630,14 @@ export default function AgendaPage() {
                         </span>
                       </div>
 
-                      <p className="font-bold text-xs text-slate-900 dark:text-slate-100 line-clamp-1">
-                        {visita.imovel?.titulo}
+                      {/* Nome do Cliente em destaque como título principal */}
+                      <p className="font-extrabold text-xs text-slate-900 dark:text-slate-100 line-clamp-1">
+                        {visita.cliente?.nome || 'Cliente'}
                       </p>
 
+                      {/* Título do Imóvel como subtexto secundário */}
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                        Cliente: <strong>{visita.cliente?.nome}</strong>
+                        {visita.imovel?.titulo || 'Imóvel'}
                       </p>
                     </div>
                   ))}

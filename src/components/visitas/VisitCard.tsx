@@ -393,20 +393,73 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
             </div>
           </div>
 
-          {/* ─── 2. Botão Dinâmico "Concluir Visita" por Horário ─── */}
-          {podeConcluir && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsConcluirModalOpen(true);
-              }}
-              className="w-full mb-2.5 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
-              title="Concluir visita agendada"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Concluir Visita</span>
-            </button>
+          {/* ─── 2. Botões de Ação Rápida por Status (Agendada / Confirmada) ─── */}
+          {visita.status === 'agendada' && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStatusChange('confirmada');
+                }}
+                className="w-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 py-2 rounded-xl shadow-xs cursor-pointer"
+                title="Confirmar visita"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Confirmar Visita</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStatusChange('cancelada');
+                }}
+                className="w-full text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1.5 py-2 rounded-xl cursor-pointer"
+                title="Cancelar visita"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Cancelar</span>
+              </Button>
+            </div>
+          )}
+
+          {visita.status === 'confirmada' && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsConcluirModalOpen(true);
+                }}
+                className="w-full text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center gap-1.5 py-2 rounded-xl shadow-xs cursor-pointer"
+                title="Concluir visita e disparar pesquisas/comprovações"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Concluir Visita</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStatusChange('cancelada');
+                }}
+                className="w-full text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1.5 py-2 rounded-xl cursor-pointer"
+                title="Cancelar visita"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Cancelar</span>
+              </Button>
+            </div>
           )}
 
           {/* Três Botões de Ação em Linha: WhatsApp Cliente, WhatsApp Proprietário e Mapa */}
