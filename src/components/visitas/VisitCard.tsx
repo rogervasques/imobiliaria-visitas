@@ -26,6 +26,8 @@ import {
   User,
   Navigation,
   ChevronDown,
+  UserX,
+  CalendarClock,
 } from 'lucide-react';
 import {
   formatFriendlyDate,
@@ -55,9 +57,10 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
   > = {
     agendada: { label: 'Agendada', variant: 'warning', dotColor: 'bg-amber-400 border-amber-500' },
     confirmada: { label: 'Confirmada', variant: 'success', dotColor: 'bg-emerald-600 border-emerald-500' },
-    concluida: { label: 'Concluída', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
-    reagendada: { label: 'Concluída', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
+    concluida: { label: 'Realizada', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
+    reagendada: { label: 'Realizada', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
     cancelada: { label: 'Cancelada', variant: 'danger', dotColor: 'bg-rose-500 border-rose-400' },
+    nao_compareceu: { label: 'Não Compareceu', variant: 'warning', dotColor: 'bg-amber-600 border-amber-500' },
   };
 
   const [isConcluirModalOpen, setIsConcluirModalOpen] = useState(false);
@@ -179,7 +182,15 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                       className="w-full text-left px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                     >
                       <div className="w-2.5 h-2.5 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
-                      <span>Concluída</span>
+                      <span>Realizada</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange('nao_compareceu')}
+                      className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-600 border border-amber-500 shrink-0" />
+                      <span>Não Compareceu</span>
                     </button>
                     <button
                       type="button"
@@ -288,13 +299,13 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] border border-slate-200 dark:border-slate-700 transition-colors shadow-2xs"
                     title="Abrir localização no Google Maps"
                   >
-                    <MapPin className="w-3 h-3 text-emerald-500" />
+                    <MapPin className="w-3.5 h-3.5 text-emerald-500" />
                     <span>📍 Mapa</span>
                   </a>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                <User className="w-3 h-3 text-emerald-500 shrink-0" />
+                <User className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                 <span className="truncate">
                   Corretor: <strong className="text-slate-700 dark:text-slate-200 font-semibold">{visita.corretor_nome || visita.created_by_user_nome || 'Roger Vasques Berchembrock'}</strong>
                 </span>
@@ -393,9 +404,9 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
             </div>
           </div>
 
-          {/* ─── 2. Botões de Ação Rápida por Status (Agendada / Confirmada) ─── */}
+          {/* ─── 2. Botões de Desfecho & Ações Rápidas por Status ─── */}
           {visita.status === 'agendada' && (
-            <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3">
               <Button
                 type="button"
                 variant="primary"
@@ -404,11 +415,26 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                   e.stopPropagation();
                   handleStatusChange('confirmada');
                 }}
-                className="w-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 py-2 rounded-xl shadow-xs cursor-pointer"
+                className="w-full text-[11px] sm:text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1 py-2 rounded-xl shadow-xs cursor-pointer truncate"
                 title="Confirmar visita"
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Confirmar Visita</span>
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span>Confirmar</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditModalOpen(true);
+                }}
+                className="w-full text-[11px] sm:text-xs font-bold border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
+                title="Remarcar data e horário da visita"
+              >
+                <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
+                <span>Remarcar</span>
               </Button>
 
               <Button
@@ -419,34 +445,66 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                   e.stopPropagation();
                   handleStatusChange('cancelada');
                 }}
-                className="w-full text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1.5 py-2 rounded-xl cursor-pointer"
+                className="w-full text-[11px] sm:text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
                 title="Cancelar visita"
               >
-                <XCircle className="w-3.5 h-3.5" />
+                <XCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>Cancelar</span>
               </Button>
             </div>
           )}
 
           {visita.status === 'confirmada' && (
-            <div className={`gap-2 mb-3 ${podeConcluir ? 'grid grid-cols-2' : 'flex justify-end'}`}>
-              {podeConcluir && (
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsConcluirModalOpen(true);
-                  }}
-                  className="w-full text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center gap-1.5 py-2 rounded-xl shadow-xs cursor-pointer"
-                  title="Concluir visita e disparar pesquisas/comprovações"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Concluir Visita</span>
-                </Button>
-              )}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mb-3">
+              {/* [ Realizada ] */}
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsConcluirModalOpen(true);
+                }}
+                className="w-full text-[11px] sm:text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center gap-1 py-2 rounded-xl shadow-xs cursor-pointer truncate"
+                title="Concluir visita e disparar pesquisas/comprovações"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span>Realizada</span>
+              </Button>
 
+              {/* [ Não Compareceu ] */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStatusChange('nao_compareceu');
+                }}
+                className="w-full text-[11px] sm:text-xs font-bold border-amber-300 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
+                title="Registrar que o cliente ou proprietário faltou"
+              >
+                <UserX className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+                <span>Não Compareceu</span>
+              </Button>
+
+              {/* [ Remarcar ] */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditModalOpen(true);
+                }}
+                className="w-full text-[11px] sm:text-xs font-bold border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
+                title="Remarcar data e horário da visita"
+              >
+                <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
+                <span>Remarcar</span>
+              </Button>
+
+              {/* [ Cancelar ] */}
               <Button
                 type="button"
                 variant="outline"
@@ -455,11 +513,30 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                   e.stopPropagation();
                   handleStatusChange('cancelada');
                 }}
-                className={`${podeConcluir ? 'w-full' : 'w-full'} text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1.5 py-2 rounded-xl cursor-pointer`}
+                className="w-full text-[11px] sm:text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
                 title="Cancelar visita"
               >
-                <XCircle className="w-3.5 h-3.5" />
+                <XCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>Cancelar</span>
+              </Button>
+            </div>
+          )}
+
+          {(visita.status === 'nao_compareceu' || visita.status === 'cancelada') && (
+            <div className="mb-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditModalOpen(true);
+                }}
+                className="w-full text-[11px] sm:text-xs font-bold border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 flex items-center justify-center gap-1.5 py-1.5 rounded-xl cursor-pointer"
+                title="Remarcar esta visita"
+              >
+                <CalendarClock className="w-3.5 h-3.5 text-sky-500" />
+                <span>Remarcar Visita</span>
               </Button>
             </div>
           )}

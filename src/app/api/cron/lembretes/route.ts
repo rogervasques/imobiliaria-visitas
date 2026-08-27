@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       }
     };
 
-    // 2. Busca visitas pendentes de lembrete (1h antes)
+    // 2. Busca visitas pendentes de lembrete (1h antes) - Trava estrita de segurança: SOMENTE 'confirmada' ou 'agendada'
     const { data: visitasLembrete, error: errVisitas } = await supabase
       .from('visitas')
       .select(`
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
         imovel:imoveis(*),
         cliente:clientes(*)
       `)
-      .neq('status', 'cancelada')
+      .in('status', ['confirmada', 'agendada'])
       .neq('notificar_lembrete', false)
       .eq('whatsapp_lembrete_cliente', 'pendente')
       .lte('data_hora_visita', limiteFuturoLembrete.toISOString())
@@ -71,6 +71,12 @@ export async function GET(req: NextRequest) {
 
     if (visitasLembrete && visitasLembrete.length > 0) {
       for (const visita of visitasLembrete as unknown as Visita[]) {
+        // Validação Estrita de Status (Bloqueia Cancelada, Não Compareceu ou Realizada)
+        if (visita.status !== 'confirmada' && visita.status !== 'agendada') {
+          logs.push(`[Trava de Segurança] Lembrete 1h ignorado para visita ${visita.id}: status inválido (${visita.status})`);
+          continue;
+        }
+
         const ctx = await buildTemplateContextAsync(visita);
         const creatorInstance = await resolveVisitCreatorInstance(visita);
 
@@ -135,7 +141,7 @@ export async function GET(req: NextRequest) {
         imovel:imoveis(*),
         cliente:clientes(*)
       `)
-      .neq('status', 'cancelada')
+      .not('status', 'in', '("cancelada","nao_compareceu")')
       .neq('notificar_pos_visita', false)
       .eq('whatsapp_pos_visita_cliente', 'pendente')
       .gte('data_hora_visita', limitePassadoPosInicio.toISOString())

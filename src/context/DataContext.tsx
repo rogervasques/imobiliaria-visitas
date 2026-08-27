@@ -1226,9 +1226,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const agora = new Date();
     let enviadas = 0;
 
-    // 1. Lembretes (1 hora antes - janela de 0 a 65 min)
+    // 1. Lembretes (1 hora antes - janela de 0 a 65 min) - Trava estrita: SOMENTE 'confirmada' ou 'agendada'
     const visitasLembrete = visitas.filter((v) => {
-      if (v.status === 'cancelada' || v.notificar_lembrete === false) return false;
+      if (v.status !== 'confirmada' && v.status !== 'agendada') return false;
+      if (v.notificar_lembrete === false) return false;
       if (v.whatsapp_lembrete_cliente === 'enviado' && v.whatsapp_lembrete_proprietario === 'enviado') return false;
       
       const visitDate = new Date(v.data_hora_visita);
@@ -1238,7 +1239,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     // 2. Pós-Visita (2 horas após - janela de visitas que ocorreram entre 110 e 200 min atrás)
     const visitasPosVisita = visitas.filter((v) => {
-      if (v.status === 'cancelada' || v.notificar_pos_visita === false) return false;
+      if (v.status === 'cancelada' || v.status === 'nao_compareceu' || v.notificar_pos_visita === false) return false;
       if (v.whatsapp_pos_visita_cliente === 'enviado' || v.whatsapp_pos_visita_cliente === 'ignorado') return false;
 
       const visitDate = new Date(v.data_hora_visita);

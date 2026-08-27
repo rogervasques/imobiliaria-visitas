@@ -110,7 +110,7 @@ export interface Cliente {
   atualizado_em?: string;
 }
 
-export type StatusVisita = 'agendada' | 'confirmada' | 'cancelada' | 'reagendada' | 'concluida';
+export type StatusVisita = 'agendada' | 'confirmada' | 'cancelada' | 'reagendada' | 'concluida' | 'nao_compareceu';
 export type StatusDisparoWhatsApp =
   | 'pendente'
   | 'enviado'

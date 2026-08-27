@@ -13,6 +13,8 @@ import {
   Building2, CalendarDays, Timer, ChevronLeft, ChevronRight,
   Clock, CalendarCheck2, Hourglass, Ban, User, ChevronDown,
   Navigation,
+  UserX,
+  CalendarClock,
 } from 'lucide-react';
 import {
   formatPhone, formatTime, getWhatsAppDirectLink,
@@ -39,18 +41,25 @@ const STATUS_CFG: Record<StatusVisita, { label: string; dot: string; dotPure: st
     line: 'border-l-amber-400',
   },
   concluida: {
-    label: 'Concluída',
+    label: 'Realizada',
     dot: 'bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-950',
     dotPure: 'bg-purple-500',
     badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800',
     line: 'border-l-purple-500',
   },
   reagendada: {
-    label: 'Concluída',
+    label: 'Realizada',
     dot: 'bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-950',
     dotPure: 'bg-purple-500',
     badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800',
     line: 'border-l-purple-500',
+  },
+  nao_compareceu: {
+    label: 'Não Compareceu',
+    dot: 'bg-amber-600 ring-4 ring-amber-100 dark:ring-amber-950',
+    dotPure: 'bg-amber-600',
+    badge: 'bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    line: 'border-l-amber-600',
   },
   cancelada: {
     label: 'Cancelada',
@@ -155,6 +164,7 @@ function MiniCalendario({
     concluida: 'bg-purple-500',
     cancelada: 'bg-rose-500',
     reagendada: 'bg-purple-400',
+    nao_compareceu: 'bg-amber-600',
   };
 
   return (
@@ -431,7 +441,15 @@ function TimelineCard({
                       className="w-full text-left px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                     >
                       <div className="w-2.5 h-2.5 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
-                      <span>Concluída</span>
+                      <span>Realizada</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStatus('nao_compareceu')}
+                      className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-600 border border-amber-500 shrink-0" />
+                      <span>Não Compareceu</span>
                     </button>
                     <button
                       type="button"
@@ -514,53 +532,99 @@ function TimelineCard({
             </div>
           </div>
 
-          {/* ─── Botões de Ação Rápida por Status (Agendada / Confirmada) ─── */}
+          {/* ─── Botões de Desfecho & Ações Rápidas por Status ─── */}
           {visita.status === 'agendada' && (
-            <div className="mt-3 grid grid-cols-2 gap-2" onClick={e => e.stopPropagation()}>
+            <div className="mt-3 grid grid-cols-3 gap-1.5 sm:gap-2" onClick={e => e.stopPropagation()}>
               <button
                 type="button"
                 onClick={() => handleStatus('confirmada')}
-                className="w-full py-1.5 sm:py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
+                className="w-full py-1.5 sm:py-2 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] sm:text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
                 title="Confirmar visita"
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                 <span>Confirmar</span>
               </button>
 
               <button
                 type="button"
+                onClick={() => setIsEditOpen(true)}
+                className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
+                title="Remarcar data e horário da visita"
+              >
+                <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
+                <span>Remarcar</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => handleStatus('cancelada')}
-                className="w-full py-1.5 sm:py-2 px-3 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
+                className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
                 title="Cancelar visita"
               >
-                <XCircle className="w-3.5 h-3.5" />
+                <XCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>Cancelar</span>
               </button>
             </div>
           )}
 
           {visita.status === 'confirmada' && (
-            <div className={`mt-3 ${podeConcluir ? 'grid grid-cols-2 gap-2' : 'flex justify-end'}`} onClick={e => e.stopPropagation()}>
-              {podeConcluir && (
-                <button
-                  type="button"
-                  onClick={() => setIsConcluirOpen(true)}
-                  className="w-full py-1.5 sm:py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in"
-                  title="Concluir visita agendada"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Concluir Visita</span>
-                </button>
-              )}
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2" onClick={e => e.stopPropagation()}>
+              {/* [ Realizada ] */}
+              <button
+                type="button"
+                onClick={() => setIsConcluirOpen(true)}
+                className="w-full py-1.5 sm:py-2 px-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-[11px] sm:text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
+                title="Concluir visita e disparar pesquisas/comprovações"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span>Realizada</span>
+              </button>
 
+              {/* [ Não Compareceu ] */}
+              <button
+                type="button"
+                onClick={() => handleStatus('nao_compareceu')}
+                className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-amber-300 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
+                title="Registrar que o cliente ou proprietário faltou"
+              >
+                <UserX className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+                <span>Não Compareceu</span>
+              </button>
+
+              {/* [ Remarcar ] */}
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(true)}
+                className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
+                title="Remarcar data e horário da visita"
+              >
+                <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
+                <span>Remarcar</span>
+              </button>
+
+              {/* [ Cancelar ] */}
               <button
                 type="button"
                 onClick={() => handleStatus('cancelada')}
-                className={`${podeConcluir ? 'w-full' : 'w-full'} py-1.5 sm:py-2 px-3 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in`}
+                className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
                 title="Cancelar visita"
               >
-                <XCircle className="w-3.5 h-3.5" />
+                <XCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>Cancelar</span>
+              </button>
+            </div>
+          )}
+
+          {(visita.status === 'nao_compareceu' || visita.status === 'cancelada') && (
+            <div className="mt-3" onClick={e => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(true)}
+                className="w-full py-1.5 sm:py-2 px-3 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                title="Remarcar esta visita"
+              >
+                <CalendarClock className="w-3.5 h-3.5 text-sky-500" />
+                <span>Remarcar Visita</span>
               </button>
             </div>
           )}

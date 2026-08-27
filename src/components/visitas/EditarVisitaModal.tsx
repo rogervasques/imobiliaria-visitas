@@ -305,7 +305,8 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
           >
             <option value="agendada">Agendada</option>
             <option value="confirmada">Confirmada</option>
-            <option value="concluida">Concluída</option>
+            <option value="concluida">Realizada</option>
+            <option value="nao_compareceu">Não Compareceu</option>
             <option value="cancelada">Cancelada</option>
             <option value="reagendada">Reagendada</option>
           </Select>

@@ -199,6 +199,12 @@ export default function AgendaPage() {
       text: 'text-rose-950 dark:text-rose-100',
       label: 'Cancelada',
     },
+    nao_compareceu: {
+      bg: 'bg-amber-100/95 dark:bg-amber-950/80 hover:bg-amber-200/90 dark:hover:bg-amber-900/90',
+      border: 'border border-amber-300 dark:border-amber-700/60',
+      text: 'text-amber-950 dark:text-amber-100',
+      label: 'Não Compareceu',
+    },
   };
 
   // Estilos de tag colorida por status no Mês
@@ -230,6 +236,11 @@ export default function AgendaPage() {
       bg: 'bg-rose-100 dark:bg-rose-950/90',
       border: 'border-rose-300 dark:border-rose-700/70',
       text: 'text-rose-950 dark:text-rose-100',
+    },
+    nao_compareceu: {
+      bg: 'bg-amber-100 dark:bg-amber-950/90',
+      border: 'border-amber-300 dark:border-amber-700/70',
+      text: 'text-amber-950 dark:text-amber-100',
     },
   };
 
@@ -582,10 +593,16 @@ export default function AgendaPage() {
                                   ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
                                   : v.status === 'concluida' || v.status === 'reagendada'
                                   ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
+                                  : v.status === 'nao_compareceu'
+                                  ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                                   : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                               }`}
                             >
-                              {v.status.charAt(0).toUpperCase() + v.status.slice(1)}
+                              {v.status === 'nao_compareceu'
+                                ? 'Não Compareceu'
+                                : v.status === 'concluida' || v.status === 'reagendada'
+                                ? 'Realizada'
+                                : v.status.charAt(0).toUpperCase() + v.status.slice(1)}
                             </span>
                           </div>
                         </div>

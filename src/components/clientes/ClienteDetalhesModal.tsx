@@ -118,11 +118,19 @@ export function ClienteDetalhesModal({
             Cancelada
           </span>
         );
+      case 'concluida':
       case 'reagendada':
         return (
           <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
             <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-            Reagendada
+            Realizada
+          </span>
+        );
+      case 'nao_compareceu':
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Não Compareceu
           </span>
         );
       default:
