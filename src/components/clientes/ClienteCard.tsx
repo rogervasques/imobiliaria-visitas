@@ -6,6 +6,7 @@ import { Card, CardContent } from '../ui/Card';
 import {
   Phone,
   Tag,
+  DollarSign,
   Clock,
   MessageCircle,
   CalendarCheck,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import { formatPhone, getInitials, getWhatsAppDirectLink } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
+import { useTenant } from '@/context/TenantContext';
 import { getImoveisCompativeis } from '@/lib/imovelMatching';
 
 interface ClienteCardProps {
@@ -23,6 +25,7 @@ interface ClienteCardProps {
 
 export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProps) {
   const { visitas, imoveis } = useData();
+  const { moduloCrmAtivo } = useTenant();
 
   const directWhatsApp = getWhatsAppDirectLink(
     cliente.telefone,
@@ -47,16 +50,6 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
   const imoveisCompativeis = useMemo(() => {
     return getImoveisCompativeis(cliente, imoveis);
   }, [cliente, imoveis]);
-
-  // Texto fundido de interesse + orçamento
-  const textoInteresseOrcamento = useMemo(() => {
-    if (cliente.perfil_interesse && cliente.faixa_orcamento) {
-      return `${cliente.perfil_interesse} (${cliente.faixa_orcamento})`;
-    }
-    if (cliente.perfil_interesse) return cliente.perfil_interesse;
-    if (cliente.faixa_orcamento) return `Orçamento: ${cliente.faixa_orcamento}`;
-    return null;
-  }, [cliente.perfil_interesse, cliente.faixa_orcamento]);
 
   return (
     <Card
@@ -99,22 +92,34 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
           )}
         </div>
 
-        {/* ─── 2. Linha Fundida: Interesse e Orçamento ─── */}
-        {textoInteresseOrcamento && (
-          <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
-            <Tag className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-            <span className="font-semibold truncate" title={textoInteresseOrcamento}>
-              {textoInteresseOrcamento}
+        {/* ─── 2. Linha 1: Perfil de Interesse Completo ─── */}
+        {cliente.perfil_interesse && (
+          <div className="flex items-start gap-1.5 text-xs text-slate-700 dark:text-slate-300">
+            <Tag className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+            <span className="font-semibold line-clamp-2 leading-relaxed" title={cliente.perfil_interesse}>
+              {cliente.perfil_interesse}
             </span>
           </div>
         )}
 
-        {/* ─── 3. Linha de Métricas: Status/Tempo de Parada (Esq) e Visitas (Dir) ─── */}
-        <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-          <span className="flex items-center gap-1 font-medium text-slate-600 dark:text-slate-400 truncate">
-            <Clock className="w-3 h-3 text-amber-500 shrink-0" />
-            <span className="truncate">{cliente.tempo_parada_texto || 'Contato recente'}</span>
-          </span>
+        {/* ─── 3. Linha 2: Faixa de Orçamento em Destaque ─── */}
+        {cliente.faixa_orcamento && (
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+            <DollarSign className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <span>
+              Orçamento: <strong className="text-slate-900 dark:text-slate-100 font-bold">{cliente.faixa_orcamento}</strong>
+            </span>
+          </div>
+        )}
+
+        {/* ─── 4. Linha de Métricas: Status CRM (se ativo) + Quantidade de Visitas ─── */}
+        <div className={`flex items-center text-[11px] text-slate-500 dark:text-slate-400 ${moduloCrmAtivo && cliente.tempo_parada_texto ? 'justify-between' : 'justify-end'}`}>
+          {moduloCrmAtivo && cliente.tempo_parada_texto && (
+            <span className="flex items-center gap-1 font-medium text-slate-600 dark:text-slate-400 truncate">
+              <Clock className="w-3 h-3 text-amber-500 shrink-0" />
+              <span className="truncate">{cliente.tempo_parada_texto}</span>
+            </span>
+          )}
 
           <span className="flex items-center gap-1 shrink-0 font-medium">
             <CalendarCheck className="w-3 h-3 text-sky-500 shrink-0" />
