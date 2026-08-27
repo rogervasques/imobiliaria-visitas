@@ -362,7 +362,7 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
   };
 
   const statusColors: Record<string, string> = {
-    agendada: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+    agendada: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
     cancelada: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
     reagendada: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
     concluida: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',

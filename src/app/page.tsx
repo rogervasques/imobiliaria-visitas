@@ -230,7 +230,7 @@ export default function LandingPage() {
                 </div>
                 <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
                   <span className="text-slate-400">Cliente: <strong>Carlos Eduardo</strong></span>
-                  <span className="text-amber-400 font-bold">Agendada</span>
+                  <span className="text-emerald-400 font-bold">Agendada</span>
                 </div>
               </div>
 

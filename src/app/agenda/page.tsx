@@ -170,9 +170,9 @@ export default function AgendaPage() {
     { bg: string; border: string; text: string; label: string }
   > = {
     agendada: {
-      bg: 'bg-amber-100/95 dark:bg-amber-950/80 hover:bg-amber-200/90 dark:hover:bg-amber-900/90',
-      border: 'border border-amber-300 dark:border-amber-700/60',
-      text: 'text-amber-950 dark:text-amber-100',
+      bg: 'bg-emerald-100/95 dark:bg-emerald-950/80 hover:bg-emerald-200/90 dark:hover:bg-emerald-900/90',
+      border: 'border border-emerald-300 dark:border-emerald-700/60',
+      text: 'text-emerald-950 dark:text-emerald-100',
       label: 'Agendada',
     },
     concluida: {
@@ -207,9 +207,9 @@ export default function AgendaPage() {
     { bg: string; border: string; text: string }
   > = {
     agendada: {
-      bg: 'bg-amber-100 dark:bg-amber-950/90',
-      border: 'border-amber-300 dark:border-amber-700/70',
-      text: 'text-amber-950 dark:text-amber-100',
+      bg: 'bg-emerald-100 dark:bg-emerald-950/90',
+      border: 'border-emerald-300 dark:border-emerald-700/70',
+      text: 'text-emerald-950 dark:text-emerald-100',
     },
     concluida: {
       bg: 'bg-purple-100 dark:bg-purple-950/90',
@@ -481,7 +481,7 @@ export default function AgendaPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 border border-emerald-400 shrink-0" />
                     <span className="font-semibold">Agendada</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
@@ -489,7 +489,7 @@ export default function AgendaPage() {
                     <span className="font-semibold">Realizada</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-3 h-3 rounded-full bg-amber-600 border border-amber-500 shrink-0" />
+                    <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
                     <span className="font-semibold">Não Compareceu</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
@@ -582,7 +582,7 @@ export default function AgendaPage() {
                                   ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
                                   : v.status === 'nao_compareceu'
                                   ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                                  : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                               }`}
                             >
                               {v.status === 'nao_compareceu'
@@ -709,7 +709,7 @@ export default function AgendaPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 border border-emerald-400 shrink-0" />
                     <span className="font-semibold">Agendada</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
@@ -717,7 +717,7 @@ export default function AgendaPage() {
                     <span className="font-semibold">Realizada</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-3 h-3 rounded-full bg-amber-600 border border-amber-500 shrink-0" />
+                    <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
                     <span className="font-semibold">Não Compareceu</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
@@ -780,7 +780,7 @@ export default function AgendaPage() {
                               ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
                               : visita.status === 'nao_compareceu'
                               ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
-                              : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
+                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
                           }`}
                         >
                           {visita.status === 'nao_compareceu' ? 'Não Compareceu' : visita.status === 'concluida' || visita.status === 'reagendada' ? 'Realizada' : 'Agendada'}
@@ -817,12 +817,12 @@ export default function AgendaPage() {
             <CardContent className="p-4 space-y-3">
               <div className="space-y-2 text-xs">
                 {/* Agendadas */}
-                <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/70 dark:bg-amber-950/30">
-                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium">
-                    <CalendarCheck2 className="w-3.5 h-3.5 text-amber-500" />
+                <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30">
+                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-medium">
+                    <CalendarCheck2 className="w-3.5 h-3.5 text-emerald-500" />
                     <span>Visitas Agendadas</span>
                   </div>
-                  <span className="font-bold text-amber-700 dark:text-amber-300">
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300">
                     {statsSemana.agendadas}
                   </span>
                 </div>

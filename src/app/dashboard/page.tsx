@@ -28,10 +28,10 @@ import { ConcluirVisitaModal } from '@/components/visitas/ConcluirVisitaModal';
 const STATUS_CFG: Record<StatusVisita, { label: string; dot: string; dotPure: string; badge: string; line: string }> = {
   agendada: {
     label: 'Agendada',
-    dot: 'bg-amber-400 ring-4 ring-amber-100 dark:ring-amber-950',
-    dotPure: 'bg-amber-400',
-    badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-    line: 'border-l-amber-400',
+    dot: 'bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-950',
+    dotPure: 'bg-emerald-500',
+    badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    line: 'border-l-emerald-500',
   },
   concluida: {
     label: 'Realizada',
@@ -49,10 +49,10 @@ const STATUS_CFG: Record<StatusVisita, { label: string; dot: string; dotPure: st
   },
   nao_compareceu: {
     label: 'Não Compareceu',
-    dot: 'bg-amber-600 ring-4 ring-amber-100 dark:ring-amber-950',
-    dotPure: 'bg-amber-600',
-    badge: 'bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-    line: 'border-l-amber-600',
+    dot: 'bg-amber-400 ring-4 ring-amber-100 dark:ring-amber-950',
+    dotPure: 'bg-amber-400',
+    badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    line: 'border-l-amber-400',
   },
   cancelada: {
     label: 'Cancelada',
@@ -152,11 +152,11 @@ function MiniCalendario({
 
   // Dots de status únicos por dia
   const dotColors: Record<StatusVisita, string> = {
-    agendada: 'bg-amber-400',
+    agendada: 'bg-emerald-500',
     concluida: 'bg-purple-500',
     cancelada: 'bg-rose-500',
     reagendada: 'bg-purple-400',
-    nao_compareceu: 'bg-amber-600',
+    nao_compareceu: 'bg-amber-400',
   };
 
   return (
@@ -226,9 +226,9 @@ function MiniCalendario({
       {/* Legenda */}
       <div className="px-3 pb-3 flex flex-wrap gap-2">
         {[
-          { color: 'bg-amber-400', label: 'Agendada' },
+          { color: 'bg-emerald-500', label: 'Agendada' },
           { color: 'bg-purple-500', label: 'Realizada' },
-          { color: 'bg-amber-600', label: 'Não Compareceu' },
+          { color: 'bg-amber-400', label: 'Não Compareceu' },
           { color: 'bg-rose-500', label: 'Cancelada' },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
@@ -415,9 +415,9 @@ function TimelineCard({
                     <button
                       type="button"
                       onClick={() => handleStatus('agendada')}
-                      className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                      className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                     >
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-emerald-400 shrink-0" />
                       <span>Agendada</span>
                     </button>
                     <button
@@ -433,7 +433,7 @@ function TimelineCard({
                       onClick={() => handleStatus('nao_compareceu')}
                       className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                     >
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-600 border border-amber-500 shrink-0" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
                       <span>Não Compareceu</span>
                     </button>
                     <button
@@ -744,7 +744,7 @@ export default function DashboardHojePage() {
   // Cards-filtro de métricas
   const metricCards = [
     { key: null, label: 'Total no Dia', value: metricasDia.total, color: 'slate', active: filterStatus === null },
-    { key: 'agendada' as StatusVisita, label: 'Agendadas', value: metricasDia.agendadas, color: 'amber', active: filterStatus === 'agendada' },
+    { key: 'agendada' as StatusVisita, label: 'Agendadas', value: metricasDia.agendadas, color: 'emerald', active: filterStatus === 'agendada' },
     { key: 'concluida' as StatusVisita, label: 'Realizadas', value: metricasDia.concluidas, color: 'purple', active: filterStatus === 'concluida' || filterStatus === 'reagendada' },
     { key: 'nao_compareceu' as StatusVisita, label: 'Não Compareceu', value: metricasDia.nao_compareceu, color: 'amber', active: filterStatus === 'nao_compareceu' },
     { key: 'cancelada' as StatusVisita, label: 'Canceladas', value: metricasDia.canceladas, color: 'rose', active: filterStatus === 'cancelada' },

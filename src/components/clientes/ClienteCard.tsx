@@ -77,7 +77,7 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
           {visitaAtiva && (
             <div className="shrink-0">
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold leading-tight bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold leading-tight bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
               >
                 <span className="text-[10px]">📅</span>
                 <span className="whitespace-nowrap">{visitaAtiva.label}</span>

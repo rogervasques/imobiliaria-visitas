@@ -340,9 +340,9 @@ export default function RelatoriosPage() {
             </div>
 
             {/* Agendadas */}
-            <div className="col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-amber-50/90 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800/80 text-amber-800 dark:text-amber-300 text-xs shadow-2xs truncate">
-              <Hourglass className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span className="font-black tabular-nums text-amber-700 dark:text-amber-300">{agendadas}</span>
+            <div className="col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300 text-xs shadow-2xs truncate">
+              <Hourglass className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <span className="font-black tabular-nums text-emerald-700 dark:text-emerald-300">{agendadas}</span>
               <span className="text-[11px] font-semibold truncate">Agendadas</span>
             </div>
 
@@ -408,22 +408,22 @@ export default function RelatoriosPage() {
             </Card>
 
             {/* Agendadas */}
-            <Card className="border-amber-500/20 bg-amber-500/5 shadow-xs">
+            <Card className="border-emerald-500/20 bg-emerald-500/5 shadow-xs">
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
                     <Hourglass className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-300 leading-tight">
+                    <div className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-300 leading-tight">
                       {agendadas}
                     </div>
-                    <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight text-amber-600 dark:text-amber-400 truncate">
+                    <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight text-emerald-600 dark:text-emerald-400 truncate">
                       Agendadas
                     </div>
                   </div>
                 </div>
-                <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-2 border-t border-amber-500/10 pt-1.5 truncate">
+                <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-2 border-t border-emerald-500/10 pt-1.5 truncate">
                   Pendentes / Em andamento
                 </p>
               </CardContent>
@@ -527,7 +527,7 @@ export default function RelatoriosPage() {
                         <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5 flex-wrap gap-1">
                           <span>Total: <strong className="text-slate-800 dark:text-slate-200">{corretor.total}</strong></span>
                           <span>Realizadas: <strong className="text-purple-600">{corretor.concluidas}</strong></span>
-                          <span>Agendadas: <strong className="text-amber-600">{corretor.agendadas}</strong></span>
+                          <span>Agendadas: <strong className="text-emerald-600">{corretor.agendadas}</strong></span>
                           <span>Não Compareceu: <strong className="text-amber-600">{corretor.nao_compareceu}</strong></span>
                           <span>Canceladas: <strong className="text-rose-500">{corretor.canceladas}</strong></span>
                         </div>

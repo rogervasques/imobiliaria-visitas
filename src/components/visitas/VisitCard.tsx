@@ -55,11 +55,11 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
     StatusVisita,
     { label: string; variant: 'warning' | 'success' | 'danger' | 'purple' | 'default'; dotColor: string }
   > = {
-    agendada: { label: 'Agendada', variant: 'warning', dotColor: 'bg-amber-400 border-amber-500' },
+    agendada: { label: 'Agendada', variant: 'success', dotColor: 'bg-emerald-500 border-emerald-400' },
     concluida: { label: 'Realizada', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
     reagendada: { label: 'Realizada', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
     cancelada: { label: 'Cancelada', variant: 'danger', dotColor: 'bg-rose-500 border-rose-400' },
-    nao_compareceu: { label: 'Não Compareceu', variant: 'warning', dotColor: 'bg-amber-600 border-amber-500' },
+    nao_compareceu: { label: 'Não Compareceu', variant: 'warning', dotColor: 'bg-amber-400 border-amber-500' },
   };
 
   const [isConcluirModalOpen, setIsConcluirModalOpen] = useState(false);
@@ -162,9 +162,9 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                     <button
                       type="button"
                       onClick={() => handleStatusChange('agendada')}
-                      className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                      className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                     >
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-emerald-400 shrink-0" />
                       <span>Agendada</span>
                     </button>
                     <button
@@ -180,7 +180,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                       onClick={() => handleStatusChange('nao_compareceu')}
                       className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                     >
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-600 border border-amber-500 shrink-0" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
                       <span>Não Compareceu</span>
                     </button>
                     <button
