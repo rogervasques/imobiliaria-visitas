@@ -27,7 +27,6 @@ import {
   History,
   FileText,
   Sparkles,
-  ChevronRight,
   Home,
 } from 'lucide-react';
 import { formatCurrency, formatPhone, formatDateTime, getInitials, getWhatsAppDirectLink } from '@/lib/utils';
@@ -296,27 +295,22 @@ export function ClienteDetalhesModal({
             </div>
 
             {/* Cartão de Identificação do Cliente */}
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-black flex items-center justify-center text-lg shadow-md shadow-emerald-600/25 shrink-0">
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3.5">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-black flex items-center justify-center text-base sm:text-lg shadow-md shadow-emerald-600/25 shrink-0">
                   {getInitials(cliente.nome)}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-slate-100">
-                      {cliente.nome}
-                    </h3>
-                    <Badge variant={statusVariants[cliente.status] || 'default'} size="sm">
-                      {cliente.status.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-slate-100 truncate">
+                    {cliente.nome}
+                  </h3>
+                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex-wrap">
                     <span className="flex items-center gap-1 font-mono font-medium">
                       <Phone className="w-3.5 h-3.5 text-slate-400" />
                       {formatPhone(cliente.telefone)}
                     </span>
                     {cliente.email && (
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 truncate">
                         <Mail className="w-3.5 h-3.5 text-slate-400" />
                         {cliente.email}
                       </span>
@@ -325,15 +319,23 @@ export function ClienteDetalhesModal({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              {/* Ações Rápidas: 100% contidas no card superior */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <a
                   href={directWhatsApp}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm"
+                  className="w-full"
                 >
-                  <MessageCircle className="w-4 h-4" />
-                  WhatsApp
+                  <Button
+                    type="button"
+                    variant="whatsapp"
+                    size="sm"
+                    className="w-full font-bold text-xs flex items-center justify-center gap-1.5 py-2 shadow-xs cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>WhatsApp</span>
+                  </Button>
                 </a>
 
                 <Button
@@ -341,10 +343,10 @@ export function ClienteDetalhesModal({
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEnviarImovelOpen(true)}
-                  className="font-bold text-xs shadow-xs border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                  className="w-full font-bold text-xs shadow-xs border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center gap-1.5 py-2 cursor-pointer"
                 >
-                  <Home className="w-3.5 h-3.5 mr-1 text-emerald-600" />
-                  Enviar Imóvel
+                  <Home className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Enviar Imóvel</span>
                 </Button>
 
                 {onAgendarVisita && (
@@ -356,10 +358,10 @@ export function ClienteDetalhesModal({
                       onClose();
                       onAgendarVisita(cliente);
                     }}
-                    className="font-bold text-xs shadow-sm"
+                    className="w-full font-bold text-xs shadow-xs flex items-center justify-center gap-1.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    Agendar Visita
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agendar Visita</span>
                   </Button>
                 )}
               </div>
@@ -433,11 +435,6 @@ export function ClienteDetalhesModal({
                         </div>
                         <div className="flex items-center gap-2">
                           {statusVisitaBadge(v.status)}
-                          {onSelectVisita && (
-                            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-                              Abrir <ChevronRight className="w-3 h-3" />
-                            </span>
-                          )}
                         </div>
                       </div>
 

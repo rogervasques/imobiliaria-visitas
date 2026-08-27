@@ -15,10 +15,10 @@ import { Button } from '@/components/ui/Button';
 import { Users, Search, Plus, Filter, Key, UserCheck, Sparkles } from 'lucide-react';
 
 export default function ClientesPage() {
-  const { clientes, proprietarios, imoveis } = useData();
+  const { clientes, proprietarios, imoveis, visitas } = useData();
   const [search, setSearch] = useState('');
   const [tipoFiltro, setTipoFiltro] = useState<'todos' | 'compradores' | 'proprietarios'>('todos');
-  const [statusFilter, setStatusFilter] = useState('todos');
+  const [filtroVisita, setFiltroVisita] = useState<'todos' | 'com_visita' | 'confirmada' | 'agendada' | 'sem_visita'>('todos');
   const [isNovoClienteOpen, setIsNovoClienteOpen] = useState(false);
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
   const [clienteParaVisita, setClienteParaVisita] = useState<Cliente | null>(null);
@@ -47,7 +47,6 @@ export default function ClientesPage() {
         status: 'ativo' as const,
         perfil_interesse: p.imoveis_count ? `Proprietário de ${p.imoveis_count} imóvel(is)` : 'Proprietário de Imóvel',
         tempo_parada_texto: 'Proprietário ativo',
-        corretor_responsavel_nome: 'Roger Vasques',
         criado_em: p.criado_em,
       }));
     }
@@ -64,12 +63,23 @@ export default function ClientesPage() {
           (cl.email && cl.email.toLowerCase().includes(search.toLowerCase())) ||
           (cl.perfil_interesse && cl.perfil_interesse.toLowerCase().includes(search.toLowerCase()));
 
-        const matchStatus = statusFilter === 'todos' || cl.status === statusFilter;
+        if (!matchSearch) return false;
 
-        return matchSearch && matchStatus;
+        if (filtroVisita === 'todos') return true;
+
+        const visitasDoCliente = visitas.filter((v) => v.cliente_id === cl.id);
+        const temConfirmada = visitasDoCliente.some((v) => v.status === 'confirmada');
+        const temAgendada = visitasDoCliente.some((v) => v.status === 'agendada');
+
+        if (filtroVisita === 'confirmada') return temConfirmada;
+        if (filtroVisita === 'agendada') return temAgendada;
+        if (filtroVisita === 'com_visita') return temConfirmada || temAgendada;
+        if (filtroVisita === 'sem_visita') return !temConfirmada && !temAgendada;
+
+        return true;
       })
       .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
-  }, [baseClientes, search, statusFilter]);
+  }, [baseClientes, search, filtroVisita, visitas]);
 
   const countCompradores = useMemo(() => clientes.filter((c) => c.tipo_cliente !== 'proprietario').length, [clientes]);
   const countProprietarios = useMemo(() => {
@@ -167,20 +177,21 @@ export default function ClientesPage() {
           />
 
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Status:</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Visitas:</span>
             {[
               { id: 'todos', label: 'Todos' },
-              { id: 'ativo', label: 'Ativos' },
-              { id: 'negociando', label: 'Em Negociação' },
-              { id: 'fechado', label: 'Fechados' },
+              { id: 'com_visita', label: 'Com Visita Ativa' },
+              { id: 'confirmada', label: 'Visita Confirmada' },
+              { id: 'agendada', label: 'Visita Agendada' },
+              { id: 'sem_visita', label: 'Sem Visita' },
             ].map((sf) => (
               <button
                 key={sf.id}
                 type="button"
-                onClick={() => setStatusFilter(sf.id)}
+                onClick={() => setFiltroVisita(sf.id as any)}
                 className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  statusFilter === sf.id
-                    ? 'bg-emerald-600 text-white shadow-xs'
+                  filtroVisita === sf.id
+                    ? 'bg-emerald-600 text-white shadow-xs font-bold'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >

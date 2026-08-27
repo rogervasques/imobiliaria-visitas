@@ -241,9 +241,6 @@ export default function ProprietariosPage() {
                               <span className="truncate">
                                 {im.bairro}, {im.cidade}
                               </span>
-                              <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                                Ver detalhes →
-                              </span>
                             </div>
                           </div>
                         ))}

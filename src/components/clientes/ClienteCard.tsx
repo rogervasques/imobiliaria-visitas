@@ -3,10 +3,8 @@
 import React, { useMemo } from 'react';
 import { Cliente, Imovel } from '@/types';
 import { Card, CardContent } from '../ui/Card';
-import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import {
-  User,
   Phone,
   Tag,
   DollarSign,
@@ -29,20 +27,6 @@ interface ClienteCardProps {
 export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProps) {
   const { visitas, imoveis } = useData();
 
-  const statusVariants: Record<string, 'success' | 'warning' | 'purple' | 'default'> = {
-    ativo: 'success',
-    negociando: 'warning',
-    fechado: 'purple',
-    inativo: 'default',
-  };
-
-  const statusLabels: Record<string, string> = {
-    ativo: 'Ativo',
-    negociando: 'Negociando',
-    fechado: 'Fechado',
-    inativo: 'Inativo',
-  };
-
   const directWhatsApp = getWhatsAppDirectLink(
     cliente.telefone,
     `Olá, ${cliente.nome}! Tudo bem? Sou da imobiliária e gostaria de falar sobre as opções de imóveis para você.`
@@ -52,13 +36,20 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
     return visitas.filter((v) => v.cliente_id === cliente.id).length;
   }, [visitas, cliente.id]);
 
+  // Identifica se o cliente possui uma visita ativa (Confirmada ou Agendada)
+  const visitaAtiva = useMemo(() => {
+    const visitasDoCliente = visitas.filter((v) => v.cliente_id === cliente.id);
+    const confirmada = visitasDoCliente.find((v) => v.status === 'confirmada');
+    if (confirmada) return { status: 'confirmada', label: 'Visita Confirmada' };
+    const agendada = visitasDoCliente.find((v) => v.status === 'agendada');
+    if (agendada) return { status: 'agendada', label: 'Visita Agendada' };
+    return null;
+  }, [visitas, cliente.id]);
+
   // Calcula imóveis compatíveis com o perfil do cliente
   const imoveisCompativeis = useMemo(() => {
     return getImoveisCompativeis(cliente, imoveis);
   }, [cliente, imoveis]);
-
-  const corretorNome =
-    cliente.corretor_responsavel_nome || 'Roger Vasques';
 
   return (
     <Card
@@ -66,7 +57,7 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
       className="hover:border-emerald-500/50 hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col justify-between overflow-hidden relative border-slate-200/90 dark:border-slate-800"
     >
       <CardContent className="p-4 sm:p-5 space-y-3.5">
-        {/* ─── 1. Topo: Avatar, Nome, Telefone + Corretor e Status ─── */}
+        {/* ─── 1. Topo: Avatar, Nome, Telefone + Tag de Visita Ativa ─── */}
         <div className="flex items-start justify-between gap-2.5">
           {/* Avatar e Identificação */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -84,17 +75,21 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
             </div>
           </div>
 
-          {/* Canto Superior Direito: Corretor Responsável & Status */}
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <Badge variant={statusVariants[cliente.status] || 'default'} size="sm" className="font-bold">
-              {statusLabels[cliente.status] || cliente.status.toUpperCase()}
-            </Badge>
-
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700/60 max-w-[130px] truncate" title={`Corretor responsável: ${corretorNome}`}>
-              <User className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
-              <span className="truncate">{corretorNome}</span>
-            </span>
-          </div>
+          {/* Canto Superior Direito: Somente Tag de Visita Ativa (se houver) */}
+          {visitaAtiva && (
+            <div className="shrink-0">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                  visitaAtiva.status === 'confirmada'
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                    : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                }`}
+              >
+                <span>📅</span>
+                <span>{visitaAtiva.label}</span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* ─── 2. Corpo do Card: Perfil, Orçamento & Última Interação ─── */}
