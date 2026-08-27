@@ -56,7 +56,6 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
     { label: string; variant: 'warning' | 'success' | 'danger' | 'purple' | 'default'; dotColor: string }
   > = {
     agendada: { label: 'Agendada', variant: 'warning', dotColor: 'bg-amber-400 border-amber-500' },
-    confirmada: { label: 'Confirmada', variant: 'success', dotColor: 'bg-emerald-600 border-emerald-500' },
     concluida: { label: 'Realizada', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
     reagendada: { label: 'Realizada', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
     cancelada: { label: 'Cancelada', variant: 'danger', dotColor: 'bg-rose-500 border-rose-400' },
@@ -167,14 +166,6 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                     >
                       <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
                       <span>Agendada</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange('confirmada')}
-                      className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 border border-emerald-500 shrink-0" />
-                      <span>Confirmada</span>
                     </button>
                     <button
                       type="button"
@@ -404,57 +395,8 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
             </div>
           </div>
 
-          {/* ─── 2. Botões de Desfecho & Ações Rápidas por Status ─── */}
+          {/* ─── 2. Botões de Desfecho & Ações Rápidas por Status (Agendada) ─── */}
           {visita.status === 'agendada' && (
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3">
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleStatusChange('confirmada');
-                }}
-                className="w-full text-[11px] sm:text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1 py-2 rounded-xl shadow-xs cursor-pointer truncate"
-                title="Confirmar visita"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                <span>Confirmar</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditModalOpen(true);
-                }}
-                className="w-full text-[11px] sm:text-xs font-bold border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
-                title="Remarcar data e horário da visita"
-              >
-                <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
-                <span>Remarcar</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleStatusChange('cancelada');
-                }}
-                className="w-full text-[11px] sm:text-xs font-bold border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center gap-1 py-2 rounded-xl cursor-pointer truncate"
-                title="Cancelar visita"
-              >
-                <XCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>Cancelar</span>
-              </Button>
-            </div>
-          )}
-
-          {visita.status === 'confirmada' && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mb-3">
               {/* [ Realizada ] */}
               <Button

@@ -110,7 +110,7 @@ export interface Cliente {
   atualizado_em?: string;
 }
 
-export type StatusVisita = 'agendada' | 'confirmada' | 'cancelada' | 'reagendada' | 'concluida' | 'nao_compareceu';
+export type StatusVisita = 'agendada' | 'cancelada' | 'reagendada' | 'concluida' | 'nao_compareceu';
 export type StatusDisparoWhatsApp =
   | 'pendente'
   | 'enviado'
@@ -230,12 +230,11 @@ export interface WhatsAppLog {
 
 export interface DashboardMetrics {
   totalVisitasHoje: number;
-  visitasConfirmadasHoje: number;
+  visitasAgendadasHoje: number;
   visitasCanceladasHoje: number;
-  visitasPendentesHoje: number;
+  visitasRealizadasHoje: number;
   totalImoveisAtivos: number;
   totalClientesAtivos: number;
-  taxaConfirmacao: number;
 }
 
 export type UserRole = 'admin' | 'gestor' | 'corretor';

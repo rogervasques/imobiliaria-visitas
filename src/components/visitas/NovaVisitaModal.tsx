@@ -298,9 +298,9 @@ export function NovaVisitaModal({
             label="Status Inicial"
             value={status}
             onChange={(e) => setStatus(e.target.value as StatusVisita)}
+            disabled
           >
             <option value="agendada">Agendada</option>
-            <option value="confirmada">Confirmada</option>
           </Select>
         </div>
 

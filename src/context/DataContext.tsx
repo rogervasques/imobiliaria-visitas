@@ -1226,9 +1226,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const agora = new Date();
     let enviadas = 0;
 
-    // 1. Lembretes (1 hora antes - janela de 0 a 65 min) - Trava estrita: SOMENTE 'confirmada' ou 'agendada'
+    // 1. Lembretes (1 hora antes - janela de 0 a 65 min) - Trava estrita: SOMENTE 'agendada'
     const visitasLembrete = visitas.filter((v) => {
-      if (v.status !== 'confirmada' && v.status !== 'agendada') return false;
+      if (v.status !== 'agendada') return false;
       if (v.notificar_lembrete === false) return false;
       if (v.whatsapp_lembrete_cliente === 'enviado' && v.whatsapp_lembrete_proprietario === 'enviado') return false;
       
@@ -1369,21 +1369,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return vStr === hojeStr;
   });
 
-  const visitasConfirmadasHoje = visitasHoje.filter((v) => v.status === 'confirmada').length;
+  const visitasAgendadasHoje = visitasHoje.filter((v) => v.status === 'agendada').length;
+  const visitasRealizadasHoje = visitasHoje.filter((v) => v.status === 'concluida' || v.status === 'reagendada').length;
   const visitasCanceladasHoje = visitasHoje.filter((v) => v.status === 'cancelada').length;
-  const visitasPendentesHoje = visitasHoje.filter((v) => v.status === 'agendada').length;
   const totalImoveisAtivos = imoveis.filter((i) => i.status === 'disponivel').length;
   const totalClientesAtivos = clientes.filter((c) => c.status === 'ativo').length;
-  const taxaConfirmacao = visitasHoje.length > 0 ? Math.round((visitasConfirmadasHoje / visitasHoje.length) * 100) : 100;
 
   const metrics: DashboardMetrics = {
     totalVisitasHoje: visitasHoje.length,
-    visitasConfirmadasHoje,
+    visitasAgendadasHoje,
     visitasCanceladasHoje,
-    visitasPendentesHoje,
+    visitasRealizadasHoje,
     totalImoveisAtivos,
     totalClientesAtivos,
-    taxaConfirmacao,
   };
 
   return (

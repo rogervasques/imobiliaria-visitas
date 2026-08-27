@@ -36,11 +36,9 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
     return visitas.filter((v) => v.cliente_id === cliente.id).length;
   }, [visitas, cliente.id]);
 
-  // Identifica se o cliente possui uma visita ativa (Confirmada ou Agendada)
+  // Identifica se o cliente possui uma visita ativa (Agendada)
   const visitaAtiva = useMemo(() => {
     const visitasDoCliente = visitas.filter((v) => v.cliente_id === cliente.id);
-    const confirmada = visitasDoCliente.find((v) => v.status === 'confirmada');
-    if (confirmada) return { status: 'confirmada', label: 'Visita Confirmada' };
     const agendada = visitasDoCliente.find((v) => v.status === 'agendada');
     if (agendada) return { status: 'agendada', label: 'Visita Agendada' };
     return null;
@@ -79,11 +77,7 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
           {visitaAtiva && (
             <div className="shrink-0">
               <span
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold leading-tight ${
-                  visitaAtiva.status === 'confirmada'
-                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80'
-                    : 'bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80'
-                }`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold leading-tight bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80"
               >
                 <span className="text-[10px]">📅</span>
                 <span className="whitespace-nowrap">{visitaAtiva.label}</span>

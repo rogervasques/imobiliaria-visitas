@@ -40,7 +40,7 @@ export default function ClientesPage() {
 
         if (filtroVisita === 'com_visita') {
           const visitasDoCliente = visitas.filter((v) => v.cliente_id === cl.id);
-          return visitasDoCliente.some((v) => v.status === 'agendada' || v.status === 'confirmada');
+          return visitasDoCliente.some((v) => v.status === 'agendada');
         }
 
         return true;

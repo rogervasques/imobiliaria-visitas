@@ -81,7 +81,7 @@ export function CrmLeadCard({
   // Visitas vinculadas a este cliente (NÃO exibe em novos_leads ou qualificacao)
   const podeExibirVisita = etapaAtual !== 'novos_leads' && etapaAtual !== 'qualificacao';
   const visitasDoLead = podeExibirVisita ? visitas.filter((v) => v.cliente_id === lead.id) : [];
-  const proximaVisita = visitasDoLead.find((v) => v.status === 'agendada' || v.status === 'confirmada');
+  const proximaVisita = visitasDoLead.find((v) => v.status === 'agendada');
 
   // Imóvel de interesse
   const imovelInteresse = lead.imovel_interesse_id

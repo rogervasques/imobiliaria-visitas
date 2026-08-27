@@ -304,7 +304,6 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
             onChange={(e) => setStatus(e.target.value as StatusVisita)}
           >
             <option value="agendada">Agendada</option>
-            <option value="confirmada">Confirmada</option>
             <option value="concluida">Realizada</option>
             <option value="nao_compareceu">Não Compareceu</option>
             <option value="cancelada">Cancelada</option>

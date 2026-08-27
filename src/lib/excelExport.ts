@@ -178,16 +178,18 @@ export function exportarRelatorioAnaliticoExcel({
   periodoLabel: string;
   resumo: {
     totalVisitas: number;
-    confirmadas: number;
+    agendadas: number;
     concluidas: number;
+    nao_compareceu?: number;
     canceladas: number;
     taxaSucesso: number;
   };
   desempenhoCorretores: {
     nome: string;
     total: number;
-    confirmadas: number;
+    agendadas?: number;
     concluidas: number;
+    nao_compareceu?: number;
     canceladas: number;
     taxaConversao: number;
   }[];
@@ -206,9 +208,10 @@ export function exportarRelatorioAnaliticoExcel({
   // 1. Aba Resumo
   const resumoDados = [
     { 'Métrica': 'Período Selecionado', 'Valor': periodoLabel },
-    { 'Métrica': 'Total de Visitas Agendadas', 'Valor': resumo.totalVisitas },
-    { 'Métrica': 'Visitas Confirmadas', 'Valor': resumo.confirmadas },
-    { 'Métrica': 'Visitas Concluídas', 'Valor': resumo.concluidas },
+    { 'Métrica': 'Total de Visitas Registradas', 'Valor': resumo.totalVisitas },
+    { 'Métrica': 'Visitas Agendadas', 'Valor': resumo.agendadas },
+    { 'Métrica': 'Visitas Realizadas', 'Valor': resumo.concluidas },
+    { 'Métrica': 'Não Compareceu', 'Valor': resumo.nao_compareceu || 0 },
     { 'Métrica': 'Visitas Canceladas', 'Valor': resumo.canceladas },
     { 'Métrica': 'Taxa de Conversão Global', 'Valor': `${resumo.taxaSucesso}%` },
   ];
@@ -220,8 +223,9 @@ export function exportarRelatorioAnaliticoExcel({
   const corretoresDados = desempenhoCorretores.map((c) => ({
     'Corretor': c.nome,
     'Total Visitas': c.total,
-    'Confirmadas': c.confirmadas,
-    'Concluídas': c.concluidas,
+    'Agendadas': c.agendadas || 0,
+    'Realizadas': c.concluidas,
+    'Não Compareceu': c.nao_compareceu || 0,
     'Canceladas': c.canceladas,
     'Taxa de Conversão': `${c.taxaConversao}%`,
   }));

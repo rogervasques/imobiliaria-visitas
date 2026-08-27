@@ -355,18 +355,18 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
 
   const statusLabels: Record<string, string> = {
     agendada: 'Agendada',
-    confirmada: 'Confirmada',
     cancelada: 'Cancelada',
-    reagendada: 'Reagendada',
-    concluida: 'Concluída',
+    reagendada: 'Realizada',
+    concluida: 'Realizada',
+    nao_compareceu: 'Não Compareceu',
   };
 
   const statusColors: Record<string, string> = {
     agendada: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-    confirmada: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
     cancelada: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
-    reagendada: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-    concluida: 'bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300',
+    reagendada: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
+    concluida: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
+    nao_compareceu: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
   };
 
   const waCliente = cliente?.telefone

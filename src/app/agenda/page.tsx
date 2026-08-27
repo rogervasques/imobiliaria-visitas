@@ -157,9 +157,9 @@ export default function AgendaPage() {
   const statsSemana = useMemo(() => {
     return {
       total: visitasDaSemana.length,
-      confirmadas: visitasDaSemana.filter((v) => v.status === 'confirmada').length,
       agendadas: visitasDaSemana.filter((v) => v.status === 'agendada').length,
       concluidas: visitasDaSemana.filter((v) => v.status === 'concluida' || v.status === 'reagendada').length,
+      nao_compareceu: visitasDaSemana.filter((v) => v.status === 'nao_compareceu').length,
       canceladas: visitasDaSemana.filter((v) => v.status === 'cancelada').length,
     };
   }, [visitasDaSemana]);
@@ -169,12 +169,6 @@ export default function AgendaPage() {
     StatusVisita,
     { bg: string; border: string; text: string; label: string }
   > = {
-    confirmada: {
-      bg: 'bg-emerald-700 dark:bg-emerald-800 hover:bg-emerald-600 dark:hover:bg-emerald-700',
-      border: 'border border-emerald-500 dark:border-emerald-400',
-      text: 'text-white dark:text-emerald-50',
-      label: 'Confirmada',
-    },
     agendada: {
       bg: 'bg-amber-100/95 dark:bg-amber-950/80 hover:bg-amber-200/90 dark:hover:bg-amber-900/90',
       border: 'border border-amber-300 dark:border-amber-700/60',
@@ -185,13 +179,13 @@ export default function AgendaPage() {
       bg: 'bg-purple-100/95 dark:bg-purple-950/80 hover:bg-purple-200/90 dark:hover:bg-purple-900/90',
       border: 'border border-purple-300 dark:border-purple-700/60',
       text: 'text-purple-950 dark:text-purple-100',
-      label: 'Concluída',
+      label: 'Realizada',
     },
     reagendada: {
       bg: 'bg-purple-100/95 dark:bg-purple-950/80 hover:bg-purple-200/90 dark:hover:bg-purple-900/90',
       border: 'border border-purple-300 dark:border-purple-700/60',
       text: 'text-purple-950 dark:text-purple-100',
-      label: 'Concluída',
+      label: 'Realizada',
     },
     cancelada: {
       bg: 'bg-rose-100/95 dark:bg-rose-950/80 hover:bg-rose-200/90 dark:hover:bg-rose-900/90',
@@ -212,11 +206,6 @@ export default function AgendaPage() {
     StatusVisita,
     { bg: string; border: string; text: string }
   > = {
-    confirmada: {
-      bg: 'bg-emerald-600 dark:bg-emerald-700',
-      border: 'border-emerald-500 dark:border-emerald-600',
-      text: 'text-white',
-    },
     agendada: {
       bg: 'bg-amber-100 dark:bg-amber-950/90',
       border: 'border-amber-300 dark:border-amber-700/70',
@@ -492,16 +481,16 @@ export default function AgendaPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-3 h-3 rounded-full bg-emerald-700 border border-emerald-500 shrink-0" />
-                    <span className="font-semibold">Confirmada</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
                     <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
                     <span className="font-semibold">Agendada</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
                     <div className="w-3 h-3 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
-                    <span className="font-semibold">Concluída</span>
+                    <span className="font-semibold">Realizada</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                    <div className="w-3 h-3 rounded-full bg-amber-600 border border-amber-500 shrink-0" />
+                    <span className="font-semibold">Não Compareceu</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
                     <div className="w-3 h-3 rounded-full bg-rose-500 border border-rose-400 shrink-0" />
@@ -587,9 +576,7 @@ export default function AgendaPage() {
                           <div className="shrink-0 flex items-center gap-2">
                             <span
                               className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                                v.status === 'confirmada'
-                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                                  : v.status === 'cancelada'
+                                v.status === 'cancelada'
                                   ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
                                   : v.status === 'concluida' || v.status === 'reagendada'
                                   ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
@@ -722,16 +709,16 @@ export default function AgendaPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-3 h-3 rounded-full bg-emerald-600 border border-emerald-500 shrink-0" />
-                    <span className="font-semibold">Confirmada</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
                     <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
                     <span className="font-semibold">Agendada</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
                     <div className="w-3 h-3 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
-                    <span className="font-semibold">Concluída</span>
+                    <span className="font-semibold">Realizada</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                    <div className="w-3 h-3 rounded-full bg-amber-600 border border-amber-500 shrink-0" />
+                    <span className="font-semibold">Não Compareceu</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
                     <div className="w-3 h-3 rounded-full bg-rose-500 border border-rose-400 shrink-0" />
@@ -787,14 +774,16 @@ export default function AgendaPage() {
                         </span>
                         <span
                           className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                            visita.status === 'confirmada'
-                              ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
-                              : visita.status === 'cancelada'
+                            visita.status === 'cancelada'
                               ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                              : visita.status === 'concluida' || visita.status === 'reagendada'
+                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+                              : visita.status === 'nao_compareceu'
+                              ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
+                              : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
                           }`}
                         >
-                          {visita.status}
+                          {visita.status === 'nao_compareceu' ? 'Não Compareceu' : visita.status === 'concluida' || visita.status === 'reagendada' ? 'Realizada' : 'Agendada'}
                         </span>
                       </div>
 
@@ -838,25 +827,25 @@ export default function AgendaPage() {
                   </span>
                 </div>
 
-                {/* Confirmadas */}
-                <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30">
-                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Confirmadas</span>
-                  </div>
-                  <span className="font-bold text-emerald-700 dark:text-emerald-300">
-                    {statsSemana.confirmadas}
-                  </span>
-                </div>
-
-                {/* Concluídas */}
+                {/* Realizadas */}
                 <div className="flex items-center justify-between p-2 rounded-xl bg-purple-50/70 dark:bg-purple-950/30">
                   <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400 font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5 text-purple-500" />
-                    <span>Concluídas</span>
+                    <span>Realizadas</span>
                   </div>
                   <span className="font-bold text-purple-700 dark:text-purple-300">
                     {statsSemana.concluidas}
+                  </span>
+                </div>
+
+                {/* Não Compareceu */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/70 dark:bg-amber-950/30">
+                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium">
+                    <CalendarCheck2 className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Não Compareceu</span>
+                  </div>
+                  <span className="font-bold text-amber-700 dark:text-amber-300">
+                    {statsSemana.nao_compareceu}
                   </span>
                 </div>
 

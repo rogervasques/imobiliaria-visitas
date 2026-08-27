@@ -103,15 +103,15 @@ export default function RelatoriosPage() {
 
   // Métricas do período
   const totalVisitas = visitasFiltradas.length;
-  const confirmadas = visitasFiltradas.filter((v) => v.status === 'confirmada').length;
   const agendadas = visitasFiltradas.filter((v) => v.status === 'agendada').length;
   const concluidas = visitasFiltradas.filter((v) => v.status === 'concluida' || v.status === 'reagendada').length;
+  const nao_compareceu = visitasFiltradas.filter((v) => v.status === 'nao_compareceu').length;
   const canceladas = visitasFiltradas.filter((v) => v.status === 'cancelada').length;
-  const taxaSucesso = totalVisitas > 0 ? Math.round(((confirmadas + concluidas) / totalVisitas) * 100) : 0;
+  const taxaSucesso = totalVisitas > 0 ? Math.round((concluidas / totalVisitas) * 100) : 0;
 
   // 1. Relatório de Desempenho por Corretor
   const desempenhoCorretores = useMemo(() => {
-    const mapa = new Map<string, { nome: string; total: number; confirmadas: number; agendadas: number; concluidas: number; canceladas: number }>();
+    const mapa = new Map<string, { nome: string; total: number; agendadas: number; concluidas: number; nao_compareceu: number; canceladas: number }>();
 
     visitasFiltradas.forEach((v) => {
       const nomeCorretor = v.corretor_nome || v.created_by_user_nome || 'Corretor Geral';
@@ -119,25 +119,25 @@ export default function RelatoriosPage() {
         mapa.set(nomeCorretor, {
           nome: nomeCorretor,
           total: 0,
-          confirmadas: 0,
           agendadas: 0,
           concluidas: 0,
+          nao_compareceu: 0,
           canceladas: 0,
         });
       }
 
       const item = mapa.get(nomeCorretor)!;
       item.total += 1;
-      if (v.status === 'confirmada') item.confirmadas += 1;
       if (v.status === 'agendada') item.agendadas += 1;
       if (v.status === 'concluida' || v.status === 'reagendada') item.concluidas += 1;
+      if (v.status === 'nao_compareceu') item.nao_compareceu += 1;
       if (v.status === 'cancelada') item.canceladas += 1;
     });
 
     return Array.from(mapa.values())
       .map((c) => ({
         ...c,
-        taxaConversao: c.total > 0 ? Math.round(((c.confirmadas + c.concluidas) / c.total) * 100) : 0,
+        taxaConversao: c.total > 0 ? Math.round((c.concluidas / c.total) * 100) : 0,
       }))
       .sort((a, b) => b.total - a.total);
   }, [visitasFiltradas]);
@@ -180,8 +180,9 @@ export default function RelatoriosPage() {
       periodoLabel,
       resumo: {
         totalVisitas,
-        confirmadas,
+        agendadas,
         concluidas,
+        nao_compareceu,
         canceladas,
         taxaSucesso,
       },
@@ -322,7 +323,7 @@ export default function RelatoriosPage() {
           </Card>
 
           {/* ── Cards de Métricas Principais: Pílulas Compactas no Mobile (< 768px) e Cards no Desktop (>= 768px) ── */}
-          {/* 1. Mobile (< 768px): 5 Pílulas 100% Visíveis (3 no topo, 2 embaixo) */}
+          {/* 1. Mobile (< 768px): 5 Pílulas 100% Visíveis */}
           <div className="grid grid-cols-6 gap-1.5 md:hidden">
             {/* Total */}
             <div className="col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs shadow-2xs truncate">
@@ -331,11 +332,11 @@ export default function RelatoriosPage() {
               <span className="text-[11px] font-semibold truncate">Total</span>
             </div>
 
-            {/* Confirmadas */}
-            <div className="col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300 text-xs shadow-2xs truncate">
-              <CalendarCheck2 className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <span className="font-black tabular-nums text-emerald-700 dark:text-emerald-300">{confirmadas}</span>
-              <span className="text-[11px] font-semibold truncate">Confirmadas</span>
+            {/* Realizadas */}
+            <div className="col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-purple-50/90 dark:bg-purple-950/60 border border-purple-200/80 dark:border-purple-800/80 text-purple-800 dark:text-purple-300 text-xs shadow-2xs truncate">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-purple-600 dark:text-purple-400" />
+              <span className="font-black tabular-nums text-purple-700 dark:text-purple-300">{concluidas}</span>
+              <span className="text-[11px] font-semibold truncate">Realizadas</span>
             </div>
 
             {/* Agendadas */}
@@ -345,11 +346,11 @@ export default function RelatoriosPage() {
               <span className="text-[11px] font-semibold truncate">Agendadas</span>
             </div>
 
-            {/* Concluídas */}
-            <div className="col-span-3 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-purple-50/90 dark:bg-purple-950/60 border border-purple-200/80 dark:border-purple-800/80 text-purple-800 dark:text-purple-300 text-xs shadow-2xs truncate">
-              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-purple-600 dark:text-purple-400" />
-              <span className="font-black tabular-nums text-purple-700 dark:text-purple-300">{concluidas}</span>
-              <span className="text-[11px] font-semibold truncate">Concluídas</span>
+            {/* Não Compareceu */}
+            <div className="col-span-3 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-amber-50/90 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800/80 text-amber-800 dark:text-amber-300 text-xs shadow-2xs truncate">
+              <CalendarCheck2 className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span className="font-black tabular-nums text-amber-700 dark:text-amber-300">{nao_compareceu}</span>
+              <span className="text-[11px] font-semibold truncate">Não Compareceu</span>
             </div>
 
             {/* Canceladas */}
@@ -384,29 +385,7 @@ export default function RelatoriosPage() {
               </CardContent>
             </Card>
 
-            {/* Confirmadas */}
-            <Card className="border-emerald-500/20 bg-emerald-500/5 shadow-xs">
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                    <CalendarCheck2 className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-300 leading-tight">
-                      {confirmadas}
-                    </div>
-                    <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight text-emerald-600 dark:text-emerald-400 truncate">
-                      Confirmadas
-                    </div>
-                  </div>
-                </div>
-                <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-2 border-t border-emerald-500/10 pt-1.5 truncate">
-                  {taxaSucesso}% conversão global
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Concluídas */}
+            {/* Realizadas */}
             <Card className="border-purple-500/20 bg-purple-500/5 shadow-xs">
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center gap-3">
@@ -418,12 +397,12 @@ export default function RelatoriosPage() {
                       {concluidas}
                     </div>
                     <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight text-purple-600 dark:text-purple-400 truncate">
-                      Concluídas
+                      Realizadas
                     </div>
                   </div>
                 </div>
                 <p className="text-[11px] text-purple-600/80 dark:text-purple-400/80 mt-2 border-t border-purple-500/10 pt-1.5 truncate">
-                  Visitas realizadas
+                  {taxaSucesso}% conversão global
                 </p>
               </CardContent>
             </Card>
@@ -446,6 +425,28 @@ export default function RelatoriosPage() {
                 </div>
                 <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-2 border-t border-amber-500/10 pt-1.5 truncate">
                   Pendentes / Em andamento
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Não Compareceu */}
+            <Card className="border-amber-500/20 bg-amber-500/5 shadow-xs">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                    <CalendarCheck2 className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-300 leading-tight">
+                      {nao_compareceu}
+                    </div>
+                    <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-tight text-amber-600 dark:text-amber-400 truncate">
+                      Não Compareceu
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-2 border-t border-amber-500/10 pt-1.5 truncate">
+                  Ausência registrada
                 </p>
               </CardContent>
             </Card>
@@ -525,9 +526,9 @@ export default function RelatoriosPage() {
                         {/* Métricas do Corretor */}
                         <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5 flex-wrap gap-1">
                           <span>Total: <strong className="text-slate-800 dark:text-slate-200">{corretor.total}</strong></span>
-                          <span>Confirmadas: <strong className="text-emerald-600">{corretor.confirmadas}</strong></span>
-                          <span>Concluídas: <strong className="text-purple-600">{corretor.concluidas}</strong></span>
+                          <span>Realizadas: <strong className="text-purple-600">{corretor.concluidas}</strong></span>
                           <span>Agendadas: <strong className="text-amber-600">{corretor.agendadas}</strong></span>
+                          <span>Não Compareceu: <strong className="text-amber-600">{corretor.nao_compareceu}</strong></span>
                           <span>Canceladas: <strong className="text-rose-500">{corretor.canceladas}</strong></span>
                         </div>
                       </div>

@@ -38,7 +38,9 @@ export default function VisitasPage() {
       v.cliente?.telefone.includes(search);
 
     // 2. Filtro por status
-    const matchStatus = statusFilter === 'todas' || v.status === statusFilter;
+    const matchStatus =
+      statusFilter === 'todas' ||
+      (statusFilter === 'concluida' ? v.status === 'concluida' || v.status === 'reagendada' : v.status === statusFilter);
 
     // 3. Filtro por data
     const vDate = new Date(v.data_hora_visita);
@@ -127,7 +129,8 @@ export default function VisitasPage() {
               {[
                 { id: 'todas', label: 'Todos' },
                 { id: 'agendada', label: 'Agendadas' },
-                { id: 'confirmada', label: 'Confirmadas' },
+                { id: 'concluida', label: 'Realizadas' },
+                { id: 'nao_compareceu', label: 'Não Compareceu' },
                 { id: 'cancelada', label: 'Canceladas' },
               ].map((sf) => (
                 <button

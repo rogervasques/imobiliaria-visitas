@@ -479,11 +479,13 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
 
     let status: StatusVisita = 'agendada';
     if (dayOffset === 0) {
-      status = v === 1 ? 'confirmada' : v === 2 ? 'confirmada' : 'agendada';
+      status = v === 1 ? 'concluida' : 'agendada';
     } else if (v % 7 === 0) {
       status = 'cancelada';
     } else if (v % 5 === 0) {
-      status = 'confirmada';
+      status = 'concluida';
+    } else if (v % 4 === 0) {
+      status = 'nao_compareceu';
     } else {
       status = 'agendada';
     }
@@ -504,8 +506,8 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
       notificar_lembrete: true,
       notificar_pos_visita: true,
       status,
-      whatsapp_confirmacao_cliente: status === 'confirmada' ? 'visualizado' : 'enviado',
-      whatsapp_confirmacao_proprietario: status === 'confirmada' ? 'entregue' : 'enviado',
+      whatsapp_confirmacao_cliente: 'visualizado',
+      whatsapp_confirmacao_proprietario: 'entregue',
       whatsapp_lembrete_cliente: dayOffset === 0 ? 'enviado' : 'pendente',
       whatsapp_lembrete_proprietario: dayOffset === 0 ? 'enviado' : 'pendente',
       whatsapp_pos_visita_cliente: 'pendente',

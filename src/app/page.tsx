@@ -230,7 +230,7 @@ export default function LandingPage() {
                 </div>
                 <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
                   <span className="text-slate-400">Cliente: <strong>Carlos Eduardo</strong></span>
-                  <span className="text-emerald-400 font-bold">Confirmada</span>
+                  <span className="text-amber-400 font-bold">Agendada</span>
                 </div>
               </div>
 
@@ -313,7 +313,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-white">Agenda Visual e Intuitiva</h3>
               <p className="text-sm text-slate-300 leading-relaxed">
-                Acompanhe o fluxo de compromissos por <strong>dia, semana ou mês</strong> em um painel moderno com linha do tempo e status codificados por cores (Confirmada, Agendada, Cancelada).
+                Acompanhe o fluxo de compromissos por <strong>dia, semana ou mês</strong> em um painel moderno com linha do tempo e status codificados por cores (Agendada, Realizada, Cancelada).
               </p>
               <div className="pt-2 flex items-center gap-2 text-xs font-bold text-teal-400">
                 <Clock className="w-4 h-4" />

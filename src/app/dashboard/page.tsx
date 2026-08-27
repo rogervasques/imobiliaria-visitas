@@ -26,13 +26,6 @@ import { ConcluirVisitaModal } from '@/components/visitas/ConcluirVisitaModal';
 // ─── Constantes de Status ────────────────────────────────────────────────────
 
 const STATUS_CFG: Record<StatusVisita, { label: string; dot: string; dotPure: string; badge: string; line: string }> = {
-  confirmada: {
-    label: 'Confirmada',
-    dot: 'bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-950',
-    dotPure: 'bg-emerald-500',
-    badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-    line: 'border-l-emerald-500',
-  },
   agendada: {
     label: 'Agendada',
     dot: 'bg-amber-400 ring-4 ring-amber-100 dark:ring-amber-950',
@@ -159,7 +152,6 @@ function MiniCalendario({
 
   // Dots de status únicos por dia
   const dotColors: Record<StatusVisita, string> = {
-    confirmada: 'bg-emerald-500',
     agendada: 'bg-amber-400',
     concluida: 'bg-purple-500',
     cancelada: 'bg-rose-500',
@@ -234,8 +226,9 @@ function MiniCalendario({
       {/* Legenda */}
       <div className="px-3 pb-3 flex flex-wrap gap-2">
         {[
-          { color: 'bg-emerald-500', label: 'Confirmada' },
           { color: 'bg-amber-400', label: 'Agendada' },
+          { color: 'bg-purple-500', label: 'Realizada' },
+          { color: 'bg-amber-600', label: 'Não Compareceu' },
           { color: 'bg-rose-500', label: 'Cancelada' },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
@@ -429,14 +422,6 @@ function TimelineCard({
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleStatus('confirmada')}
-                      className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 border border-emerald-500 shrink-0" />
-                      <span>Confirmada</span>
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => handleStatus('concluida')}
                       className="w-full text-left px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                     >
@@ -532,42 +517,8 @@ function TimelineCard({
             </div>
           </div>
 
-          {/* ─── Botões de Desfecho & Ações Rápidas por Status ─── */}
+          {/* ─── Botões de Desfecho & Ações Rápidas por Status (Agendada) ─── */}
           {visita.status === 'agendada' && (
-            <div className="mt-3 grid grid-cols-3 gap-1.5 sm:gap-2" onClick={e => e.stopPropagation()}>
-              <button
-                type="button"
-                onClick={() => handleStatus('confirmada')}
-                className="w-full py-1.5 sm:py-2 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] sm:text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                title="Confirmar visita"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                <span>Confirmar</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsEditOpen(true)}
-                className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                title="Remarcar data e horário da visita"
-              >
-                <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
-                <span>Remarcar</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleStatus('cancelada')}
-                className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                title="Cancelar visita"
-              >
-                <XCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>Cancelar</span>
-              </button>
-            </div>
-          )}
-
-          {visita.status === 'confirmada' && (
             <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2" onClick={e => e.stopPropagation()}>
               {/* [ Realizada ] */}
               <button
@@ -742,9 +693,9 @@ export default function DashboardHojePage() {
   // Métricas do dia selecionado
   const metricasDia = useMemo(() => ({
     total: visitasDoDia.length,
-    confirmadas: visitasDoDia.filter(v => v.status === 'confirmada').length,
     agendadas: visitasDoDia.filter(v => v.status === 'agendada').length,
     concluidas: visitasDoDia.filter(v => v.status === 'concluida' || v.status === 'reagendada').length,
+    nao_compareceu: visitasDoDia.filter(v => v.status === 'nao_compareceu').length,
     canceladas: visitasDoDia.filter(v => v.status === 'cancelada').length,
   }), [visitasDoDia]);
 
@@ -765,9 +716,9 @@ export default function DashboardHojePage() {
   // Cards-filtro de métricas
   const metricCards = [
     { key: null, label: 'Total no Dia', value: metricasDia.total, color: 'slate', active: filterStatus === null },
-    { key: 'confirmada' as StatusVisita, label: 'Confirmadas', value: metricasDia.confirmadas, color: 'emerald', active: filterStatus === 'confirmada' },
     { key: 'agendada' as StatusVisita, label: 'Agendadas', value: metricasDia.agendadas, color: 'amber', active: filterStatus === 'agendada' },
-    { key: 'concluida' as StatusVisita, label: 'Concluídas', value: metricasDia.concluidas, color: 'purple', active: filterStatus === 'concluida' || filterStatus === 'reagendada' },
+    { key: 'concluida' as StatusVisita, label: 'Realizadas', value: metricasDia.concluidas, color: 'purple', active: filterStatus === 'concluida' || filterStatus === 'reagendada' },
+    { key: 'nao_compareceu' as StatusVisita, label: 'Não Compareceu', value: metricasDia.nao_compareceu, color: 'amber', active: filterStatus === 'nao_compareceu' },
     { key: 'cancelada' as StatusVisita, label: 'Canceladas', value: metricasDia.canceladas, color: 'rose', active: filterStatus === 'cancelada' },
   ];
 

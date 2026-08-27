@@ -97,17 +97,10 @@ export function ClienteDetalhesModal({
 
   const statusVisitaBadge = (st: StatusVisita) => {
     switch (st) {
-      case 'confirmada':
-        return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950/80 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-            Confirmada
-          </span>
-        );
       case 'agendada':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
             Agendada
           </span>
         );
