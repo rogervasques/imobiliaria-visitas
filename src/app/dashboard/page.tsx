@@ -329,7 +329,6 @@ function TimelineCard({
 }) {
   const { atualizarStatusVisita, removerVisita, showToast } = useData();
   const [showMenu, setShowMenu] = useState(false);
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -342,7 +341,6 @@ function TimelineCard({
   const podeConcluir = isHorarioAtingido && visita.status !== 'concluida' && visita.status !== 'reagendada' && visita.status !== 'cancelada';
 
   const handleStatus = async (s: StatusVisita) => {
-    setShowStatusDropdown(false);
     if (s === 'concluida') {
       setIsConcluirOpen(true);
       return;
@@ -382,85 +380,34 @@ function TimelineCard({
         aria-label={`Ver detalhes da visita ao ${visita.imovel?.titulo}`}
       >
         <div className="p-4 sm:p-5">
-          {/* Header do Card: Horário, Pílula de Status e Menu de 3 pontos */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Horário */}
-              <div className="flex items-center gap-1 text-slate-900 dark:text-slate-100 font-extrabold text-sm sm:text-base">
-                <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>{formatTime(visita.data_hora_visita)}</span>
-              </div>
+          {/* ─── 1. Header do Card: Status Centralizado e Menu de 3 Pontos ─── */}
+          <div className="relative flex items-center justify-center pb-1">
+            <span
+              className={`text-xs sm:text-sm font-extrabold uppercase tracking-wider ${
+                visita.status === 'agendada'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : visita.status === 'concluida' || visita.status === 'reagendada'
+                  ? 'text-purple-600 dark:text-purple-400'
+                  : visita.status === 'nao_compareceu'
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-rose-600 dark:text-rose-400'
+              }`}
+            >
+              {cfg.label}
+            </span>
 
-              {/* ─── 1. Pílula de Status Interativa com Dropdown ─── */}
-              <div className="relative" onClick={(e) => e.stopPropagation()}>
-                <button
-                  type="button"
-                  onClick={() => setShowStatusDropdown(v => !v)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border transition-all cursor-pointer hover:scale-105 ${cfg.badge}`}
-                  title="Clique para alterar o status"
-                >
-                  <span className={`w-2 h-2 rounded-full ${cfg.dotPure}`} />
-                  <span>{cfg.label}</span>
-                  <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
-                </button>
-
-                {showStatusDropdown && (
-                  <div
-                    className="absolute left-0 top-full mt-1.5 z-40 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="px-3 py-1 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                      Alterar Status
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleStatus('agendada')}
-                      className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-emerald-400 shrink-0" />
-                      <span>Agendada</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStatus('concluida')}
-                      className="w-full text-left px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
-                      <span>Realizada</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStatus('nao_compareceu')}
-                      className="w-full text-left px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
-                      <span>Não Compareceu</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStatus('cancelada')}
-                      className="w-full text-left px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full bg-rose-500 border border-rose-400 shrink-0" />
-                      <span>Cancelada</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Menu de 3 Pontos Simplificado */}
-            <div className="relative" onClick={e => e.stopPropagation()}>
+            {/* Menu de 3 Pontos Simplificado no Canto Superior Direito */}
+            <div className="absolute right-0 top-0" onClick={e => e.stopPropagation()}>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setShowMenu(v => !v); }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title="Mais opções"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
               {showMenu && (
-                <div className="absolute right-0 top-8 z-30 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+                <div className="absolute right-0 top-7 z-30 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
                   <button
                     type="button"
                     onClick={() => { setShowMenu(false); setIsEditOpen(true); }}
@@ -483,16 +430,11 @@ function TimelineCard({
             </div>
           </div>
 
-          {/* Imóvel e Endereço */}
-          <div className="mt-2.5 space-y-0.5">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono text-[10px] font-bold">
-                {visita.imovel?.codigo || 'S/C'}
-              </span>
-              <p className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base line-clamp-1">
-                {visita.imovel?.titulo || 'Imóvel não especificado'}
-              </p>
-            </div>
+          {/* ─── 2. Imóvel e Endereço (Título imediatamente abaixo do status) ─── */}
+          <div className="mt-1 space-y-0.5">
+            <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base line-clamp-1">
+              {visita.imovel?.titulo || 'Imóvel não especificado'}
+            </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
               <MapPin className="w-3 h-3 shrink-0 text-slate-400" />
               <span>{visita.imovel?.endereco || '—'}, {visita.imovel?.bairro || ''}</span>
@@ -517,78 +459,44 @@ function TimelineCard({
             </div>
           </div>
 
-          {/* ─── Botões de Desfecho & Ações Rápidas por Status (Agendada) ─── */}
+          {/* ─── 3. Botões de Ação por Horário (Dinâmico) ─── */}
           {visita.status === 'agendada' && (
             new Date().getTime() < new Date(visita.data_hora_visita).getTime() ? (
-              /* Visita Futura (Antes do Horário Agendado): 2 Ações */
-              <div className="mt-3 grid grid-cols-2 gap-1.5 sm:gap-2" onClick={e => e.stopPropagation()}>
+              /* Visita Futura (Antes do Horário Agendado): 2 Ações lado a lado */
+              <div className="mt-3 grid grid-cols-2 gap-2" onClick={e => e.stopPropagation()}>
                 {/* [ Remarcar ] */}
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(true)}
-                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in truncate"
+                  className="w-full py-2 px-2 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in truncate"
                   title="Remarcar data e horário da visita"
                 >
                   <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
-                  <span>Remarcar</span>
+                  <span>📅 Remarcar</span>
                 </button>
 
                 {/* [ Cancelar ] */}
                 <button
                   type="button"
                   onClick={() => handleStatus('cancelada')}
-                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in truncate"
+                  className="w-full py-2 px-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in truncate"
                   title="Cancelar visita"
                 >
                   <XCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
-                  <span>Cancelar</span>
+                  <span>❌ Cancelar</span>
                 </button>
               </div>
             ) : (
-              /* Visita Passada/Em Andamento (Após o Horário Agendado): 4 Opções de Desfecho */
-              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2" onClick={e => e.stopPropagation()}>
-                {/* [ Realizada ] */}
+              /* Visita Passada/Em Andamento (Horário já passou): Botão Destacado Concluir Visita (largura total) */
+              <div className="mt-3" onClick={e => e.stopPropagation()}>
                 <button
                   type="button"
                   onClick={() => setIsConcluirOpen(true)}
-                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-[11px] sm:text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                  title="Concluir visita e disparar pesquisas/comprovações"
+                  className="w-full py-2 sm:py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer animate-in fade-in"
+                  title="Concluir visita e registrar desfecho"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                  <span>Realizada</span>
-                </button>
-
-                {/* [ Não Compareceu ] */}
-                <button
-                  type="button"
-                  onClick={() => handleStatus('nao_compareceu')}
-                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-amber-300 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                  title="Registrar que o cliente ou proprietário faltou"
-                >
-                  <UserX className="w-3.5 h-3.5 shrink-0 text-amber-500" />
-                  <span>Não Compareceu</span>
-                </button>
-
-                {/* [ Remarcar ] */}
-                <button
-                  type="button"
-                  onClick={() => setIsEditOpen(true)}
-                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                  title="Remarcar data e horário da visita"
-                >
-                  <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
-                  <span>Remarcar</span>
-                </button>
-
-                {/* [ Cancelar ] */}
-                <button
-                  type="button"
-                  onClick={() => handleStatus('cancelada')}
-                  className="w-full py-1.5 sm:py-2 px-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer animate-in fade-in truncate"
-                  title="Cancelar visita"
-                >
-                  <XCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
-                  <span>Cancelar</span>
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>💜 Concluir Visita</span>
                 </button>
               </div>
             )
@@ -599,11 +507,11 @@ function TimelineCard({
               <button
                 type="button"
                 onClick={() => setIsEditOpen(true)}
-                className="w-full py-1.5 sm:py-2 px-3 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full py-2 px-3 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 title="Remarcar esta visita"
               >
                 <CalendarClock className="w-3.5 h-3.5 text-sky-500" />
-                <span>Remarcar Visita</span>
+                <span>📅 Remarcar Visita</span>
               </button>
             </div>
           )}
