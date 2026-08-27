@@ -149,6 +149,7 @@ export interface Visita {
   notificar_lembrete_cliente?: boolean;
   notificar_lembrete_proprietario?: boolean;
   notificar_pos_visita?: boolean;
+  notificar_pos_visita_cliente?: boolean;
   notificar_comprovacao_proprietario?: boolean;
   gravar_logs?: boolean; // Flag geral de gravação
   gravar_logs_cliente?: boolean; // Gravar histórico do atendimento com o Cliente (Ativo na criação até +48h)

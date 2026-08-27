@@ -51,6 +51,8 @@ export function NovaVisitaModal({
   const [notificarConfirmacaoProprietario, setNotificarConfirmacaoProprietario] = useState(true);
   const [notificarLembreteCliente, setNotificarLembreteCliente] = useState(true);
   const [notificarLembreteProprietario, setNotificarLembreteProprietario] = useState(true);
+  const [notificarPosVisitaCliente, setNotificarPosVisitaCliente] = useState(true);
+  const [notificarComprovacaoProprietario, setNotificarComprovacaoProprietario] = useState(true);
   const [gravarLogsCliente, setGravarLogsCliente] = useState(true);
   const [gravarLogsProprietario, setGravarLogsProprietario] = useState(true);
 
@@ -78,6 +80,8 @@ export function NovaVisitaModal({
       setNotificarConfirmacaoProprietario(true);
       setNotificarLembreteCliente(true);
       setNotificarLembreteProprietario(true);
+      setNotificarPosVisitaCliente(true);
+      setNotificarComprovacaoProprietario(true);
       setGravarLogsCliente(true);
       setGravarLogsProprietario(true);
       setImovelToAddId('');
@@ -122,9 +126,8 @@ export function NovaVisitaModal({
           imovel_id: selectedImoveisIds[0],
           imoveis_ids: selectedImoveisIds,
           cliente_id: clienteId,
-          corretor_nome: user?.name || 'Corretor EasyMob',
-          created_by_user_id: user?.id || 'user-admin-master',
-          created_by_user_nome: user?.name || 'Admin',
+          corretor_nome: user?.name || 'Corretor Responsável',
+          corretor_telefone: '',
           data_hora_visita: new Date(dataHora).toISOString(),
           status,
           observacoes,
@@ -134,7 +137,9 @@ export function NovaVisitaModal({
           notificar_lembrete: temLembrete,
           notificar_lembrete_cliente: notificarLembreteCliente,
           notificar_lembrete_proprietario: notificarLembreteProprietario,
-          notificar_pos_visita: true,
+          notificar_pos_visita: notificarPosVisitaCliente,
+          notificar_pos_visita_cliente: notificarPosVisitaCliente,
+          notificar_comprovacao_proprietario: notificarComprovacaoProprietario,
           gravar_logs: gravarLogsCliente || gravarLogsProprietario,
           gravar_logs_cliente: gravarLogsCliente,
           gravar_logs_proprietario: gravarLogsProprietario,
@@ -142,7 +147,8 @@ export function NovaVisitaModal({
           whatsapp_confirmacao_proprietario: notificarConfirmacaoProprietario ? 'pendente' : 'inativo',
           whatsapp_lembrete_cliente: notificarLembreteCliente ? 'pendente' : 'inativo',
           whatsapp_lembrete_proprietario: notificarLembreteProprietario ? 'pendente' : 'inativo',
-          whatsapp_pos_visita_cliente: 'pendente',
+          whatsapp_pos_visita_cliente: notificarPosVisitaCliente ? 'pendente' : 'inativo',
+          whatsapp_comprovacao_proprietario: notificarComprovacaoProprietario ? 'pendente' : 'inativo',
         },
         temConfirmacao
       );
@@ -224,7 +230,7 @@ export function NovaVisitaModal({
                     <button
                       type="button"
                       onClick={() => handleRemoveImovel(im.id)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                       title="Remover este imóvel da lista"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -313,7 +319,7 @@ export function NovaVisitaModal({
           rows={2}
         />
 
-        {/* ─── 5. Seção de Notificações via WhatsApp (3 Checkboxes Pré-marcadas) ─── */}
+        {/* ─── 5. Seção de Notificações via WhatsApp ─── */}
         <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 space-y-3">
           <div className="flex items-center justify-between border-b border-emerald-200/60 dark:border-emerald-800/40 pb-2">
             <h4 className="text-xs font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-200 flex items-center gap-1.5">
@@ -398,6 +404,42 @@ export function NovaVisitaModal({
               </div>
             </label>
 
+            {/* Checkbox 5: Enviar WhatsApp ao Cliente após concluir visita */}
+            <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+              <input
+                type="checkbox"
+                checked={notificarPosVisitaCliente}
+                onChange={(e) => setNotificarPosVisitaCliente(e.target.checked)}
+                className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+              />
+              <div className="leading-snug flex-1">
+                <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
+                  Enviar WhatsApp ao Cliente após concluir visita
+                </span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Disparo automático solicitando feedback sobre a visita realizada.
+                </p>
+              </div>
+            </label>
+
+            {/* Checkbox 6: Enviar WhatsApp ao Proprietário após concluir visita */}
+            <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+              <input
+                type="checkbox"
+                checked={notificarComprovacaoProprietario}
+                onChange={(e) => setNotificarComprovacaoProprietario(e.target.checked)}
+                className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+              />
+              <div className="leading-snug flex-1">
+                <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
+                  Enviar WhatsApp ao Proprietário após concluir visita
+                </span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Notifica o proprietário confirmando a realização da visita em seu imóvel.
+                </p>
+              </div>
+            </label>
+
             {/* Seção Comprovante de Atendimento (Gravação Separada Cliente / Proprietário) */}
             <div className="pt-2.5 border-t border-emerald-200/60 dark:border-emerald-800/40 space-y-2.5">
               <div className="flex items-center justify-between">
@@ -468,5 +510,3 @@ export function NovaVisitaModal({
     </Modal>
   );
 }
-
-

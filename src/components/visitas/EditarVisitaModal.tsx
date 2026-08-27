@@ -49,6 +49,12 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
   const [notificarLembreteProprietario, setNotificarLembreteProprietario] = useState(
     visita.notificar_lembrete_proprietario !== undefined ? visita.notificar_lembrete_proprietario : visita.notificar_lembrete !== false
   );
+  const [notificarPosVisitaCliente, setNotificarPosVisitaCliente] = useState(
+    visita.notificar_pos_visita_cliente !== undefined ? visita.notificar_pos_visita_cliente : visita.notificar_pos_visita !== false
+  );
+  const [notificarComprovacaoProprietario, setNotificarComprovacaoProprietario] = useState(
+    visita.notificar_comprovacao_proprietario !== undefined ? visita.notificar_comprovacao_proprietario : true
+  );
   const [gravarLogsCliente, setGravarLogsCliente] = useState(
     visita.gravar_logs_cliente !== undefined ? visita.gravar_logs_cliente : visita.gravar_logs !== false
   );
@@ -72,6 +78,8 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
       setNotificarConfirmacaoProprietario(visita.notificar_confirmacao_proprietario !== undefined ? visita.notificar_confirmacao_proprietario : visita.notificar_confirmacao !== false);
       setNotificarLembreteCliente(visita.notificar_lembrete_cliente !== undefined ? visita.notificar_lembrete_cliente : visita.notificar_lembrete !== false);
       setNotificarLembreteProprietario(visita.notificar_lembrete_proprietario !== undefined ? visita.notificar_lembrete_proprietario : visita.notificar_lembrete !== false);
+      setNotificarPosVisitaCliente(visita.notificar_pos_visita_cliente !== undefined ? visita.notificar_pos_visita_cliente : visita.notificar_pos_visita !== false);
+      setNotificarComprovacaoProprietario(visita.notificar_comprovacao_proprietario !== undefined ? visita.notificar_comprovacao_proprietario : true);
       setGravarLogsCliente(visita.gravar_logs_cliente !== undefined ? visita.gravar_logs_cliente : visita.gravar_logs !== false);
       setGravarLogsProprietario(visita.gravar_logs_proprietario !== undefined ? visita.gravar_logs_proprietario : visita.gravar_logs !== false);
 
@@ -132,6 +140,9 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
         notificar_lembrete: temLembrete,
         notificar_lembrete_cliente: notificarLembreteCliente,
         notificar_lembrete_proprietario: notificarLembreteProprietario,
+        notificar_pos_visita: notificarPosVisitaCliente,
+        notificar_pos_visita_cliente: notificarPosVisitaCliente,
+        notificar_comprovacao_proprietario: notificarComprovacaoProprietario,
         gravar_logs: gravarLogsCliente || gravarLogsProprietario,
         gravar_logs_cliente: gravarLogsCliente,
         gravar_logs_proprietario: gravarLogsProprietario,
@@ -362,6 +373,39 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
                 className="w-4 h-4 text-emerald-600 rounded mt-0.5"
               />
               <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Enviar lembrete (1h antes) ao Proprietário</span>
+            </label>
+            <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+              <input
+                type="checkbox"
+                checked={notificarPosVisitaCliente}
+                onChange={(e) => setNotificarPosVisitaCliente(e.target.checked)}
+                className="w-4 h-4 text-emerald-600 rounded mt-0.5"
+              />
+              <div className="leading-snug flex-1">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 transition-colors block">
+                  Enviar WhatsApp ao Cliente após concluir visita
+                </span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Disparo automático solicitando feedback sobre a visita realizada.
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+              <input
+                type="checkbox"
+                checked={notificarComprovacaoProprietario}
+                onChange={(e) => setNotificarComprovacaoProprietario(e.target.checked)}
+                className="w-4 h-4 text-emerald-600 rounded mt-0.5"
+              />
+              <div className="leading-snug flex-1">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 transition-colors block">
+                  Enviar WhatsApp ao Proprietário após concluir visita
+                </span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Notifica o proprietário confirmando a realização da visita em seu imóvel.
+                </p>
+              </div>
             </label>
             <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40 space-y-2">
               <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block uppercase tracking-wider">
