@@ -532,11 +532,15 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
         </div>
       </Modal>
 
-      {/* Modal de Conclusão da Visita (com opções de WhatsApp e Comprovante de Atendimento) */}
+      {/* Modal de Conclusão da Visita */}
       <ConcluirVisitaModal
         visita={visita}
         isOpen={isConcluirModalOpen}
         onClose={() => setIsConcluirModalOpen(false)}
+        onRemarcar={() => {
+          setIsConcluirModalOpen(false);
+          handleOpenEdit();
+        }}
       />
     </>
   );

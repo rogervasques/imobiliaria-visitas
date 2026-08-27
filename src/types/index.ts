@@ -202,6 +202,8 @@ export interface ConfiguracaoWhatsApp {
   imobiliaria_id?: string;
   imobiliaria?: string;
   ativo: boolean;
+  enviar_pos_visita_cliente?: boolean;
+  enviar_comprovacao_proprietario?: boolean;
   template_confirmacao_cliente: string;
   template_confirmacao_proprietario: string;
   template_lembrete_cliente: string;

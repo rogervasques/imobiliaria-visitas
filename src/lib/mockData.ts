@@ -14,6 +14,8 @@ export const mockConfigWhatsApp: ConfiguracaoWhatsApp = {
   api_key: 'easymob_secret_token_2026',
   instancia_nome: 'easymob',
   ativo: true,
+  enviar_pos_visita_cliente: true,
+  enviar_comprovacao_proprietario: true,
   template_confirmacao_cliente:
     'Olá, {cliente_nome}! 👋 Confirmada nossa visita para *{data_hora}* no imóvel *{imovel_titulo}*.\n\n📍 *Roteiro de Imóveis:*\n{roteiro_imoveis}\n\n📍 *Localização no Mapa:* {link_curto_mapa}\n\n👤 *Corretor:* {corretor_nome} ({corretor_telefone})\n\nQualquer dúvida, conte com a *EasyMob*!',
   template_confirmacao_proprietario:

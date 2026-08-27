@@ -926,7 +926,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const ctx = await buildTemplateContextAsync(visita);
 
     // 1. Enviar mensagem pós-visita ao Cliente (Pedir feedback)
-    if (opcoes?.enviarPosVisitaCliente !== false && visita.cliente?.telefone && configWhatsApp.ativo) {
+    const deveEnviarCliente =
+      opcoes?.enviarPosVisitaCliente !== undefined
+        ? opcoes.enviarPosVisitaCliente
+        : configWhatsApp.enviar_pos_visita_cliente !== false;
+
+    if (deveEnviarCliente && visita.cliente?.telefone && configWhatsApp.ativo) {
       const templatePos = configWhatsApp.template_pos_visita_cliente ||
         '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*{corretor_nome}*';
 
@@ -947,7 +952,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     // 2. Enviar mensagem de comprovação ao Proprietário
-    if (opcoes?.enviarComprovacaoProprietario !== false && configWhatsApp.ativo) {
+    const deveEnviarProprietario =
+      opcoes?.enviarComprovacaoProprietario !== undefined
+        ? opcoes.enviarComprovacaoProprietario
+        : configWhatsApp.enviar_comprovacao_proprietario !== false;
+
+    if (deveEnviarProprietario && configWhatsApp.ativo) {
       const imoveisVisita = visita.imoveis && visita.imoveis.length > 0
         ? visita.imoveis
         : visita.imovel ? [visita.imovel] : [];

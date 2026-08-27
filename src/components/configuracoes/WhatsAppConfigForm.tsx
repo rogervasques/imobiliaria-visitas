@@ -128,6 +128,14 @@ export function WhatsAppConfigForm() {
     '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*EasyMob - Gestão Imobiliária Inteligente*'
   );
 
+  // Preferências Globais de Notificações WhatsApp
+  const [enviarPosVisitaCliente, setEnviarPosVisitaCliente] = useState(
+    configWhatsApp.enviar_pos_visita_cliente !== false
+  );
+  const [enviarComprovacaoProprietario, setEnviarComprovacaoProprietario] = useState(
+    configWhatsApp.enviar_comprovacao_proprietario !== false
+  );
+
   const [activeTab, setActiveTab] = useState<'api' | 'templates' | 'automacao'>('api');
   const [selectedTemplateTab, setSelectedTemplateTab] = useState<
     'conf_cliente' | 'conf_prop' | 'lemb_cliente' | 'lemb_prop' | 'comprovacao_prop' | 'pos_visita'
@@ -380,8 +388,8 @@ export function WhatsAppConfigForm() {
     setTimeout(() => setCopiedWebhook(false), 2500);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsSaving(true);
     try {
       await atualizarConfigWhatsApp({
@@ -390,6 +398,8 @@ export function WhatsAppConfigForm() {
         api_key: apiKey,
         instancia_nome: instanciaNome,
         ativo,
+        enviar_pos_visita_cliente: enviarPosVisitaCliente,
+        enviar_comprovacao_proprietario: enviarComprovacaoProprietario,
         template_confirmacao_cliente: templateConfCliente,
         template_confirmacao_proprietario: templateConfProp,
         template_lembrete_cliente: templateLembCliente,
@@ -398,9 +408,9 @@ export function WhatsAppConfigForm() {
         template_pos_visita_cliente: templatePosVisita,
       });
       await checkStatus();
-      showToast('Templates do WhatsApp salvos com sucesso!', 'success');
+      showToast('Configurações salvas com sucesso!', 'success');
     } catch {
-      showToast('Erro ao salvar templates do WhatsApp.', 'error');
+      showToast('Erro ao salvar configurações do WhatsApp.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -826,6 +836,80 @@ export function WhatsAppConfigForm() {
                       >
                         <Save className="w-3.5 h-3.5 mr-1.5" />
                         Salvar Credenciais
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ─── Card: Notificações via WhatsApp (Pós-Visita) ─── */}
+                <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <Bell className="w-4 h-4 text-emerald-500" />
+                        Notificações via WhatsApp
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                        Disparo Pós-Visita
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Configure os disparos automáticos ao marcar o desfecho da visita como <strong>Realizada</strong>:
+                    </p>
+
+                    <div className="space-y-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      {/* Checkbox 1: Cliente pós-visita */}
+                      <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                        <input
+                          type="checkbox"
+                          checked={enviarPosVisitaCliente}
+                          onChange={(e) => setEnviarPosVisitaCliente(e.target.checked)}
+                          className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                        />
+                        <div className="leading-snug flex-1">
+                          <span className="font-bold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors block">
+                            Enviar WhatsApp ao Cliente após concluir visita
+                          </span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            Disparo automático solicitando feedback sobre a visita realizada.
+                          </p>
+                        </div>
+                      </label>
+
+                      <div className="border-t border-slate-200 dark:border-slate-800" />
+
+                      {/* Checkbox 2: Proprietário pós-visita */}
+                      <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                        <input
+                          type="checkbox"
+                          checked={enviarComprovacaoProprietario}
+                          onChange={(e) => setEnviarComprovacaoProprietario(e.target.checked)}
+                          className="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                        />
+                        <div className="leading-snug flex-1">
+                          <span className="font-bold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors block">
+                            Enviar WhatsApp ao Proprietário após concluir visita
+                          </span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            Notifica o proprietário confirmando a realização da visita em seu imóvel.
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="flex justify-end pt-1">
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleSave()}
+                        isLoading={isSaving}
+                        className="text-xs font-bold"
+                      >
+                        <Save className="w-3.5 h-3.5 mr-1.5" />
+                        Salvar Preferências
                       </Button>
                     </div>
                   </CardContent>

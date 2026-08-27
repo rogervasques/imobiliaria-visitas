@@ -591,6 +591,10 @@ function TimelineCard({
         visita={visita}
         isOpen={isConcluirOpen}
         onClose={() => setIsConcluirOpen(false)}
+        onRemarcar={() => {
+          setIsConcluirOpen(false);
+          setIsEditOpen(true);
+        }}
       />
     </>
   );
