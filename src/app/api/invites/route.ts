@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createInvite, getAllInvites, getAllUsers, getSessionUser } from '@/lib/auth';
+import { createInvite, deleteInvite, getAllInvites, getAllUsers, getSessionUser } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
 export async function GET() {
@@ -97,5 +97,70 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('Erro ao criar convite:', err);
     return NextResponse.json({ success: false, error: 'Erro ao gerar convite.' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const sessionUser = await getSessionUser();
+
+    if (
+      !sessionUser ||
+      (sessionUser.role !== 'admin' &&
+        sessionUser.role !== 'gestor' &&
+        (sessionUser.role as string) !== 'gerente')
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'Apenas administradores e gerentes podem apagar convites.' },
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const id = body.id || req.nextUrl.searchParams.get('id');
+    const token = body.token || req.nextUrl.searchParams.get('token');
+    const action = body.action || req.nextUrl.searchParams.get('action');
+
+    // Opção de limpeza em lote: apagar todos os convites expirados ou utilizados
+    if (action === 'clean_expired_or_used') {
+      const allInvites = await getAllInvites();
+      const now = Date.now();
+      const toDelete = allInvites.filter((inv) => {
+        const isExp = new Date(inv.expires_at).getTime() < now;
+        const belongs =
+          sessionUser.role === 'admin' ||
+          inv.imobiliaria?.toLowerCase() === sessionUser.imobiliaria?.toLowerCase();
+        return belongs && (isExp || inv.used);
+      });
+
+      for (const inv of toDelete) {
+        await deleteInvite(inv.id);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `${toDelete.length} convite(s) expirado(s) ou utilizado(s) removido(s) com sucesso.`,
+        deletedCount: toDelete.length,
+      });
+    }
+
+    const targetId = id || token;
+    if (!targetId) {
+      return NextResponse.json(
+        { success: false, error: 'ID ou token do convite é obrigatório para exclusão.' },
+        { status: 400 }
+      );
+    }
+
+    await deleteInvite(targetId);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Convite removido com sucesso!',
+      id: targetId,
+    });
+  } catch (err) {
+    console.error('Erro ao excluir convite:', err);
+    return NextResponse.json({ success: false, error: 'Erro ao excluir convite.' }, { status: 500 });
   }
 }

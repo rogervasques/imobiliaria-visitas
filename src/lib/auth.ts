@@ -48,7 +48,7 @@ export const INITIAL_USERS: Usuario[] = [
 
 // Banco de dados em memória para persistência local / fallback
 let globalUsersStore: Usuario[] = [...INITIAL_USERS];
-const globalInvitesStore: Convite[] = [];
+let globalInvitesStore: Convite[] = [];
 
 /**
  * Realiza o UPSERT (inserir ou atualizar) do Administrador inicial no banco de dados e na memória
@@ -623,6 +623,22 @@ export async function getAllInvites(): Promise<Convite[]> {
   }
 
   return globalInvitesStore;
+}
+
+/**
+ * Remove um convite pelo ID ou token
+ */
+export async function deleteInvite(idOrToken: string): Promise<boolean> {
+  try {
+    await supabase.from('invites').delete().or(`id.eq.${idOrToken},token.eq.${idOrToken}`);
+  } catch (err) {
+    console.warn('[Auth] Erro ao deletar convite no Supabase:', err);
+  }
+
+  globalInvitesStore = globalInvitesStore.filter(
+    (inv) => inv.id !== idOrToken && inv.token !== idOrToken
+  );
+  return true;
 }
 
 /**

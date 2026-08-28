@@ -63,6 +63,8 @@ export default function EquipePage() {
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
+  const [deletingInviteId, setDeletingInviteId] = useState<string | null>(null);
+  const [isCleaningInvites, setIsCleaningInvites] = useState(false);
 
   // Gaveta Lateral / Modal de Detalhes do Membro
   const [selectedMember, setSelectedMember] = useState<Usuario | null>(null);
@@ -167,6 +169,13 @@ export default function EquipePage() {
       return inv.imobiliaria?.toLowerCase() === currentTenant.nome.toLowerCase();
     });
   }, [invites, currentTenant, isAdmin]);
+
+  const hasExpiredOrUsedInvites = useMemo(() => {
+    const now = Date.now();
+    return tenantInvites.some(
+      (inv) => inv.used || new Date(inv.expires_at).getTime() < now
+    );
+  }, [tenantInvites]);
 
   const getInitials = (name: string) => {
     const parts = (name || '').trim().split(/\s+/);
@@ -337,6 +346,71 @@ export default function EquipePage() {
       `Olá! Você foi convidado para fazer parte da equipe da *${imoNome}* como *${cargoNome}* no EasyMob.\n\nAcesse o link abaixo para concluir seu cadastro:\n${url}\n\n⏱️ _Este link é exclusivo e expira em 24 horas._`
     );
     window.open(`https://api.whatsapp.com/send?text=${texto}`, '_blank');
+  };
+
+  // Excluir convite individual
+  const handleDeleteInvite = async (inv: Convite) => {
+    const cargoNome = inv.role === 'gestor' ? 'Gerente' : 'Corretor';
+    if (!confirm(`Deseja realmente apagar este convite de ${cargoNome}?`)) {
+      return;
+    }
+
+    setDeletingInviteId(inv.id);
+    try {
+      const res = await fetch('/api/invites', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: inv.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao apagar convite.');
+      }
+
+      setInvites((prev) => prev.filter((i) => i.id !== inv.id));
+      showToast('Convite apagado com sucesso!', 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao apagar convite.';
+      console.error('Erro ao apagar convite:', err);
+      showToast(msg, 'error');
+    } finally {
+      setDeletingInviteId(null);
+    }
+  };
+
+  // Limpar convites expirados e utilizados em lote
+  const handleCleanExpiredInvites = async () => {
+    if (!confirm('Deseja apagar todos os convites expirados ou já utilizados desta imobiliária?')) {
+      return;
+    }
+
+    setIsCleaningInvites(true);
+    try {
+      const res = await fetch('/api/invites', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clean_expired_or_used' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao limpar convites.');
+      }
+
+      const now = Date.now();
+      setInvites((prev) =>
+        prev.filter((inv) => {
+          const isExp = new Date(inv.expires_at).getTime() < now;
+          return !isExp && !inv.used;
+        })
+      );
+      showToast(data.message || 'Convites expirados limpos com sucesso!', 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao limpar convites.';
+      console.error('Erro ao limpar convites:', err);
+      showToast(msg, 'error');
+    } finally {
+      setIsCleaningInvites(false);
+    }
   };
 
   // Se for corretor, bloqueia acesso
@@ -711,14 +785,28 @@ export default function EquipePage() {
       {activeTab === 'convites' && (
         <div className="space-y-4">
           <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-emerald-500" />
-                Histórico de Links de Convite (Validade: 24 Horas)
-              </span>
-              <span className="text-[11px] text-slate-400 font-medium">
-                Total de {tenantInvites.length} convites gerados
-              </span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 gap-2">
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-emerald-500" />
+                  Histórico de Links de Convite (Validade: 24 Horas)
+                </span>
+                <span className="text-[11px] text-slate-400 font-medium block">
+                  Total de {tenantInvites.length} convite(s) gerado(s)
+                </span>
+              </div>
+              {hasExpiredOrUsedInvites && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCleanExpiredInvites}
+                  disabled={isCleaningInvites}
+                  className="text-xs text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 h-8 self-start sm:self-auto"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  {isCleaningInvites ? 'Limpando...' : 'Limpar Expirados / Utilizados'}
+                </Button>
+              )}
             </div>
 
             {tenantInvites.length === 0 ? (
@@ -761,37 +849,54 @@ export default function EquipePage() {
                         </span>
                       </div>
 
-                      {!isUsed && !isExpired && (
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCopyLink(inviteUrl, inv.id)}
-                            className="text-xs"
-                          >
-                            {copiedInviteId === inv.id ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-emerald-500 mr-1" />
-                                Copiado!
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5 mr-1" />
-                                Copiar Link
-                              </>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {!isUsed && !isExpired && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCopyLink(inviteUrl, inv.id)}
+                              className="text-xs"
+                            >
+                              {copiedInviteId === inv.id ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-500 mr-1" />
+                                  Copiado!
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5 mr-1" />
+                                  Copiar Link
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleShareWhatsApp(inviteUrl, inv.role || 'corretor')}
+                              className="text-xs text-emerald-600 hover:text-emerald-700"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 mr-1" />
+                              WhatsApp
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteInvite(inv)}
+                          disabled={deletingInviteId === inv.id}
+                          className="text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 p-2 h-8 w-8 rounded-lg"
+                          title="Apagar convite"
+                        >
+                          <Trash2
+                            className={cn(
+                              'w-4 h-4',
+                              deletingInviteId === inv.id && 'animate-spin text-rose-500'
                             )}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleShareWhatsApp(inviteUrl, inv.role || 'corretor')}
-                            className="text-xs text-emerald-600 hover:text-emerald-700"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5 mr-1" />
-                            WhatsApp
-                          </Button>
-                        </div>
-                      )}
+                          />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
