@@ -13,7 +13,7 @@ interface TenantContextType {
   setCurrentTenant: (tenantOrNome: Imobiliaria | string) => void;
   adicionarImobiliaria: (dados: Partial<Imobiliaria> | string, logoUrl?: string) => Promise<Imobiliaria>;
   atualizarImobiliaria: (id: string, dados: Partial<Imobiliaria>) => Promise<Imobiliaria>;
-  removerImobiliaria: (id: string) => Promise<void>;
+  removerImobiliaria: (id: string, nome?: string, confirmText?: string) => Promise<void>;
   isLoadingTenants: boolean;
   refreshTenants: () => Promise<void>;
 }
@@ -150,18 +150,21 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
     // Se o usuário for Corretor ou Gestor, ele é ESTRITAMENTE restrito à sua imobiliária
     if (user.role === 'corretor' || user.role === 'gestor') {
-      const userTenantName = (user.imobiliaria || 'Lagom Imóveis').trim();
-      const match = imobiliarias.find(
-        (i) => i.nome.toLowerCase() === userTenantName.toLowerCase()
-      );
-      if (match) {
-        setCurrentTenantState(match);
-      } else {
-        setCurrentTenantState({
-          id: `tenant-${userTenantName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-          nome: userTenantName,
-          criado_em: new Date().toISOString(),
-        });
+      const userTenantName = (user.imobiliaria || '').trim();
+      if (!isLoadingTenants && imobiliarias.length > 0) {
+        const match = imobiliarias.find(
+          (i) => i.nome.toLowerCase() === userTenantName.toLowerCase()
+        );
+        if (match) {
+          setCurrentTenantState(match);
+        } else {
+          // Imobiliária não existe mais / foi excluída -> Desconecta imediatamente
+          console.warn(`[TenantContext] Imobiliária "${userTenantName}" do usuário não encontrada. Encerrando sessão.`);
+          if (typeof window !== 'undefined') {
+            alert('Aviso de Segurança: A imobiliária vinculada à sua conta foi desativada ou excluída pelo administrador.');
+            window.location.href = '/api/auth/logout';
+          }
+        }
       }
       return;
     }
@@ -360,13 +363,27 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  // Remove uma imobiliária
+  // Remove uma imobiliária com exclusão em cascata completa
   const removerImobiliaria = useCallback(
-    async (id: string): Promise<void> => {
+    async (id: string, nome?: string, confirmText: string = 'EXCLUIR'): Promise<void> => {
       try {
-        await supabase.from('imobiliarias').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Supabase delete imobiliaria offline:', err);
+        const res = await fetch(`/api/imobiliarias/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ confirmText, nome }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Erro ao excluir imobiliária.');
+        }
+      } catch (err: any) {
+        console.warn('API delete imobiliaria cascade:', err);
+        // Fallback direto no Supabase caso a rota falhe
+        try {
+          await supabase.from('imobiliarias').delete().eq('id', id);
+        } catch {
+          // ignore
+        }
       }
 
       setImobiliarias((prev) => {

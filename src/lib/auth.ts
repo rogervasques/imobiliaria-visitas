@@ -699,7 +699,43 @@ export async function verifySessionToken(token: string): Promise<UserSession | n
 }
 
 /**
- * Verifica se o usuário ainda existe e está ativo no sistema
+ * Remove todos os usuários (corretores e gestores) vinculados a uma imobiliária excluída
+ */
+export async function deleteUsersByTenant(tenantName: string, tenantId?: string): Promise<number> {
+  const normalized = (tenantName || '').trim().toLowerCase();
+  if (!normalized) return 0;
+
+  let deletedCount = 0;
+
+  try {
+    // Exclui no Supabase todos os não-admins desta imobiliária
+    const { data: usersToDelete } = await supabase
+      .from('users')
+      .select('id, email, role, imobiliaria')
+      .neq('role', 'admin')
+      .ilike('imobiliaria', tenantName.trim());
+
+    if (usersToDelete && usersToDelete.length > 0) {
+      const ids = usersToDelete.map((u) => u.id);
+      await supabase.from('users').delete().in('id', ids);
+      deletedCount = ids.length;
+    }
+  } catch (err) {
+    console.warn('[Auth] Erro ao deletar usuários por tenant no Supabase:', err);
+  }
+
+  // Remove do store local
+  globalUsersStore = globalUsersStore.filter((u) => {
+    if (u.role === 'admin') return true;
+    const userTenant = (u.imobiliaria || '').trim().toLowerCase();
+    return userTenant !== normalized;
+  });
+
+  return deletedCount;
+}
+
+/**
+ * Verifica se o usuário ainda existe e está ativo no sistema, validando se sua imobiliária ainda existe
  */
 export async function verifyUserExists(id: string, email?: string): Promise<boolean> {
   const adminEmail = INITIAL_ADMIN_EMAIL.toLowerCase().trim();
@@ -711,22 +747,87 @@ export async function verifyUserExists(id: string, email?: string): Promise<bool
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, email')
+      .select('id, email, role, imobiliaria, ativo')
       .eq('id', id)
       .maybeSingle();
 
     if (!error && data) {
+      if (data.ativo === false) return false;
+
+      // Se for corretor ou gestor, valida se a imobiliária ainda existe
+      if (data.role !== 'admin' && data.imobiliaria) {
+        let tenantFound = false;
+        try {
+          const { data: tenant } = await supabase
+            .from('imobiliarias')
+            .select('id, nome, ativo')
+            .ilike('nome', data.imobiliaria.trim())
+            .maybeSingle();
+
+          if (tenant && tenant.ativo !== false) {
+            tenantFound = true;
+          } else {
+            const { data: altTenant } = await supabase
+              .from('tenants')
+              .select('id, nome, ativo')
+              .ilike('nome', data.imobiliaria.trim())
+              .maybeSingle();
+
+            if (altTenant && altTenant.ativo !== false) {
+              tenantFound = true;
+            }
+          }
+        } catch {
+          // fallback
+        }
+
+        if (!tenantFound) {
+          return false; // Imobiliária excluída ou inativa
+        }
+      }
       return true;
     }
 
     if (email) {
       const { data: dataEmail, error: errEmail } = await supabase
         .from('users')
-        .select('id, email')
+        .select('id, email, role, imobiliaria, ativo')
         .eq('email', email.toLowerCase().trim())
         .maybeSingle();
 
       if (!errEmail && dataEmail) {
+        if (dataEmail.ativo === false) return false;
+
+        if (dataEmail.role !== 'admin' && dataEmail.imobiliaria) {
+          let tenantFound = false;
+          try {
+            const { data: tenant } = await supabase
+              .from('imobiliarias')
+              .select('id, nome, ativo')
+              .ilike('nome', dataEmail.imobiliaria.trim())
+              .maybeSingle();
+
+            if (tenant && tenant.ativo !== false) {
+              tenantFound = true;
+            } else {
+              const { data: altTenant } = await supabase
+                .from('tenants')
+                .select('id, nome, ativo')
+                .ilike('nome', dataEmail.imobiliaria.trim())
+                .maybeSingle();
+
+              if (altTenant && altTenant.ativo !== false) {
+                tenantFound = true;
+              }
+            }
+          } catch {
+            // fallback
+          }
+
+          if (!tenantFound) {
+            return false;
+          }
+        }
         return true;
       }
     }
@@ -735,7 +836,9 @@ export async function verifyUserExists(id: string, email?: string): Promise<bool
   }
 
   // 2. Consulta no store local
-  return globalUsersStore.some((u) => u.id === id || (email && u.email.toLowerCase().trim() === email.toLowerCase().trim()));
+  const localUser = globalUsersStore.find((u) => u.id === id || (email && u.email.toLowerCase().trim() === email.toLowerCase().trim()));
+  if (!localUser || localUser.ativo === false) return false;
+  return true;
 }
 
 /**

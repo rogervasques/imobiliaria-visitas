@@ -64,6 +64,12 @@ export default function ImobiliariasPage() {
   const [cleanConfirmedCheckbox, setCleanConfirmedCheckbox] = useState(false);
   const [cleanConfirmText, setCleanConfirmText] = useState('');
 
+  // Modal de Exclusão em Cascata Total (Dupla Confirmação)
+  const [tenantToDelete, setTenantToDelete] = useState<Imobiliaria | null>(null);
+  const [deleteConfirmedCheckbox, setDeleteConfirmedCheckbox] = useState(false);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+  const [isCascadeDeleting, setIsCascadeDeleting] = useState(false);
+
   const [createNome, setCreateNome] = useState('');
   const [createEmail, setCreateEmail] = useState('');
   const [createTelefone, setCreateTelefone] = useState('');
@@ -293,28 +299,65 @@ export default function ImobiliariasPage() {
     }
   };
 
-  const handleDelete = async (imo: Imobiliaria) => {
+  const handleOpenDeleteModal = (imo: Imobiliaria) => {
     if (imobiliarias.length <= 1) {
-      alert('Você não pode excluir a única imobiliária cadastrada.');
+      showToast('Você não pode excluir a única imobiliária cadastrada no sistema.', 'error');
+      return;
+    }
+    setTenantToDelete(imo);
+    setDeleteConfirmedCheckbox(false);
+    setDeleteConfirmInput('');
+  };
+
+  const handleConfirmCascadeDelete = async () => {
+    if (!tenantToDelete) return;
+
+    const trimmedInput = deleteConfirmInput.trim();
+    const isExactName = trimmedInput === tenantToDelete.nome;
+    const isExcluirUpper = trimmedInput.toUpperCase() === 'EXCLUIR';
+
+    if (!deleteConfirmedCheckbox || (!isExactName && !isExcluirUpper)) {
+      showToast(
+        `Confirme o checkbox e digite exatamente "${tenantToDelete.nome}" ou "EXCLUIR" para autorizar a exclusão.`,
+        'error'
+      );
       return;
     }
 
-    if (
-      !confirm(
-        `Tem certeza que deseja excluir a imobiliária "${imo.nome}"? Os imóveis e usuários vinculados precisarão ser reatribuídos.`
-      )
-    ) {
-      return;
-    }
-
-    setIsDeletingId(imo.id);
+    setIsCascadeDeleting(true);
     try {
-      await removerImobiliaria(imo.id);
-      showToast(`Imobiliária "${imo.nome}" removida.`, 'info');
-    } catch {
-      showToast('Erro ao excluir imobiliária.', 'error');
+      await removerImobiliaria(tenantToDelete.id, tenantToDelete.nome, trimmedInput);
+
+      // Limpar caches do localStorage
+      try {
+        localStorage.removeItem('easymob_visitas_visitas');
+        localStorage.removeItem('easymob_visitas_imoveis');
+        localStorage.removeItem('easymob_visitas_clientes');
+        localStorage.removeItem('easymob_visitas_proprietarios');
+        localStorage.removeItem('imobiliaria_visitas_visitas');
+        localStorage.removeItem('imobiliaria_visitas_imoveis');
+        localStorage.removeItem('imobiliaria_visitas_clientes');
+        localStorage.removeItem('imobiliaria_visitas_proprietarios');
+        localStorage.removeItem('easymob_item_tenants_map');
+      } catch {
+        // ignore
+      }
+
+      showToast(
+        `Imobiliária "${tenantToDelete.nome}" e todos os seus dados e corretores foram excluídos com sucesso!`,
+        'success'
+      );
+      setTenantToDelete(null);
+      setDeleteConfirmedCheckbox(false);
+      setDeleteConfirmInput('');
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao processar exclusão em cascata da imobiliária.', 'error');
     } finally {
-      setIsDeletingId(null);
+      setIsCascadeDeleting(false);
     }
   };
 
@@ -569,9 +612,9 @@ export default function ImobiliariasPage() {
 
                     <button
                       type="button"
-                      onClick={() => handleDelete(imo)}
-                      disabled={isDeletingId === imo.id || imobiliarias.length <= 1}
-                      title="Excluir Imobiliária"
+                      onClick={() => handleOpenDeleteModal(imo)}
+                      disabled={imobiliarias.length <= 1}
+                      title="Excluir Imobiliária Definitivamente"
                       className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer disabled:opacity-40"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1033,6 +1076,94 @@ export default function ImobiliariasPage() {
             >
               <Trash2 className="w-4 h-4 mr-1.5" />
               Confirmar e Limpar Banco
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ─── MODAL EXCLUSÃO EM CASCATA TOTAL (DUPLA CONFIRMAÇÃO) ─── */}
+      <Modal
+        isOpen={Boolean(tenantToDelete)}
+        onClose={() => !isCascadeDeleting && setTenantToDelete(null)}
+        title="Excluir Imobiliária em Cascata (Ação Irreversível)"
+        subtitle={`Exclusão definitiva da empresa "${tenantToDelete?.nome}" e todos os seus vínculos`}
+      >
+        <div className="space-y-4">
+          {/* Alerta Destrutivo de Alto Risco */}
+          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-xs text-rose-900 dark:text-rose-200 space-y-2.5">
+            <div className="font-black flex items-center gap-2 text-sm text-rose-700 dark:text-rose-400">
+              <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+              ATENÇÃO: EXCLUSÃO TOTAL EM CASCATA!
+            </div>
+            <p className="text-[11px] leading-relaxed font-semibold">
+              Ao confirmar a exclusão de <strong className="underline decoration-rose-500 font-black text-rose-800 dark:text-rose-300">"{tenantToDelete?.nome}"</strong>, o sistema apagará <strong>IMEDIATAMENTE e DE FORMA IRREVERSÍVEL</strong>:
+            </p>
+            <ul className="space-y-1.5 list-disc pl-4 text-[11px] text-rose-800 dark:text-rose-300">
+              <li><strong>Todos os Imóveis e Fotos</strong> cadastrados nesta imobiliária.</li>
+              <li><strong>Todas as Visitas e Roteiros</strong> de atendimento.</li>
+              <li><strong>Todos os Clientes e Leads</strong> da carteira desta imobiliária.</li>
+              <li><strong>Todos os Proprietários</strong> associados.</li>
+              <li><strong>Todos os Relatórios e Históricos de WhatsApp</strong>.</li>
+              <li><strong>TODAS AS CONTAS DE CORRETORES E GESTORES</strong> vinculados a esta imobiliária (o acesso será revogado e sessões encerradas no mesmo instante).</li>
+              <li><strong>Todos os Convites Pendentes</strong> de cadastro.</li>
+            </ul>
+          </div>
+
+          {/* 1ª Verificação: Checkbox de Ciência */}
+          <label className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={deleteConfirmedCheckbox}
+              onChange={(e) => setDeleteConfirmedCheckbox(e.target.checked)}
+              className="w-4 h-4 mt-0.5 text-rose-600 rounded border-slate-300 focus:ring-rose-500"
+            />
+            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
+              1ª Verificação: Estou ciente de que <strong>TODOS</strong> os dados, fotos, visitas, clientes e <strong>contas de corretores</strong> da <strong>"{tenantToDelete?.nome}"</strong> serão apagados em definitivo.
+            </span>
+          </label>
+
+          {/* 2ª Verificação: Digitar o Nome Exato ou EXCLUIR */}
+          <div className="space-y-1.5 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              2ª Verificação: Digite exatamente <code className="text-rose-600 dark:text-rose-400 font-mono font-black bg-rose-100 dark:bg-rose-950/60 px-1 py-0.5 rounded">{tenantToDelete?.nome}</code> ou <code className="text-rose-600 dark:text-rose-400 font-mono font-black bg-rose-100 dark:bg-rose-950/60 px-1 py-0.5 rounded">EXCLUIR</code>:
+            </label>
+            <input
+              type="text"
+              value={deleteConfirmInput}
+              onChange={(e) => setDeleteConfirmInput(e.target.value)}
+              placeholder={`Digite "${tenantToDelete?.nome}" ou "EXCLUIR"`}
+              disabled={!deleteConfirmedCheckbox || isCascadeDeleting}
+              className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono font-bold text-rose-600 dark:text-rose-400 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:opacity-50"
+            />
+          </div>
+
+          {/* Botões de Ação */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isCascadeDeleting}
+              onClick={() => setTenantToDelete(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              isLoading={isCascadeDeleting}
+              disabled={
+                !deleteConfirmedCheckbox ||
+                (deleteConfirmInput.trim() !== tenantToDelete?.nome &&
+                  deleteConfirmInput.trim().toUpperCase() !== 'EXCLUIR') ||
+                isCascadeDeleting
+              }
+              onClick={handleConfirmCascadeDelete}
+              className="bg-rose-600 hover:bg-rose-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-500 text-white font-black text-xs shadow-md"
+            >
+              <Trash2 className="w-4 h-4 mr-1.5" />
+              Confirmar Exclusão Definitiva em Cascata
             </Button>
           </div>
         </div>
