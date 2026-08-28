@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -31,6 +32,11 @@ import {
   PhoneCall,
   Smartphone,
   ExternalLink,
+  Target,
+  Search,
+  Download,
+  Share2,
+  Compass,
 } from 'lucide-react';
 import { EasyMobLogo } from '@/components/ui/EasyMobLogo';
 
@@ -72,6 +78,10 @@ export default function LandingPage() {
       a: 'Sim! Nossos clientes relatam uma redução média de mais de 75% em faltas e atrasos. O envio imediato dos dados da visita com link do Google Maps somado ao lembrete 1 hora antes garante que o cliente se planeje e confirme a presença.',
     },
     {
+      q: 'Como funciona a Ficha Pública do Imóvel e o Match com Clientes?',
+      a: 'A Ficha Pública gera uma página web moderna, rápida e responsiva para cada imóvel, com a marca da sua imobiliária e botão de agendamento. Já o recurso de Match Inteligente cruza o perfil de interesse do cliente (faixa de preço, dormitórios, bairro) e sugere na hora os imóveis compatíveis.',
+    },
+    {
       q: 'Preciso instalar algum aplicativo pesado no computador?',
       a: 'Não. O EasyMob é 100% web e na nuvem, acessível de qualquer computador, tablet ou smartphone. Ele também é um Progressive Web App (PWA), permitindo ser instalado na tela inicial do seu celular com 1 clique.',
     },
@@ -110,8 +120,14 @@ export default function LandingPage() {
             <a href="#operacao" className="hover:text-emerald-600 transition-colors">
               Operação 360°
             </a>
+            <a href="#match" className="hover:text-emerald-600 transition-colors">
+              Match de Imóveis
+            </a>
             <a href="#rastreabilidade" className="hover:text-emerald-600 transition-colors">
-              Rastreabilidade &amp; Automação
+              Rastreabilidade &amp; PDF
+            </a>
+            <a href="#mobile" className="hover:text-emerald-600 transition-colors">
+              Ficha Pública
             </a>
             <a href="#planos" className="hover:text-emerald-600 transition-colors">
               Planos &amp; Preços
@@ -140,7 +156,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ─── 1. HERO SECTION (LIGHT THEME) ─── */}
+      {/* ─── 1. HERO SECTION (COM MOCKUP REAL DO DASHBOARD) ─── */}
       <section className="relative z-10 pt-16 pb-20 md:pt-24 md:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm font-bold shadow-xs mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -196,16 +212,19 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* ─── Hero UI Mockup Visual Interativo (Light Mode) ─── */}
-        <div className="mt-16 relative mx-auto max-w-5xl rounded-3xl p-2 sm:p-3 bg-gradient-to-b from-slate-200/70 via-slate-100/60 to-slate-200/40 border border-slate-200 shadow-2xl shadow-slate-300/50">
-          <div className="rounded-2xl bg-white border border-slate-200/80 p-4 sm:p-8 overflow-hidden text-left relative shadow-sm">
-            {/* Barra superior de janela de app */}
-            <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
+        {/* ─── Hero UI Mockup com Print Real do Dashboard ─── */}
+        <div className="mt-16 relative mx-auto max-w-5xl rounded-3xl p-2 sm:p-3 bg-gradient-to-b from-slate-200/80 via-slate-100/60 to-slate-200/50 border border-slate-200/90 shadow-2xl shadow-slate-300/60">
+          <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden text-left relative shadow-sm">
+            {/* Barra superior de janela estilo macOS/App */}
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-slate-100 bg-slate-50/80">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-rose-400" />
                 <div className="w-3 h-3 rounded-full bg-amber-400" />
                 <div className="w-3 h-3 rounded-full bg-emerald-400" />
-                <span className="text-xs font-semibold text-slate-500 ml-2">EasyMob Suite — Painel Operacional</span>
+                <div className="hidden sm:flex items-center gap-1.5 ml-3 px-3 py-1 rounded-lg bg-white border border-slate-200 text-slate-400 text-xs font-mono">
+                  <Lock className="w-3 h-3 text-emerald-600" />
+                  <span>app.easymob.com.br/dashboard</span>
+                </div>
               </div>
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -213,55 +232,47 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Grid interna do mockup */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Card 1: Próxima Visita */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Próxima Visita</span>
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">Hoje 15:30</span>
+            {/* Imagem Real do Dashboard da Plataforma */}
+            <div className="relative aspect-[16/9] w-full bg-slate-100 overflow-hidden group">
+              <Image
+                src="/mockups/mockup-dashboard.png"
+                alt="Dashboard EasyMob - Gestão do Dia e Agenda de Visitas"
+                fill
+                priority
+                className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.01]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/10 via-transparent to-transparent pointer-events-none" />
+            </div>
+
+            {/* Badges Flutuantes Informativas */}
+            <div className="p-4 bg-slate-50/90 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+              <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+                  <CalendarDays className="w-4 h-4" />
                 </div>
-                <div className="space-y-1">
-                  <h4 className="text-sm font-extrabold text-slate-900">Cobertura Duplex Jardins</h4>
-                  <p className="text-xs text-slate-500 flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
-                    <span>Rua Oscar Freire, 1420</span>
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Cliente: <strong className="text-slate-800">Carlos Eduardo</strong></span>
-                  <span className="text-emerald-700 font-bold">Agendada</span>
+                <div>
+                  <h5 className="text-xs font-bold text-slate-900">Gestão do Dia</h5>
+                  <p className="text-[10px] text-slate-500">Linha do tempo de visitas e status em tempo real</p>
                 </div>
               </div>
 
-              {/* Card 2: Automação Ativa */}
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-emerald-50/60 border border-emerald-200/70 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Automação de WhatsApp</span>
-                  <Zap className="w-4 h-4 text-emerald-600" />
+              <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold shrink-0">
+                  <Zap className="w-4 h-4" />
                 </div>
-                <div className="space-y-1 text-xs">
-                  <p className="text-slate-700 font-medium">Lembrete disparado 1h antes com link do Maps:</p>
-                  <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-[11px] text-slate-700 font-mono shadow-xs">
-                    💬 &quot;Olá Carlos! Sua visita é às 15:30. Veja a rota no Maps: bit.ly/visita-391&quot;
-                  </div>
+                <div>
+                  <h5 className="text-xs font-bold text-slate-900">Automação WhatsApp</h5>
+                  <p className="text-[10px] text-slate-500">Lembretes automáticos 1h antes com link do Maps</p>
                 </div>
               </div>
 
-              {/* Card 3: Relatório de Atendimento */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Comprovante de Atendimento</span>
-                  <Scale className="w-4 h-4 text-teal-600" />
+              <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                <div className="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold shrink-0">
+                  <Scale className="w-4 h-4" />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-slate-800 font-semibold">Relatório de Atendimento em PDF</p>
-                  <p className="text-[11px] text-slate-500">Comprovação de aproximação útil (Art. 727 CC) com logs auditáveis.</p>
-                </div>
-                <div className="pt-1">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700">
-                    <FileText className="w-3.5 h-3.5" /> PDF Gerado com 1 Clique
-                  </span>
+                <div>
+                  <h5 className="text-xs font-bold text-slate-900">Proteção Jurídica</h5>
+                  <p className="text-[10px] text-slate-500">Relatório de Atendimento em PDF (Art. 727 CC)</p>
                 </div>
               </div>
             </div>
@@ -375,137 +386,87 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── 3. MÓDULO: CONEXÃO INSTANTÂNEA E AJUDA NA PROTEÇÃO JURÍDICA (LIGHT THEME) ─── */}
-      <section id="rastreabilidade" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      {/* ─── 3. NOVO BLOCO VISUAL: MATCH INTELIGENTE DE IMÓVEIS COMPATÍVEIS ─── */}
+      <section id="match" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Lado Esquerdo: Textos e Benefícios */}
+          {/* Lado Esquerdo: Benefícios do Match */}
           <div className="lg:col-span-6 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-extrabold uppercase tracking-wider shadow-xs">
-              <Zap className="w-3.5 h-3.5" />
-              <span>Automação &amp; Rastreabilidade</span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-extrabold uppercase tracking-wider shadow-xs">
+              <Target className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Inteligência Comercial &amp; CRM</span>
             </div>
 
-            {/* Headline Atualizada conforme requisito */}
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-              Conexão Instantânea e Ajuda na Proteção Jurídica para Suas Comissões
+              Match Inteligente: Conecte o Cliente Certo ao Imóvel Ideal
             </h2>
 
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-              O EasyMob cuida da comunicação com o cliente e constrói uma esteira de evidências auditável de todos os seus atendimentos.
+              O EasyMob cruza automaticamente o perfil de busca do comprador (bairros de interesse, faixa de valor, número de quartos e tipo de imóvel) com toda a carteira de imóveis da sua imobiliária.
             </p>
 
-            {/* Lista com destaques */}
             <div className="space-y-4 pt-2">
               <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
                 <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200">
-                  <Smartphone className="w-5 h-5" />
+                  <Search className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-900 text-sm sm:text-base">Conexão via QR Code sem Burocracia</h4>
+                  <h4 className="font-bold text-slate-900 text-sm sm:text-base">Sugestões Instantâneas no Card do Cliente</h4>
                   <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
-                    Conecte o número de WhatsApp da sua imobiliária em menos de 30 segundos escaneando o QR Code, sem precisar de aprovação complexa da Meta.
+                    Ao abrir o cadastro do cliente, veja de imediato a lista de imóveis 100% compatíveis com o orçamento e as preferências dele.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
                 <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 mt-0.5 border border-teal-200">
-                  <Send className="w-5 h-5" />
+                  <Share2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-900 text-sm sm:text-base">Notificações e Lembretes Automáticos</h4>
+                  <h4 className="font-bold text-slate-900 text-sm sm:text-base">Envio Direto no WhatsApp com 1 Clique</h4>
                   <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
-                    Envio automático dos dados do imóvel + link de localização do Maps no momento do agendamento, e lembrete disparado <strong className="text-slate-900">1 hora antes da visita</strong>.
+                    Envie a ficha do imóvel compatível diretamente para o WhatsApp do cliente sem precisar copiar links ou digitar mensagens do zero.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
                 <div className="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center shrink-0 mt-0.5 border border-cyan-200">
-                  <Clock className="w-5 h-5" />
+                  <TrendingUp className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-900 text-sm sm:text-base">Histórico e Retenção de Logs</h4>
+                  <h4 className="font-bold text-slate-900 text-sm sm:text-base">Aceleração de Visitas &amp; Fechamentos</h4>
                   <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
-                    Captura e retenção segura de todos os logs da conversa desde o agendamento até 48 horas após a visita.
-                  </p>
-                </div>
-              </div>
-
-              {/* Nomenclatura atualizada: Relatório de Atendimento em PDF */}
-              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200 shadow-xs">
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-300">
-                  <Scale className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-emerald-900 text-sm sm:text-base">Relatório de Atendimento em PDF (Art. 727 do Código Civil)</h4>
-                  <p className="text-xs sm:text-sm text-slate-700 mt-0.5">
-                    Gere em 1 clique um relatório consolidado com data, hora, mensagens trocadas e imóveis visitados para comprovação de aproximação útil e suporte ao departamento jurídico em caso de disputa de honorários.
+                    Aumente o índice de conversão aproveitando o momento quente do lead com recomendações assertivas e personalizadas.
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Lado Direito: Preview do Relatório de Atendimento em PDF (Light Mode) */}
+          {/* Lado Direito: Print Real do Match de Imóveis */}
           <div className="lg:col-span-6">
-            <div className="rounded-3xl bg-white border border-emerald-200/90 p-6 sm:p-8 shadow-xl shadow-slate-200/70 space-y-6 relative overflow-hidden">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="rounded-3xl bg-white border border-emerald-200 p-3 sm:p-4 shadow-xl shadow-slate-200/80 relative">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 mb-3 text-xs font-bold text-slate-700">
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-slate-900">Relatório de Atendimento &amp; Aproximação Útil</h4>
-                    <p className="text-[11px] text-slate-500">Documento Oficial Auditável — Art. 727 CC</p>
-                  </div>
+                  <Target className="w-4 h-4 text-emerald-600" />
+                  <span>Card do Cliente &bull; Imóveis Compatíveis</span>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                  Relatório Auditável em PDF
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  Match Automático
                 </span>
               </div>
-
-              {/* Corpo Simulado do Relatório de Atendimento */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3 text-xs text-slate-700">
-                <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div>
-                    <span className="text-slate-500 block">Corretor Responsável:</span>
-                    <strong className="text-slate-900">Roger Vasques Berchembrock</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block">Cliente Comprador:</span>
-                    <strong className="text-slate-900">Carlos Eduardo Menezes</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block">Imóvel Visitado:</span>
-                    <strong className="text-slate-900">Apartamento 802 — Reserva Bela Vista</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block">Data e Hora:</span>
-                    <strong className="text-emerald-700 font-bold">24/08/2026 às 15:30h</strong>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 space-y-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                    Trilha de Auditoria &amp; Registro de Conversas:
-                  </span>
-                  <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-[11px] font-mono text-slate-700 space-y-1 shadow-xs">
-                    <p className="text-emerald-700 font-semibold">[14:30] Sistema: Disparo de lembrete com link de localização Maps enviado.</p>
-                    <p className="text-slate-700">[14:32] Cliente: &quot;Confirmadíssimo! Estou chegando no endereço.&quot;</p>
-                    <p className="text-slate-700">[15:30] Corretor: Visita iniciada e registrada no sistema.</p>
-                  </div>
-                </div>
+              <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 shadow-2xs group">
+                <Image
+                  src="/mockups/mockup-match-imoveis.png"
+                  alt="Match de Imóveis Compatíveis - EasyMob"
+                  fill
+                  className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                />
               </div>
-
-              {/* Rodapé do Card */}
-              <div className="pt-2 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Proteção garantida contra bypass de comissão</span>
-                </div>
-                <span className="text-xs font-bold text-emerald-700 hover:text-emerald-800 inline-flex items-center gap-1">
-                  Ver modelo completo <ArrowRight className="w-3.5 h-3.5" />
+              <div className="p-3 bg-emerald-50/70 rounded-2xl border border-emerald-200/80 mt-3 flex items-center justify-between text-xs">
+                <span className="text-emerald-900 font-semibold">Cruzamento instantâneo por valor, dormitórios e localização.</span>
+                <span className="text-emerald-700 font-bold flex items-center gap-1">
+                  100% Automático <Check className="w-3.5 h-3.5 text-emerald-600" />
                 </span>
               </div>
             </div>
@@ -513,7 +474,204 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── 4. SEÇÃO DE PLANOS E PREÇOS (TABELA DE PRECIFICAÇÃO ATUALIZADA) ─── */}
+      {/* ─── 4. MÓDULO: RASTREABILIDADE & RELATÓRIO AUDITÁVEL EM PDF (COM PRINT REAL) ─── */}
+      <section id="rastreabilidade" className="relative z-10 py-24 bg-slate-100/70 border-y border-slate-200/80 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Lado Esquerdo: Textos e Benefícios */}
+            <div className="lg:col-span-6 space-y-6 text-left">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-extrabold uppercase tracking-wider shadow-xs">
+                <Zap className="w-3.5 h-3.5" />
+                <span>Automação &amp; Rastreabilidade</span>
+              </div>
+
+              {/* Headline Atualizada conforme requisito */}
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                Conexão Instantânea e Ajuda na Proteção Jurídica para Suas Comissões
+              </h2>
+
+              <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+                O EasyMob cuida da comunicação com o cliente e constrói uma esteira de evidências auditável de todos os seus atendimentos.
+              </p>
+
+              {/* Lista com destaques */}
+              <div className="space-y-4 pt-2">
+                <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm sm:text-base">Conexão via QR Code sem Burocracia</h4>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
+                      Conecte o número de WhatsApp da sua imobiliária em menos de 30 segundos escaneando o QR Code, sem precisar de aprovação complexa da Meta.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+                  <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 mt-0.5 border border-teal-200">
+                    <Send className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm sm:text-base">Notificações e Lembretes Automáticos</h4>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
+                      Envio automático dos dados do imóvel + link de localização do Maps no momento do agendamento, e lembrete disparado <strong className="text-slate-900">1 hora antes da visita</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+                  <div className="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center shrink-0 mt-0.5 border border-cyan-200">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm sm:text-base">Histórico e Retenção de Logs</h4>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
+                      Captura e retenção segura de todos os logs da conversa desde o agendamento até 48 horas após a visita.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Nomenclatura atualizada: Relatório de Atendimento em PDF */}
+                <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200 shadow-xs">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-300">
+                    <Scale className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-emerald-900 text-sm sm:text-base">Relatório de Atendimento em PDF (Art. 727 do Código Civil)</h4>
+                    <p className="text-xs sm:text-sm text-slate-700 mt-0.5">
+                      Gere em 1 clique um relatório consolidado com data, hora, mensagens trocadas e imóveis visitados para comprovação de aproximação útil e suporte ao departamento jurídico em caso de disputa de honorários.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Lado Direito: Preview Real do Relatório de Atendimento em PDF */}
+            <div className="lg:col-span-6">
+              <div className="rounded-3xl bg-white border border-emerald-200/90 p-4 sm:p-6 shadow-xl shadow-slate-200/80 space-y-4 relative overflow-hidden">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-900">Relatório de Atendimento Oficial</h4>
+                      <p className="text-[11px] text-slate-500">Documento Auditável — Art. 727 CC</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    PDF Pronto para Download
+                  </span>
+                </div>
+
+                {/* Print Real do Documento em PDF */}
+                <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 shadow-md group">
+                  <Image
+                    src="/mockups/mockup-relatorio-pdf.png"
+                    alt="Preview do Relatório de Atendimento em PDF Art 727 CC"
+                    fill
+                    className="object-contain p-2 bg-slate-100/50 transition-transform duration-500 group-hover:scale-[1.02]"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Proteção garantida contra bypass de comissão</span>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-700 hover:text-emerald-800 inline-flex items-center gap-1">
+                    Documento Oficial com Carimbo <Check className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 5. NOVO BLOCO VISUAL: MOBILE / FICHA PÚBLICA DO IMÓVEL (SMARTPHONE MOCKUP) ─── */}
+      <section id="mobile" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Lado Esquerdo: Print Real na Tela de Smartphone */}
+          <div className="lg:col-span-5 flex justify-center">
+            {/* Moldura de Smartphone Estilizada */}
+            <div className="relative w-[300px] sm:w-[320px] rounded-[44px] bg-slate-900 p-3 shadow-2xl shadow-slate-400/50 border-4 border-slate-800">
+              {/* Notch superior */}
+              <div className="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-900 rounded-full z-20" />
+              
+              {/* Tela do Celular com a Imagem Real */}
+              <div className="relative aspect-[9/18.5] w-full rounded-[34px] overflow-hidden bg-white border border-slate-800">
+                <Image
+                  src="/mockups/mockup-ficha-publica.png"
+                  alt="Ficha Pública do Imóvel no Smartphone com Logo e Carrossel"
+                  fill
+                  className="object-cover object-top"
+                />
+              </div>
+
+              {/* Botão Home Bar inferior */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-28 h-1 bg-slate-600 rounded-full" />
+            </div>
+          </div>
+
+          {/* Lado Direito: Textos e Benefícios da Ficha Pública */}
+          <div className="lg:col-span-7 space-y-6 text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-extrabold uppercase tracking-wider shadow-xs">
+              <Smartphone className="w-3.5 h-3.5 text-teal-600" />
+              <span>Experiência Mobile &amp; White Label</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+              Apresentação Impecável no Smartphone do Seu Cliente
+            </h2>
+
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-medium">
+              Envie com 1 clique o link público e responsivo do imóvel diretamente para o WhatsApp do cliente, com fotos em alta definição e a marca da sua imobiliária.
+            </p>
+
+            <div className="space-y-4 pt-2">
+              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm sm:text-base">White Label com a Marca da Sua Imobiliária</h4>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
+                    O logotipo e as cores da sua imobiliária aparecem no topo da página, reforçando a autoridade e o profissionalismo da sua equipe.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 mt-0.5 border border-teal-200">
+                  <Compass className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm sm:text-base">Carrossel de Fotos em Alta Definição &amp; Tour</h4>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
+                    Galeria de fotos fluida, detalhes de cômodos, mapa com localização e tour visual otimizado para carregar instantaneamente em qualquer conexão 4G/5G.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center shrink-0 mt-0.5 border border-cyan-200">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm sm:text-base">Botão Direto de Agendamento pelo WhatsApp</h4>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
+                    O cliente visualiza o imóvel e clica no botão principal para agendar a visita diretamente com o corretor responsável pelo anúncio.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 6. SEÇÃO DE PLANOS E PREÇOS (TABELA DE PRECIFICAÇÃO ATUALIZADA) ─── */}
       <section id="planos" className="relative z-10 py-24 bg-slate-100/70 border-t border-slate-200/80 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Cabeçalho */}
@@ -791,7 +949,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── 5. CHAMADA PARA AÇÃO FINAL (CTA) ─── */}
+      {/* ─── 7. CHAMADA PARA AÇÃO FINAL (CTA) ─── */}
       <section className="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="rounded-3xl p-8 sm:p-14 bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950 text-center space-y-8 shadow-2xl relative overflow-hidden border border-slate-800">
           <div className="absolute -right-20 -top-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -841,8 +999,14 @@ export default function LandingPage() {
             <a href="#operacao" className="hover:text-emerald-600 transition-colors">
               Operação
             </a>
+            <a href="#match" className="hover:text-emerald-600 transition-colors">
+              Match de Imóveis
+            </a>
             <a href="#rastreabilidade" className="hover:text-emerald-600 transition-colors">
               Rastreabilidade
+            </a>
+            <a href="#mobile" className="hover:text-emerald-600 transition-colors">
+              Ficha Pública
             </a>
             <a href="#planos" className="hover:text-emerald-600 transition-colors">
               Planos
