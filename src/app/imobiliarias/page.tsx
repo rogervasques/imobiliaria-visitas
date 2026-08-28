@@ -28,6 +28,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTenant } from '@/context/TenantContext';
 import { useData } from '@/context/DataContext';
 import { cn } from '@/lib/utils';
+import { LogoUpload } from '@/components/ui/LogoUpload';
 import Link from 'next/link';
 
 export default function ImobiliariasPage() {
@@ -521,6 +522,13 @@ export default function ImobiliariasPage() {
             />
           </div>
 
+          {/* Upload de Logo */}
+          <LogoUpload
+            label="Logo da Imobiliária (PNG ou SVG Transparente)"
+            value={createLogoUrl}
+            onChange={setCreateLogoUrl}
+          />
+
           {/* Feature Toggle: Módulo CRM */}
           <label className="flex items-center gap-3 p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-900/60 cursor-pointer select-none">
             <input
@@ -620,6 +628,13 @@ export default function ImobiliariasPage() {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
+
+            {/* Upload de Logo */}
+            <LogoUpload
+              label="Logo da Imobiliária (PNG ou SVG Transparente)"
+              value={editLogoUrl}
+              onChange={setEditLogoUrl}
+            />
 
             {/* Feature Toggle: Módulo CRM */}
             <label className="flex items-center gap-3 p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-900/60 cursor-pointer select-none">

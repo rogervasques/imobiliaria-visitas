@@ -233,28 +233,32 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
       {/* ── Topo / Barra de Navegação Pública ── */}
       <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          {/* Lado Esquerdo: Nome da Imobiliária dona do imóvel */}
-          <div className="flex items-center gap-2.5 min-w-0">
+          {/* Lado Esquerdo: Marca da Imobiliária dona do imóvel */}
+          <div className="flex items-center min-w-0">
             {logoImobiliaria ? (
+              /* COM LOGO: Substituição Completa da Marca */
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logoImobiliaria}
                 alt={imobiliariaExibicao}
-                className="w-8 h-8 rounded-xl object-cover bg-white shadow-md shadow-emerald-500/20 shrink-0"
+                className="max-h-9 max-w-[180px] w-auto h-auto object-contain"
               />
             ) : (
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 shrink-0">
-                {getInitials(imobiliariaExibicao)}
+              /* SEM LOGO (FALLBACK): [ Ícone com Iniciais ] + [ Nome da Imobiliária em Texto ] */
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 shrink-0">
+                  {getInitials(imobiliariaExibicao)}
+                </div>
+                <div className="min-w-0">
+                  <span className="font-extrabold text-sm text-white tracking-tight block truncate leading-tight">
+                    {imobiliariaExibicao}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block font-medium">
+                    Ficha do Imóvel
+                  </span>
+                </div>
               </div>
             )}
-            <div className="min-w-0">
-              <span className="font-extrabold text-sm text-white tracking-tight block truncate leading-tight">
-                {imobiliariaExibicao}
-              </span>
-              <span className="text-[10px] text-slate-400 block font-medium">
-                Ficha do Imóvel
-              </span>
-            </div>
           </div>
 
           {/* Lado Direito: by EasyMob */}

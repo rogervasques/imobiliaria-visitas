@@ -119,25 +119,42 @@ export function Sidebar() {
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 text-left group cursor-pointer"
+                className="w-full flex items-center justify-between p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 text-left group cursor-pointer min-h-[50px]"
+                title="Clique para alternar imobiliária"
               >
-                {/* Logo / Iniciais da Imobiliária */}
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-black text-sm shadow-md shadow-emerald-500/25 shrink-0">
-                  {getInitials(currentTenant?.nome || 'EM')}
-                </div>
-
-                {/* Nome da Imobiliária (permite até 2 linhas completas sem cortar) */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-1">
-                    <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-[13px] leading-tight line-clamp-2 break-words">
-                      {currentTenant?.nome || 'EasyMob Imóveis'}
-                    </span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 shrink-0 transition-transform duration-200 mt-0.5" />
+                {currentTenant?.logo_url ? (
+                  /* COM LOGO: Substituição Completa da Marca */
+                  <div className="flex items-center justify-between w-full min-w-0 pr-0.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentTenant.logo_url}
+                      alt={currentTenant.nome || 'Logo'}
+                      className="max-h-10 max-w-[180px] w-auto h-auto object-contain shrink-0"
+                    />
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 shrink-0 transition-transform duration-200 ml-2" />
                   </div>
-                  <span className="block text-[10px] text-slate-400 font-medium mt-0.5">
-                    Clique para alternar
-                  </span>
-                </div>
+                ) : (
+                  /* SEM LOGO (FALLBACK): [ Ícone com Iniciais ] + [ Nome da Imobiliária em Texto ] */
+                  <>
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-black text-sm shadow-md shadow-emerald-500/25 shrink-0">
+                        {getInitials(currentTenant?.nome || 'EM')}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-1">
+                          <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-[13px] leading-tight line-clamp-2 break-words">
+                            {currentTenant?.nome || 'EasyMob Imóveis'}
+                          </span>
+                        </div>
+                        <span className="block text-[10px] text-slate-400 font-medium mt-0.5">
+                          Clique para alternar
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 shrink-0 transition-transform duration-200 ml-1.5" />
+                  </>
+                )}
               </button>
 
               {/* Popover Dropdown de Alternância de Imobiliárias */}
@@ -165,16 +182,27 @@ export function Sidebar() {
                           )}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div
-                              className={cn(
-                                'w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0',
-                                isSelected
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                              )}
-                            >
-                              {getInitials(imo.nome)}
-                            </div>
+                            {imo.logo_url ? (
+                              <div className="w-6 h-6 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-0.5 flex items-center justify-center shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={imo.logo_url}
+                                  alt={imo.nome}
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <div
+                                className={cn(
+                                  'w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0',
+                                  isSelected
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                )}
+                              >
+                                {getInitials(imo.nome)}
+                              </div>
+                            )}
                             <span className="truncate">{imo.nome}</span>
                           </div>
                           {isSelected && <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
@@ -201,15 +229,28 @@ export function Sidebar() {
             </div>
           ) : (
             /* ─── PERFIL CORRETOR: MARCA WHITE LABEL FIXA ─── */
-            <div className="flex items-center gap-3 p-2">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-black text-sm shadow-md shadow-emerald-500/25 shrink-0">
-                {getInitials(currentTenant?.nome || user?.imobiliaria || 'EM')}
-              </div>
-              <div className="min-w-0 flex-1">
-                <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-[13px] leading-tight line-clamp-2 break-words block">
-                  {currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis'}
-                </span>
-              </div>
+            <div className="flex items-center p-2 min-h-[48px]">
+              {currentTenant?.logo_url ? (
+                /* COM LOGO: Exibe apenas a imagem da logo enviada */
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={currentTenant.logo_url}
+                  alt={currentTenant.nome || user?.imobiliaria || 'Imobiliária'}
+                  className="max-h-10 max-w-[190px] w-auto h-auto object-contain"
+                />
+              ) : (
+                /* SEM LOGO (FALLBACK): [ Ícone com Iniciais ] + [ Nome da Imobiliária em Texto ] */
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-black text-sm shadow-md shadow-emerald-500/25 shrink-0">
+                    {getInitials(currentTenant?.nome || user?.imobiliaria || 'EM')}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-[13px] leading-tight line-clamp-2 break-words block">
+                      {currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

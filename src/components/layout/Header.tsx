@@ -94,17 +94,34 @@ export function Header({ onOpenNovaVisita }: HeaderProps) {
                   <button
                     type="button"
                     onClick={() => setIsMobileDropdownOpen(!isMobileDropdownOpen)}
-                    className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left cursor-pointer"
+                    className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left cursor-pointer min-h-[36px]"
+                    title="Alternar imobiliária"
                   >
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 shrink-0">
-                      {getInitials(currentTenant?.nome || 'EM')}
-                    </div>
-                    <div className="flex items-center gap-1 min-w-0 max-w-[190px] xs:max-w-[230px]">
-                      <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-tight line-clamp-2 break-words">
-                        {currentTenant?.nome || 'EasyMob Imóveis'}
-                      </span>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    </div>
+                    {currentTenant?.logo_url ? (
+                      /* COM LOGO: Substituição Completa da Marca */
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={currentTenant.logo_url}
+                          alt={currentTenant.nome || 'Logo'}
+                          className="max-h-8 max-w-[150px] w-auto h-auto object-contain shrink-0"
+                        />
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      </div>
+                    ) : (
+                      /* SEM LOGO (FALLBACK): [ Ícone com Iniciais ] + [ Nome da Imobiliária em Texto ] */
+                      <>
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 shrink-0">
+                          {getInitials(currentTenant?.nome || 'EM')}
+                        </div>
+                        <div className="flex items-center gap-1 min-w-0 max-w-[190px] xs:max-w-[230px]">
+                          <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-tight line-clamp-2 break-words">
+                            {currentTenant?.nome || 'EasyMob Imóveis'}
+                          </span>
+                          <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        </div>
+                      </>
+                    )}
                   </button>
 
                   {/* Dropdown Mobile */}
@@ -132,16 +149,27 @@ export function Header({ onOpenNovaVisita }: HeaderProps) {
                               )}
                             >
                               <div className="flex items-center gap-2 min-w-0">
-                                <div
-                                  className={cn(
-                                    'w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0',
-                                    isSelected
-                                      ? 'bg-emerald-600 text-white'
-                                      : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                                  )}
-                                >
-                                  {getInitials(imo.nome)}
-                                </div>
+                                {imo.logo_url ? (
+                                  <div className="w-6 h-6 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-0.5 flex items-center justify-center shrink-0">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={imo.logo_url}
+                                      alt={imo.nome}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div
+                                    className={cn(
+                                      'w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0',
+                                      isSelected
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                    )}
+                                  >
+                                    {getInitials(imo.nome)}
+                                  </div>
+                                )}
                                 <span className="truncate">{imo.nome}</span>
                               </div>
                               {isSelected && <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
@@ -168,14 +196,25 @@ export function Header({ onOpenNovaVisita }: HeaderProps) {
                 </div>
               ) : (
                 /* Corretor no mobile */
-                <div className="flex items-center gap-2 min-w-0 max-w-[200px] xs:max-w-[240px]">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 shrink-0">
-                    {getInitials(currentTenant?.nome || user?.imobiliaria || 'EM')}
+                currentTenant?.logo_url ? (
+                  /* COM LOGO: Exibe apenas a imagem da logo */
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={currentTenant.logo_url}
+                    alt={currentTenant.nome || user?.imobiliaria || 'Imobiliária'}
+                    className="max-h-8 max-w-[160px] w-auto h-auto object-contain"
+                  />
+                ) : (
+                  /* SEM LOGO (FALLBACK): Iniciais + Texto */
+                  <div className="flex items-center gap-2 min-w-0 max-w-[200px] xs:max-w-[240px]">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 shrink-0">
+                      {getInitials(currentTenant?.nome || user?.imobiliaria || 'EM')}
+                    </div>
+                    <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-tight line-clamp-2 break-words">
+                      {currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis'}
+                    </span>
                   </div>
-                  <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-tight line-clamp-2 break-words">
-                    {currentTenant?.nome || user?.imobiliaria || 'EasyMob Imóveis'}
-                  </span>
-                </div>
+                )
               )}
             </div>
 
