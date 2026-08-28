@@ -84,8 +84,12 @@ export async function POST(req: NextRequest) {
     const targetRole = role === 'gestor' ? 'gestor' : 'corretor';
     const newInvite = await createInvite(targetImobiliaria, targetRole);
 
-    // Monta o link completo do convite
-    const origin = req.nextUrl.origin;
+    // Monta o link completo do convite dinamicamente
+    const forwardedProto = req.headers.get('x-forwarded-proto') || 'https';
+    const forwardedHost = req.headers.get('x-forwarded-host') || req.headers.get('host');
+    const origin = forwardedHost 
+      ? `${forwardedProto}://${forwardedHost}` 
+      : (req.headers.get('origin') || req.nextUrl.origin || process.env.NEXT_PUBLIC_APP_URL || '');
     const inviteUrl = `${origin}/cadastrar?token=${newInvite.token}`;
 
     return NextResponse.json({

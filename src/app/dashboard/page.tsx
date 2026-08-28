@@ -472,7 +472,7 @@ function TimelineCard({
                   title="Remarcar data e horário da visita"
                 >
                   <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
-                  <span>📅 Remarcar</span>
+                  <span>Remarcar</span>
                 </button>
 
                 {/* [ Cancelar ] */}
@@ -483,7 +483,7 @@ function TimelineCard({
                   title="Cancelar visita"
                 >
                   <XCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
-                  <span>❌ Cancelar</span>
+                  <span>Cancelar</span>
                 </button>
               </div>
             ) : (
@@ -496,7 +496,7 @@ function TimelineCard({
                   title="Concluir visita e registrar desfecho"
                 >
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>💜 Concluir Visita</span>
+                  <span>Concluir Visita</span>
                 </button>
               </div>
             )
@@ -511,7 +511,7 @@ function TimelineCard({
                 title="Remarcar esta visita"
               >
                 <CalendarClock className="w-3.5 h-3.5 text-sky-500" />
-                <span>📅 Remarcar Visita</span>
+                <span>Remarcar Visita</span>
               </button>
             </div>
           )}
@@ -550,7 +550,7 @@ function TimelineCard({
                   className="w-full flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-400 border border-sky-200/70 dark:border-sky-800/70 text-[11px] sm:text-xs font-bold transition-all cursor-pointer shadow-2xs truncate"
                 >
                   <MapPin className="w-3.5 h-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
-                  <span>📍 Mapa</span>
+                  <span>Mapa</span>
                 </button>
               </a>
             </div>

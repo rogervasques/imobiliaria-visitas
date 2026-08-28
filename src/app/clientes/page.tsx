@@ -12,7 +12,7 @@ import { VisitaDetalhesModal } from '@/components/visitas/VisitaDetalhesModal';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Users, Search, Plus } from 'lucide-react';
+import { Users, Search, Plus, Calendar } from 'lucide-react';
 
 export default function ClientesPage() {
   const { clientes, imoveis, visitas } = useData();
@@ -108,7 +108,8 @@ export default function ClientesPage() {
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              <span>📅 Com Visita Agendada</span>
+              <Calendar className="w-3.5 h-3.5 mr-1 shrink-0" />
+              <span>Com Visita Agendada</span>
             </button>
           </div>
         </CardContent>

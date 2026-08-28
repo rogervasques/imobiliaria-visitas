@@ -316,7 +316,12 @@ export default function EquipePage() {
         throw new Error(data.error || 'Erro ao gerar convite.');
       }
 
-      setGeneratedInviteUrl(data.inviteUrl);
+      const currentOrigin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '');
+      const cleanInviteUrl = data.invite?.token
+        ? `${currentOrigin}/cadastrar?token=${data.invite.token}`
+        : (data.inviteUrl ? data.inviteUrl.replace(/https?:\/\/[^\/]+/, currentOrigin) : '');
+
+      setGeneratedInviteUrl(cleanInviteUrl);
       showToast('Convite gerado com sucesso (validade: 24h)!', 'success');
       await fetchEquipeData();
     } catch (err: unknown) {

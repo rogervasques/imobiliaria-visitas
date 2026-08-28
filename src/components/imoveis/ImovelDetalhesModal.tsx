@@ -1034,7 +1034,7 @@ export function ImovelDetalhesModal({
                       title="Abrir localização no Google Maps"
                     >
                       <MapPin className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>📍 Mapa</span>
+                      <span>Mapa</span>
                     </a>
                   </div>
                 </div>

@@ -503,8 +503,9 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 hover:underline bg-emerald-950/60 border border-emerald-800/60 px-3 py-1.5 rounded-xl self-start sm:self-auto"
             >
-              <span>📍 Ver no Google Maps</span>
-              <ExternalLink className="w-3 h-3" />
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Ver no Google Maps</span>
+              <ExternalLink className="w-3 h-3 ml-0.5" />
             </a>
           </div>
         </div>

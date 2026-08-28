@@ -226,7 +226,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                     title="Abrir localização no Google Maps"
                   >
                     <MapPin className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>📍 Mapa</span>
+                    <span>Mapa</span>
                   </a>
                 </div>
               </div>
@@ -348,7 +348,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                   title="Remarcar data e horário da visita"
                 >
                   <CalendarClock className="w-3.5 h-3.5 shrink-0 text-sky-500" />
-                  <span>📅 Remarcar</span>
+                  <span>Remarcar</span>
                 </Button>
 
                 {/* [ Cancelar ] */}
@@ -364,7 +364,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                   title="Cancelar visita"
                 >
                   <XCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
-                  <span>❌ Cancelar</span>
+                  <span>Cancelar</span>
                 </Button>
               </div>
             ) : (
@@ -382,7 +382,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                   title="Concluir visita e registrar desfecho"
                 >
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>💜 Concluir Visita</span>
+                  <span>Concluir Visita</span>
                 </Button>
               </div>
             )
@@ -402,7 +402,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                 title="Remarcar esta visita"
               >
                 <CalendarClock className="w-3.5 h-3.5 text-sky-500" />
-                <span>📅 Remarcar Visita</span>
+                <span>Remarcar Visita</span>
               </Button>
             </div>
           )}

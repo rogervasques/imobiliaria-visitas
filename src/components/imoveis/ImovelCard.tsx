@@ -194,7 +194,8 @@ export function ImovelCard({ imovel, onClick, onEdit, onAgendarVisita }: ImovelC
               className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline shrink-0 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800"
               title="Abrir no Google Maps"
             >
-              <span>📍 Mapa</span>
+              <MapPin className="w-3 h-3 shrink-0" />
+              <span>Mapa</span>
             </a>
           </div>
 

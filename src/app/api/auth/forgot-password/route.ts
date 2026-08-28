@@ -25,8 +25,12 @@ export async function POST(req: NextRequest) {
 
     const { token, user } = resetData;
 
-    // Constrói a URL base
-    const origin = req.headers.get('origin') || req.nextUrl.origin || 'http://localhost:3000';
+    // Constrói a URL base dinamicamente
+    const forwardedProto = req.headers.get('x-forwarded-proto') || 'https';
+    const forwardedHost = req.headers.get('x-forwarded-host') || req.headers.get('host');
+    const origin = forwardedHost 
+      ? `${forwardedProto}://${forwardedHost}` 
+      : (req.headers.get('origin') || req.nextUrl.origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
     const resetUrl = `${origin}/redefinir-senha?token=${encodeURIComponent(token)}`;
 
     // Dispara via WhatsApp se o usuário tiver telefone
