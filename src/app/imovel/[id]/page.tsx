@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { mockImoveis } from '@/lib/mockData';
 import { ImovelGaleriaLightbox } from '@/components/imoveis/ImovelGaleriaLightbox';
 import { getGoogleMapsSearchUrl } from '@/lib/maps';
-import { formatCurrency, getWhatsAppDirectLink } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import {
   Building2,
   MapPin,
@@ -15,19 +15,11 @@ import {
   Car,
   Maximize2,
   Sparkles,
-  Share2,
-  Phone,
-  MessageCircle,
-  Calendar,
   CheckCircle2,
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  Eye,
   Images,
-  ShieldCheck,
-  Tag,
-  Clock,
   Home,
 } from 'lucide-react';
 import { EasyMobLogo } from '@/components/ui/EasyMobLogo';
@@ -226,32 +218,6 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
     ? `${formatCurrency(imovel.valor_locacao)}/mês`
     : 'Sob Consulta';
 
-  // Link do WhatsApp com mensagem pronta direcionada para a imobiliária
-  const mensagemWhatsAppCliente = `Olá! 👋 Vi o imóvel *${imovel.titulo}* (Código: ${imovel.codigo || 'SEM-COD'}) e gostaria de mais informações ou agendar uma visita presencial!`;
-  const whatsappUrl = getWhatsAppDirectLink(telefoneImobiliaria, mensagemWhatsAppCliente);
-
-  const handleShare = async () => {
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({
-          title: imovel.titulo,
-          text: `Confira este imóvel: ${imovel.titulo} - ${valorPrincipal}`,
-          url: window.location.href,
-        });
-      } catch {
-        // Ignora cancelamento
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        setCopiedLink(true);
-        setTimeout(() => setCopiedLink(false), 2500);
-      } catch {
-        // Fallback
-      }
-    }
-  };
-
   const getInitials = (name: string) => {
     const parts = (name || '').trim().split(/\s+/);
     if (parts.length >= 2) {
@@ -263,7 +229,7 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
   const imobiliariaExibicao = nomeImobiliaria || imovel.imobiliaria || 'Lagom Imóveis';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-28 md:pb-12">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-12">
       {/* ── Topo / Barra de Navegação Pública ── */}
       <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -385,12 +351,6 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
                 <span>{activePhotoIndex + 1} / {fotosList.length}</span>
               </div>
             )}
-
-            {/* Botão de Zoom */}
-            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black/90 text-white text-xs font-bold backdrop-blur-md transition-all group-hover:scale-105 shadow-md z-10">
-              <Eye className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Ver em Tela Cheia</span>
-            </div>
           </div>
 
           {/* Faixa de Miniaturas */}
@@ -534,51 +494,7 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
           </div>
         )}
 
-        {/* 6. Card de Chamada para Visita */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-900 border border-emerald-500/30 text-center space-y-4 shadow-2xl">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto">
-            <Calendar className="w-6 h-6" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-xl sm:text-2xl font-black text-white">
-              Ficou interessado neste imóvel?
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto">
-              Agende uma visita presencial para conhecer todos os detalhes de perto. Nosso corretor entrará em contato para confirmar o melhor horário!
-            </p>
-          </div>
-
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm transition-all shadow-lg hover:scale-105"
-          >
-            <MessageCircle className="w-5 h-5 fill-slate-950" />
-            <span>Agendar Visita pelo WhatsApp</span>
-          </a>
-        </div>
       </main>
-
-      {/* ── Barra Flutuante Fixa Inferior no Celular (CTA Rápido) ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 p-3 sm:hidden shadow-2xl flex items-center justify-between gap-3">
-        <div>
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Valor</span>
-          <div className="text-base font-black text-emerald-400 truncate max-w-[130px]">
-            {valorPrincipal}
-          </div>
-        </div>
-
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
-        >
-          <MessageCircle className="w-4 h-4 fill-slate-950" />
-          <span>Falar no WhatsApp</span>
-        </a>
-      </div>
 
       {/* Lightbox em Tela Cheia */}
       <ImovelGaleriaLightbox
