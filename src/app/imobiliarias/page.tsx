@@ -104,6 +104,7 @@ export default function ImobiliariasPage() {
         localStorage.removeItem('imobiliaria_visitas_clientes');
         localStorage.removeItem('imobiliaria_visitas_proprietarios');
         localStorage.removeItem('easymob_item_tenants_map');
+        localStorage.setItem('easymob_active_tenant_nome', activeTenantName);
       } catch {
         // ignore
       }

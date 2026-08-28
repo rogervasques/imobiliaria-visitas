@@ -23,31 +23,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const imobiliariaNome = (imobiliaria || 'Todas as imobiliárias').trim();
+    const imobiliariaNome = (imobiliaria || '').trim();
 
     // 2. Limpeza no Supabase
     try {
-      // 2.1 Limpar logs de WhatsApp
-      await supabase.from('whatsapp_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-      // 2.2 Limpar tabela de junção se existir
-      try {
-        await supabase.from('visita_imoveis').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      } catch {
-        // ignore
+      if (imobiliariaNome && imobiliariaNome !== 'Todas as imobiliárias' && imobiliariaNome !== 'Todas') {
+        // Limpeza direcionada ao tenant específico
+        await supabase.from('visitas').delete().ilike('observacoes', `%[tenant:${imobiliariaNome}]%`);
+        await supabase.from('imoveis').delete().ilike('observacoes_chaves', `%[tenant:${imobiliariaNome}]%`);
+        await supabase.from('clientes').delete().ilike('observacoes', `%[tenant:${imobiliariaNome}]%`);
+      } else {
+        // Limpeza geral de todas as imobiliárias
+        await supabase.from('whatsapp_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        try {
+          await supabase.from('visita_imoveis').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        } catch {
+          // ignore
+        }
+        await supabase.from('visitas').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('imoveis').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('clientes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('proprietarios').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       }
-
-      // 2.3 Limpar Visitas
-      await supabase.from('visitas').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-      // 2.4 Limpar Imóveis
-      await supabase.from('imoveis').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-      // 2.5 Limpar Clientes
-      await supabase.from('clientes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-      // 2.6 Limpar Proprietários
-      await supabase.from('proprietarios').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     } catch (dbErr: any) {
       console.warn('[Clean Database] Aviso durante a limpeza no Supabase:', dbErr.message);
     }

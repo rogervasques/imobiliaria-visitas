@@ -93,6 +93,17 @@ const sortClientesAlphabetically = (list: Cliente[]): Cliente[] =>
 
 const TENANT_ITEM_MAP_STORAGE_KEY = 'easymob_item_tenants_map';
 
+export const extractTenantFromText = (text?: string | null): string | null => {
+  if (!text) return null;
+  const match = text.match(/\[tenant:([^\]]+)\]/i);
+  return match ? match[1].trim() : null;
+};
+
+export const cleanTenantTag = (text?: string | null): string => {
+  if (!text) return '';
+  return text.replace(/\s*\[tenant:[^\]]+\]/gi, '').trim();
+};
+
 const getItemTenantMap = (): Record<string, string> => {
   if (typeof window === 'undefined') return {};
   try {
@@ -190,11 +201,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=1200&auto=format&fit=crop&q=80',
           ];
 
+          const imoTenant =
+            im.imobiliaria ||
+            extractTenantFromText(im.observacoes_chaves) ||
+            extractTenantFromText(im.descricao_comercial) ||
+            tenantMap[im.id] ||
+            defaultTenantName;
+
           return {
             ...im,
+            observacoes_chaves: cleanTenantTag(im.observacoes_chaves),
+            descricao_comercial: cleanTenantTag(im.descricao_comercial),
             imagem_url: mainImg,
             fotos_urls: (im.fotos_urls && im.fotos_urls.length > 0) ? im.fotos_urls : pool5,
-            imobiliaria: im.imobiliaria || tenantMap[im.id] || defaultTenantName,
+            imobiliaria: imoTenant,
           };
         });
       } else {
@@ -207,10 +227,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       // Proprietários
       let loadedProprietarios: Proprietario[] = [];
       if (!errProprietarios && dbProprietarios) {
-        loadedProprietarios = dbProprietarios.map((p) => ({
-          ...p,
-          imobiliaria: p.imobiliaria || tenantMap[p.id] || defaultTenantName,
-        }));
+        loadedProprietarios = dbProprietarios.map((p) => {
+          // Busca tenant direto, via observações, via mapa ou via imóvel associado
+          let pTenant = p.imobiliaria || extractTenantFromText(p.observacoes) || tenantMap[p.id];
+          if (!pTenant && dbImoveis) {
+            const owned = dbImoveis.find((im: any) => im.proprietario_id === p.id);
+            if (owned) {
+              pTenant = extractTenantFromText(owned.observacoes_chaves) || extractTenantFromText(owned.descricao_comercial) || tenantMap[owned.id];
+            }
+          }
+          return {
+            ...p,
+            observacoes: cleanTenantTag(p.observacoes),
+            imobiliaria: pTenant || defaultTenantName,
+          };
+        });
       } else {
         const local = getLocalItem('proprietarios');
         if (local) {
@@ -224,10 +255,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       let loadedClientes: Cliente[] = [];
       if (!errClientes && dbClientes) {
-        loadedClientes = dbClientes.map((c) => ({
-          ...c,
-          imobiliaria: c.imobiliaria || tenantMap[c.id] || defaultTenantName,
-        }));
+        loadedClientes = dbClientes.map((c) => {
+          const cliTenant = c.imobiliaria || extractTenantFromText(c.observacoes) || tenantMap[c.id] || defaultTenantName;
+          return {
+            ...c,
+            observacoes: cleanTenantTag(c.observacoes),
+            imobiliaria: cliTenant,
+          };
+        });
       } else {
         const local = getLocalItem('clientes');
         loadedClientes = local ? JSON.parse(local) : [];
@@ -337,10 +372,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           clienteRef = sortedClientes[idx % sortedClientes.length];
         }
 
-        const visitaImobiliaria = v.imobiliaria || tenantMap[v.id] || imovelPrincipal?.imobiliaria || defaultTenantName;
+        const visitaImobiliaria =
+          v.imobiliaria ||
+          extractTenantFromText(v.observacoes) ||
+          tenantMap[v.id] ||
+          imovelPrincipal?.imobiliaria ||
+          defaultTenantName;
 
         return {
           ...v,
+          observacoes: cleanTenantTag(v.observacoes),
           imobiliaria: visitaImobiliaria,
           imobiliaria_id: v.imobiliaria_id || imovelPrincipal?.imobiliaria_id,
           imovel_id: imovelPrincipal?.id || v.imovel_id,
