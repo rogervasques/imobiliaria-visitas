@@ -42,6 +42,23 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  const fotosList = getImovelFotosList(imovel);
+  const activePhoto = fotosList[activePhotoIndex] || fotosList[0] || imovel?.imagem_url || '';
+
+  // Navegação por teclado (Setas Esquerda / Direita) no carrossel da página
+  useEffect(() => {
+    if (!imovel || lightboxIndex !== null || fotosList.length <= 1) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        setActivePhotoIndex((prev) => (prev + 1) % fotosList.length);
+      } else if (e.key === 'ArrowLeft') {
+        setActivePhotoIndex((prev) => (prev - 1 + fotosList.length) % fotosList.length);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [imovel, fotosList.length, lightboxIndex]);
+
   useEffect(() => {
     async function loadImovel() {
       try {
@@ -271,23 +288,6 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
       </div>
     );
   }
-
-  const fotosList = getImovelFotosList(imovel);
-  const activePhoto = fotosList[activePhotoIndex] || fotosList[0] || imovel.imagem_url || '';
-
-  // Navegação por teclado (Setas Esquerda / Direita) no carrossel da página
-  useEffect(() => {
-    if (lightboxIndex !== null || fotosList.length <= 1) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') {
-        setActivePhotoIndex((prev) => (prev + 1) % fotosList.length);
-      } else if (e.key === 'ArrowLeft') {
-        setActivePhotoIndex((prev) => (prev - 1 + fotosList.length) % fotosList.length);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fotosList.length, lightboxIndex]);
 
   const areaConstruidaOuUtil = imovel.area_construida || imovel.area_util || 0;
   const valorPrincipal = imovel.valor_venda
