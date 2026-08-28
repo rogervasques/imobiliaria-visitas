@@ -217,7 +217,7 @@ export async function getAllUsers(): Promise<Usuario[]> {
       .select('id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, ativo, ultimo_acesso, created_at')
       .order('created_at', { ascending: false });
 
-    if (!error && dbUsers && dbUsers.length > 0) {
+    if (!error && dbUsers) {
       return dbUsers.map((u) => ({
         ...u,
         ativo: u.ativo !== false,

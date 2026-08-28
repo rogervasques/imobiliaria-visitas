@@ -179,21 +179,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const { data: dbConfig, error: errConfig } = await supabase.from('configuracoes_whatsapp').select('*').single();
 
       let loadedImoveis: Imovel[] = [];
-      if (!errImoveis && dbImoveis && dbImoveis.length > 0) {
+      if (!errImoveis && dbImoveis) {
         loadedImoveis = dbImoveis.map((im) => ({
           ...im,
           imobiliaria: im.imobiliaria || tenantMap[im.id] || defaultTenantName,
         }));
       } else {
         const local = getLocalItem('imoveis');
-        loadedImoveis = local ? JSON.parse(local) : mockImoveis;
+        loadedImoveis = local ? JSON.parse(local) : [];
       }
       const sortedImoveis = sortImoveisAlphabetically(loadedImoveis);
       setAllImoveis(sortedImoveis);
 
       // Proprietários
       let loadedProprietarios: Proprietario[] = [];
-      if (!errProprietarios && dbProprietarios && dbProprietarios.length > 0) {
+      if (!errProprietarios && dbProprietarios) {
         loadedProprietarios = dbProprietarios.map((p) => ({
           ...p,
           imobiliaria: p.imobiliaria || tenantMap[p.id] || defaultTenantName,
@@ -203,37 +203,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (local) {
           loadedProprietarios = JSON.parse(local);
         } else {
-          // Extrai proprietários únicos a partir dos imóveis carregados
-          const map = new Map<string, Proprietario>();
-          sortedImoveis.forEach((im) => {
-            const key = im.proprietario_telefone.trim().toLowerCase();
-            if (!map.has(key)) {
-              map.set(key, {
-                id: im.proprietario_id || `prop_${Math.random().toString(36).substr(2, 9)}`,
-                nome: im.proprietario_nome,
-                telefone: im.proprietario_telefone,
-                email: im.proprietario_email,
-                imobiliaria: im.imobiliaria || defaultTenantName,
-                imobiliaria_id: im.imobiliaria_id,
-                criado_em: im.criado_em || new Date().toISOString(),
-              });
-            }
-          });
-          loadedProprietarios = Array.from(map.values());
+          loadedProprietarios = [];
         }
       }
       const sortedProprietarios = sortProprietariosAlphabetically(loadedProprietarios);
       setAllProprietarios(sortedProprietarios);
 
       let loadedClientes: Cliente[] = [];
-      if (!errClientes && dbClientes && dbClientes.length > 0) {
+      if (!errClientes && dbClientes) {
         loadedClientes = dbClientes.map((c) => ({
           ...c,
           imobiliaria: c.imobiliaria || tenantMap[c.id] || defaultTenantName,
         }));
       } else {
         const local = getLocalItem('clientes');
-        loadedClientes = local ? JSON.parse(local) : mockClientes;
+        loadedClientes = local ? JSON.parse(local) : [];
       }
 
       // Enriquecimento de Leads para as 7 etapas do CRM com miniaturas e tags
@@ -265,16 +249,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         else if ((etapa as any) === 'proposta') etapa = 'proposta_negociacao';
         else if ((etapa as any) === 'fechado') etapa = 'venda_concluida';
 
-        // Garante distribuição de 2 a 3 leads por etapa para as primeiras 21 entradas
-        if (idx < 21 && (!c.etapa_crm || c.etapa_crm === 'novos_leads' || c.etapa_crm === ('novo' as any))) {
-          etapa = etapasCrmFallback[Math.floor(idx / 3)];
-        }
-
         const imovelRef = c.imovel_interesse_id
           ? sortedImoveis.find((im) => im.id === c.imovel_interesse_id)
-          : sortedImoveis[idx % (sortedImoveis.length || 1)];
+          : undefined;
 
-        const tempoParada = c.tempo_parada_texto || tagsFallback[etapa][idx % 3];
+        const tempoParada = c.tempo_parada_texto || (tagsFallback[etapa] ? tagsFallback[etapa][idx % 3] : '');
 
         return {
           ...c,
@@ -303,11 +282,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
 
       let loadedVisitas: Visita[] = [];
-      if (!errVisitas && dbVisitas && dbVisitas.length > 0) {
+      if (!errVisitas && dbVisitas) {
         loadedVisitas = dbVisitas;
       } else {
         const local = getLocalItem('visitas');
-        loadedVisitas = local ? JSON.parse(local) : mockVisitas;
+        loadedVisitas = local ? JSON.parse(local) : [];
       }
 
       // Popula referências de Imóvel e Cliente garantindo que NUNCA fiquem vazias
