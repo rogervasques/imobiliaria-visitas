@@ -65,7 +65,24 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   // Busca lista de imobiliárias no Supabase / API
   const refreshTenants = useCallback(async () => {
     try {
-      // 1. Tenta carregar do localStorage primeiro se houver lista customizada salva
+      // 1. Tenta carregar da API oficial do servidor
+      try {
+        const res = await fetch('/api/imobiliarias');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.imobiliarias) && json.imobiliarias.length > 0) {
+            setImobiliarias(json.imobiliarias);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(TENANT_LIST_STORAGE_KEY, JSON.stringify(json.imobiliarias));
+            }
+            return;
+          }
+        }
+      } catch (errApi) {
+        console.warn('API /api/imobiliarias offline:', errApi);
+      }
+
+      // 2. Tenta carregar do localStorage se houver lista customizada salva
       const savedListStr = typeof window !== 'undefined' ? localStorage.getItem(TENANT_LIST_STORAGE_KEY) : null;
       let localList: Imobiliaria[] | null = null;
       if (savedListStr) {
@@ -76,7 +93,12 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // 2. Tenta carregar da tabela 'imobiliarias'
+      if (localList && localList.length > 0) {
+        setImobiliarias(localList);
+        return;
+      }
+
+      // 3. Tenta carregar da tabela 'imobiliarias'
       const { data: dbTenants, error } = await supabase
         .from('imobiliarias')
         .select('*')
@@ -87,11 +109,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         if (typeof window !== 'undefined') {
           localStorage.setItem(TENANT_LIST_STORAGE_KEY, JSON.stringify(dbTenants));
         }
-        return;
-      }
-
-      if (localList && localList.length > 0) {
-        setImobiliarias(localList);
         return;
       }
 
@@ -261,6 +278,22 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       };
 
       try {
+        const res = await fetch('/api/imobiliarias', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newTenant),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.imobiliaria) {
+            newTenant.id = json.imobiliaria.id;
+          }
+        }
+      } catch (errApi) {
+        console.warn('API /api/imobiliarias POST offline:', errApi);
+      }
+
+      try {
         const { data, error } = await supabase
           .from('imobiliarias')
           .insert({
@@ -313,6 +346,16 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
       const newName = dados.nome?.trim();
       let oldName: string | undefined;
+
+      try {
+        await fetch(`/api/imobiliarias/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedData),
+        });
+      } catch (errApi) {
+        console.warn('API /api/imobiliarias PUT offline:', errApi);
+      }
 
       try {
         await supabase

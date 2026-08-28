@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, deleteUsersByTenant } from '@/lib/auth';
+import { updateGlobalTenant, deleteGlobalTenant } from '@/lib/tenantsStore';
 
 export async function PUT(
   req: NextRequest,
@@ -18,7 +19,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
-    const { nome, telefone, email, endereco, logo_url, ativo } = body;
+    const { nome, telefone, email, endereco, logo_url, ativo, modulo_crm_ativo, limite_usuarios } = body;
 
     if (nome && typeof nome === 'string' && nome.trim().length === 0) {
       return NextResponse.json(
@@ -40,26 +41,22 @@ export async function PUT(
     if (endereco !== undefined) updateData.endereco = endereco ? endereco.trim() : null;
     if (logo_url !== undefined) updateData.logo_url = logo_url || null;
     if (ativo !== undefined) updateData.ativo = Boolean(ativo);
+    if (modulo_crm_ativo !== undefined) updateData.modulo_crm_ativo = Boolean(modulo_crm_ativo);
+    if (limite_usuarios !== undefined) updateData.limite_usuarios = Number(limite_usuarios);
 
-    const { data, error } = await supabase
-      .from('imobiliarias')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+    // Atualiza no store global do servidor
+    const updatedStoreTenant = updateGlobalTenant(id, updateData);
 
-    if (error) {
-      console.warn('Erro ao atualizar imobiliária no Supabase:', error);
-      return NextResponse.json({
-        success: true,
-        imobiliaria: {
-          id,
-          ...updateData,
-        },
-      });
+    try {
+      await supabase
+        .from('imobiliarias')
+        .update(updateData)
+        .eq('id', id);
+    } catch {
+      // ignore
     }
 
-    return NextResponse.json({ success: true, imobiliaria: data });
+    return NextResponse.json({ success: true, imobiliaria: updatedStoreTenant || { id, ...updateData } });
   } catch (err) {
     console.error('Erro no PUT /api/imobiliarias/[id]:', err);
     return NextResponse.json(
@@ -68,8 +65,6 @@ export async function PUT(
     );
   }
 }
-
-import { deleteUsersByTenant } from '@/lib/auth';
 
 export async function DELETE(
   req: NextRequest,
@@ -264,6 +259,10 @@ export async function DELETE(
       if (errImob) {
         console.warn('[Cascade] Aviso ao excluir registro da imobiliária no Supabase:', errImob);
       }
+
+      // Remove do store global do servidor
+      deleteGlobalTenant(id);
+      if (imoNome) deleteGlobalTenant(imoNome);
     } catch (cascadeErr) {
       console.error('[Cascade] Erro geral durante exclusão em cascata:', cascadeErr);
     }

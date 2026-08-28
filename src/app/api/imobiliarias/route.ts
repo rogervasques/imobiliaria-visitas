@@ -1,23 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { getSessionUser } from '@/lib/auth';
-import { DEFAULT_IMOBILIARIAS } from '@/context/TenantContext';
+import { getGlobalTenants, saveGlobalTenant } from '@/lib/tenantsStore';
 
 export async function GET() {
   try {
-    const { data: dbTenants, error } = await supabase
-      .from('imobiliarias')
-      .select('*')
-      .order('nome', { ascending: true });
-
-    if (!error && dbTenants && dbTenants.length > 0) {
-      return NextResponse.json({ success: true, imobiliarias: dbTenants });
-    }
-
-    return NextResponse.json({ success: true, imobiliarias: DEFAULT_IMOBILIARIAS });
+    const list = getGlobalTenants();
+    return NextResponse.json({ success: true, imobiliarias: list });
   } catch (err) {
     console.error('Erro ao listar imobiliárias:', err);
-    return NextResponse.json({ success: true, imobiliarias: DEFAULT_IMOBILIARIAS });
+    return NextResponse.json({ success: true, imobiliarias: getGlobalTenants() });
   }
 }
 
@@ -33,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { nome, telefone, email, endereco, logo_url } = body;
+    const { nome, telefone, email, endereco, logo_url, modulo_crm_ativo, limite_usuarios } = body;
 
     if (!nome || typeof nome !== 'string' || nome.trim().length === 0) {
       return NextResponse.json(
@@ -43,36 +35,33 @@ export async function POST(req: NextRequest) {
     }
 
     const trimmedNome = nome.trim();
-    const slug = trimmedNome.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const savedTenant = saveGlobalTenant({
+      nome: trimmedNome,
+      telefone: telefone ? telefone.trim() : undefined,
+      email: email ? email.trim() : undefined,
+      endereco: endereco ? endereco.trim() : undefined,
+      logo_url: logo_url || undefined,
+      modulo_crm_ativo: modulo_crm_ativo !== undefined ? Boolean(modulo_crm_ativo) : true,
+      limite_usuarios: Number(limite_usuarios) || 10,
+    });
 
-    const { data, error } = await supabase
-      .from('imobiliarias')
-      .insert({
-        nome: trimmedNome,
-        slug,
-        telefone: telefone ? telefone.trim() : null,
-        email: email ? email.trim() : null,
-        endereco: endereco ? endereco.trim() : null,
-        logo_url: logo_url || null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.warn('Erro ao gravar imobiliária no Supabase:', error);
-      return NextResponse.json({
-        success: true,
-        imobiliaria: {
-          id: `tenant-${Date.now()}`,
-          nome: trimmedNome,
-          slug,
-          logo_url,
-          criado_em: new Date().toISOString(),
-        },
-      });
+    try {
+      await supabase
+        .from('imobiliarias')
+        .insert({
+          id: savedTenant.id,
+          nome: savedTenant.nome,
+          slug: savedTenant.slug,
+          telefone: savedTenant.telefone,
+          email: savedTenant.email,
+          endereco: savedTenant.endereco,
+          logo_url: savedTenant.logo_url,
+        });
+    } catch {
+      // ignore
     }
 
-    return NextResponse.json({ success: true, imobiliaria: data });
+    return NextResponse.json({ success: true, imobiliaria: savedTenant });
   } catch (err) {
     console.error('Erro ao criar imobiliária:', err);
     return NextResponse.json({ success: false, error: 'Erro interno ao cadastrar imobiliária.' }, { status: 500 });
