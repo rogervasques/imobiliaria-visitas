@@ -97,24 +97,25 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
 
           setImovel(targetImovel);
 
-          // 3. Descobre o nome real da Imobiliária dona deste imóvel (prioridade máxima: URL > localImovel > targetImovel)
-          let finalNome =
+          // 3. Descobre o nome real da Imobiliária dona deste imóvel (prioridade: URL > localImovel > targetImovel > localStorage)
+          let finalNome = (
             imobFromUrl ||
             localImovel?.imobiliaria ||
             targetImovel.imobiliaria ||
-            '';
+            ''
+          ).trim();
           let finalLogo = '';
           let finalTelefone = '';
 
-          // A. Se o imóvel tem imobiliaria_id, busca os dados da imobiliária
+          // A. Se o imóvel tem imobiliaria_id, busca os dados da imobiliária no Supabase
           if (targetImovel.imobiliaria_id) {
             try {
               const { data: imoData } = await supabase
                 .from('imobiliarias')
                 .select('*')
                 .eq('id', targetImovel.imobiliaria_id)
-                .single();
-              if (imoData && imoData.nome) {
+                .maybeSingle();
+              if (imoData) {
                 finalNome = finalNome || imoData.nome;
                 finalLogo = imoData.logo_url || '';
                 finalTelefone = imoData.telefone || '';
@@ -124,16 +125,35 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
             }
           }
 
-          // B. Busca detalhes (logo e telefone) da lista salva no localStorage
+          // B. Se ainda não encontrou logo, busca no Supabase pelo NOME da Imobiliária
+          if (!finalLogo && finalNome) {
+            try {
+              const { data: imoByName } = await supabase
+                .from('imobiliarias')
+                .select('*')
+                .ilike('nome', finalNome)
+                .maybeSingle();
+              if (imoByName) {
+                finalNome = imoByName.nome || finalNome;
+                finalLogo = imoByName.logo_url || '';
+                finalTelefone = imoByName.telefone || '';
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          // C. Busca detalhes da lista salva no localStorage (caso offline ou atualizado recentemente)
           if (typeof window !== 'undefined') {
             const savedListStr = localStorage.getItem('easymob_imobiliarias_list');
             if (savedListStr) {
               try {
                 const list = JSON.parse(savedListStr);
                 const match = list.find(
-                  (i: { nome?: string; id?: string }) =>
+                  (i: { nome?: string; id?: string; logo_url?: string; telefone?: string }) =>
+                    (targetImovel?.imobiliaria_id && i.id === targetImovel.imobiliaria_id) ||
                     (finalNome && i.nome?.toLowerCase() === finalNome.toLowerCase()) ||
-                    (targetImovel?.imobiliaria_id && i.id === targetImovel.imobiliaria_id)
+                    (targetImovel?.imobiliaria && i.nome?.toLowerCase() === targetImovel.imobiliaria.toLowerCase())
                 );
                 if (match) {
                   finalNome = finalNome || match.nome;
@@ -145,12 +165,43 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
               }
             }
 
-            // Fallback para o tenant ativo no navegador se ainda não houver nome
-            if (!finalNome) {
+            // D. Fallback para o tenant ativo no navegador se ainda não houver logo
+            if (!finalLogo) {
               const savedActive = localStorage.getItem('easymob_active_tenant_nome');
-              if (savedActive && savedActive !== 'Administração') {
-                finalNome = savedActive;
+              if (savedActive && savedActive !== 'Administração' && savedListStr) {
+                try {
+                  const list = JSON.parse(savedListStr);
+                  const activeMatch = list.find(
+                    (i: { nome?: string; logo_url?: string; telefone?: string }) =>
+                      i.nome?.toLowerCase() === savedActive.toLowerCase()
+                  );
+                  if (activeMatch) {
+                    finalLogo = activeMatch.logo_url || '';
+                    finalTelefone = finalTelefone || activeMatch.telefone || '';
+                    if (!finalNome) finalNome = activeMatch.nome;
+                  }
+                } catch {
+                  // ignore
+                }
               }
+            }
+          }
+
+          // E. Se AINDA não encontrou logo, busca a primeira imobiliária com logo cadastrada no Supabase
+          if (!finalLogo) {
+            try {
+              const { data: allImos } = await supabase
+                .from('imobiliarias')
+                .select('*')
+                .not('logo_url', 'is', null)
+                .limit(1);
+              if (allImos && allImos.length > 0 && allImos[0].logo_url) {
+                finalLogo = allImos[0].logo_url;
+                if (!finalNome) finalNome = allImos[0].nome;
+                finalTelefone = finalTelefone || allImos[0].telefone || '';
+              }
+            } catch {
+              // ignore
             }
           }
 
@@ -163,6 +214,24 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
         if (fallback) {
           setImovel(fallback);
           setNomeImobiliaria(fallback.imobiliaria || 'Imobiliária');
+          if (typeof window !== 'undefined') {
+            const savedListStr = localStorage.getItem('easymob_imobiliarias_list');
+            if (savedListStr) {
+              try {
+                const list = JSON.parse(savedListStr);
+                const match = list.find(
+                  (i: { nome?: string; logo_url?: string }) =>
+                    (fallback.imobiliaria && i.nome?.toLowerCase() === fallback.imobiliaria.toLowerCase()) ||
+                    i.logo_url
+                );
+                if (match && match.logo_url) {
+                  setLogoImobiliaria(match.logo_url);
+                }
+              } catch {
+                // ignore
+              }
+            }
+          }
         }
       } finally {
         setLoading(false);
