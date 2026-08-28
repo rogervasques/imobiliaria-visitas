@@ -239,25 +239,25 @@ export function WhatsAppStatusBadge({
           setIsModalOpen(false);
         }}
         title="Reconectar WhatsApp"
-        subtitle="Escaneie o QR Code para parear seu whatsapp"
+        subtitle="Escaneie o QR Code para parear seu WhatsApp"
         maxWidth="md"
       >
-        <div className="space-y-4 text-center">
+        <div className="space-y-4 text-center px-1 sm:px-2">
           {/* Container do QR Code */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center min-h-[260px] space-y-3">
+          <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center min-h-[260px] space-y-3">
             {isLoadingQr ? (
               <div className="space-y-3 py-8 text-slate-500">
                 <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
                 <p className="text-xs font-medium">Gerando QR Code na Evolution API...</p>
               </div>
             ) : qrCodeBase64 ? (
-              <div className="space-y-3">
-                <div className="p-2 rounded-2xl bg-white shadow-md border border-slate-200 inline-block">
+              <div className="space-y-3 w-full flex flex-col items-center">
+                <div className="p-2 sm:p-3 rounded-2xl bg-white shadow-md border border-slate-200 inline-block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
                     alt="QR Code WhatsApp"
-                    className="w-56 h-56 object-contain rounded-xl"
+                    className="w-48 h-48 sm:w-52 sm:h-52 object-contain rounded-xl mx-auto"
                   />
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 font-medium max-w-xs mx-auto leading-relaxed">
@@ -286,33 +286,33 @@ export function WhatsAppStatusBadge({
             )}
           </div>
 
-          {/* Botões de Ação */}
-          <div className="flex items-center justify-between gap-3 pt-2">
+          {/* Botões de Ação do Rodapé */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 w-full">
             <Button
               type="button"
               variant="outline"
-              size="sm"
+              size="md"
               onClick={handleOpenReconnectModal}
               isLoading={isLoadingQr}
-              className="text-xs font-bold"
+              className="flex-1 w-full text-xs sm:text-sm font-bold h-10"
             >
-              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-              Atualizar QR Code
+              <RefreshCw className="w-4 h-4 mr-1.5 shrink-0" />
+              <span>Atualizar QR Code</span>
             </Button>
 
             <Button
               type="button"
               variant="primary"
-              size="sm"
+              size="md"
               onClick={async () => {
                 await checkConnectionState();
                 isActivelyPairingRef.current = false;
                 setIsModalOpen(false);
               }}
-              className="text-xs font-bold"
+              className="flex-1 w-full text-xs sm:text-sm font-bold h-10"
             >
-              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-              Concluído
+              <CheckCircle2 className="w-4 h-4 mr-1.5 shrink-0" />
+              <span>Concluir</span>
             </Button>
           </div>
         </div>
