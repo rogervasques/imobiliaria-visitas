@@ -51,7 +51,7 @@ import {
   Share2,
   MoreVertical,
 } from 'lucide-react';
-import { formatCurrency, formatPhone, formatDateTime, getWhatsAppDirectLink } from '@/lib/utils';
+import { formatCurrency, formatPhone, formatDateTime, getWhatsAppDirectLink, getImovelFotosList } from '@/lib/utils';
 import { getGoogleMapsSearchUrl } from '@/lib/maps';
 
 interface ImovelDetalhesModalProps {
@@ -238,10 +238,8 @@ export function ImovelDetalhesModal({
     `Olá, ${imovel.proprietario_nome}! Gostaria de falar sobre o seu imóvel ${imovel.titulo} (${imovel.codigo || ''}).`
   );
 
-  // Fotos da galeria e capa de visualização
-  const fotosList = imovel.fotos_urls && imovel.fotos_urls.length > 0
-    ? imovel.fotos_urls
-    : (imovel.imagem_url ? [imovel.imagem_url] : []);
+  // Fotos da galeria e capa de visualização (garante 5 fotos para carrossel)
+  const fotosList = getImovelFotosList(imovel);
   const capaVisualizacao = imovel.imagem_url || fotosList[0] || '';
   const activePhoto = fotosList[activePhotoIndex] || capaVisualizacao;
 

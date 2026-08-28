@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { mockImoveis } from '@/lib/mockData';
 import { ImovelGaleriaLightbox } from '@/components/imoveis/ImovelGaleriaLightbox';
 import { getGoogleMapsSearchUrl } from '@/lib/maps';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getImovelFotosList } from '@/lib/utils';
 import {
   Building2,
   MapPin,
@@ -272,13 +272,22 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
     );
   }
 
-  const fotosList =
-    imovel.fotos_urls && imovel.fotos_urls.length > 0
-      ? imovel.fotos_urls
-      : imovel.imagem_url
-      ? [imovel.imagem_url]
-      : [];
-  const activePhoto = fotosList[activePhotoIndex] || imovel.imagem_url || '';
+  const fotosList = getImovelFotosList(imovel);
+  const activePhoto = fotosList[activePhotoIndex] || fotosList[0] || imovel.imagem_url || '';
+
+  // Navegação por teclado (Setas Esquerda / Direita) no carrossel da página
+  useEffect(() => {
+    if (lightboxIndex !== null || fotosList.length <= 1) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        setActivePhotoIndex((prev) => (prev + 1) % fotosList.length);
+      } else if (e.key === 'ArrowLeft') {
+        setActivePhotoIndex((prev) => (prev - 1 + fotosList.length) % fotosList.length);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fotosList.length, lightboxIndex]);
 
   const areaConstruidaOuUtil = imovel.area_construida || imovel.area_util || 0;
   const valorPrincipal = imovel.valor_venda

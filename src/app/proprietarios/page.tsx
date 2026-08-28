@@ -45,15 +45,20 @@ export default function ProprietariosPage() {
     })
     .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
 
-  // Retorna os imóveis vinculados a um proprietário
+  // Retorna os imóveis vinculados estritamente ao proprietário (por ID, nome exato ou email)
   const getImoveisDoProprietario = (prop: Proprietario) => {
-    const cleanPhone = prop.telefone?.trim().toLowerCase();
-    return imoveis.filter(
-      (im) =>
-        (im.proprietario_id && im.proprietario_id === prop.id) ||
-        (cleanPhone && im.proprietario_telefone?.trim().toLowerCase() === cleanPhone) ||
-        im.proprietario_nome?.trim().toLowerCase() === prop.nome?.trim().toLowerCase()
-    );
+    return imoveis.filter((im) => {
+      if (im.proprietario_id && prop.id) {
+        return im.proprietario_id === prop.id;
+      }
+      if (im.proprietario_nome && prop.nome) {
+        return im.proprietario_nome.trim().toLowerCase() === prop.nome.trim().toLowerCase();
+      }
+      if (im.proprietario_email && prop.email) {
+        return im.proprietario_email.trim().toLowerCase() === prop.email.trim().toLowerCase();
+      }
+      return false;
+    });
   };
 
   const toggleExpand = (id: string) => {
