@@ -35,7 +35,7 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
   const pathname = usePathname();
   const { metrics, proprietarios, clientes } = useData();
   const { user, logout } = useAuth();
-  const { moduloCrmAtivo } = useTenant();
+  const { moduloCrmAtivo, imobiliarias } = useTenant();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const totalLeadsAtivosCrm = clientes.filter((c) => {
@@ -43,7 +43,24 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
     return c.status !== 'fechado' && c.status !== 'inativo';
   }).length;
 
-  const moreItems = [
+  const podeVerEquipe = user?.role === 'admin' || user?.role === 'gestor' || (user?.role as string) === 'gerente';
+  const isAdmin = user?.role === 'admin';
+
+  // ─── LISTA COMPLETA DE TODAS AS ABAS/MÓDULOS PERMITIDOS AO PERFIL ATUAL ───
+  const allNavItems = [
+    {
+      label: 'Hoje',
+      href: '/dashboard',
+      icon: LayoutDashboard,
+      badge: metrics.totalVisitasHoje ? `${metrics.totalVisitasHoje}` : undefined,
+      description: 'Visitas agendadas e métricas do dia',
+    },
+    {
+      label: 'Agenda',
+      href: '/agenda',
+      icon: CalendarDays,
+      description: 'Calendário completo e horários',
+    },
     ...(moduloCrmAtivo
       ? [
           {
@@ -55,6 +72,13 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
           },
         ]
       : []),
+    {
+      label: 'Imóveis',
+      href: '/imoveis',
+      icon: Building2,
+      badge: `${metrics.totalImoveisAtivos}`,
+      description: 'Catálogo de imóveis e fichas públicas',
+    },
     {
       label: 'Proprietários',
       href: '/proprietarios',
@@ -69,7 +93,7 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
       badge: `${metrics.totalClientesAtivos}`,
       description: 'Base de compradores e locatários',
     },
-    ...(user?.role === 'admin' || user?.role === 'gestor' || (user?.role as string) === 'gerente'
+    ...(podeVerEquipe
       ? [
           {
             label: 'Equipe',
@@ -79,12 +103,13 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
           },
         ]
       : []),
-    ...(user?.role === 'admin'
+    ...(isAdmin
       ? [
           {
             label: 'Imobiliárias',
             href: '/imobiliarias',
             icon: Store,
+            badge: `${imobiliarias.length}`,
             description: 'Gestão multi-tenant de empresas',
           },
           {
@@ -109,11 +134,12 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
     },
   ];
 
-  const isMoreActive = moreItems.some((item) => pathname === item.href);
+  const isBottomBarRoute = pathname === '/dashboard' || pathname === '/' || pathname === '/agenda' || pathname === '/imoveis';
+  const isMoreActive = !isBottomBarRoute && allNavItems.some((item) => pathname === item.href);
 
   return (
     <>
-      {/* ─── BARRA INFERIOR FIXA (MÁXIMO 5 BOTÕES) ─── */}
+      {/* ─── BARRA INFERIOR FIXA (5 ATALHOS RÁPIDOS) ─── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800 px-2 py-1.5 bottom-safe shadow-lg">
         <div className="flex items-center justify-around relative">
           {/* 1. Hoje */}
@@ -178,7 +204,7 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
             <span className="text-[10px] mt-1">Imóveis</span>
           </Link>
 
-          {/* 5. Mais (Gaveta / Bottom Sheet) */}
+          {/* 5. Mais (Menu Global Completo) */}
           <button
             type="button"
             onClick={() => setIsMoreOpen(!isMoreOpen)}
@@ -195,7 +221,7 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
         </div>
       </nav>
 
-      {/* ─── BOTTOM SHEET DA ABA "MAIS" ─── */}
+      {/* ─── BOTTOM SHEET DA ABA "MAIS" (MENU GLOBAL COMPLETO) ─── */}
       {isMoreOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex items-end justify-center animate-in fade-in duration-200">
           {/* Backdrop */}
@@ -206,34 +232,35 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
           />
 
           {/* Painel Inferior Deslizante */}
-          <div className="relative w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl shadow-2xl z-10 p-5 space-y-4 animate-in slide-in-from-bottom duration-250 bottom-safe">
+          <div className="relative w-full max-h-[85vh] flex flex-col bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl shadow-2xl z-10 p-5 space-y-4 animate-in slide-in-from-bottom duration-250 bottom-safe">
             {/* Grab Handle */}
-            <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto" />
+            <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto shrink-0" />
 
             {/* Cabeçalho do Bottom Sheet */}
-            <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 shrink-0">
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
-                  Mais Opções
+                  Menu de Navegação
                 </h3>
                 <p className="text-xs text-slate-400 dark:text-slate-500">
-                  Acesso rápido aos outros módulos do EasyMob
+                  Acesso rápido a todos os módulos do EasyMob
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsMoreOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Fechar"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Lista de Opções */}
-            <div className="grid grid-cols-1 gap-2">
-              {moreItems.map((item) => {
+            {/* Lista Completa de Opções Permitidas (Scrollable) */}
+            <div className="overflow-y-auto no-scrollbar space-y-2 pr-0.5 max-h-[calc(85vh-180px)]">
+              {allNavItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || (item.href === '/dashboard' && pathname === '/');
 
                 return (
                   <Link
