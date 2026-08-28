@@ -4,12 +4,23 @@ export type StatusImovel = 'disponivel' | 'reservado' | 'vendido' | 'alugado' | 
 
 export interface Imobiliaria {
   id: string;
-  nome: string;
+  nome: string; // Nome Fantasia (exibido nos cabeçalhos e mensagens)
+  razao_social?: string; // Razão Social oficial da PJ
+  cnpj?: string; // CNPJ formatado
+  creci_j?: string; // CRECI Jurídico (CRECI-J)
+  site_oficial?: string; // Site Oficial / Domínio
+  telefone?: string; // Telefone / WhatsApp Comercial
+  email?: string; // E-mail Comercial
   slug?: string;
   logo_url?: string;
-  telefone?: string;
-  email?: string;
-  endereco?: string;
+  endereco?: string; // Endereço Completo formatado
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
   ativo?: boolean;
   modulo_crm_ativo?: boolean;
   criado_em?: string;
@@ -253,6 +264,7 @@ export interface Usuario {
   nome: string;
   email: string;
   telefone?: string;
+  creci?: string; // CRECI Físico (F) do Corretor/Usuário
   senha_hash?: string;
   role: UserRole;
   imobiliaria: string;

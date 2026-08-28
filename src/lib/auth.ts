@@ -21,6 +21,8 @@ export interface UserSession {
   avatar?: string;
   imobiliaria: string;
   instance_name: string;
+  telefone?: string;
+  creci?: string;
 }
 
 // Senha do Administrador Inicial: @Asenha12
@@ -312,7 +314,8 @@ export async function updateUser(
     nome?: string;
     email?: string;
     telefone?: string;
-    role?: 'admin' | 'corretor';
+    creci?: string;
+    role?: 'admin' | 'gestor' | 'corretor';
     imobiliaria?: string;
     password?: string;
   }
@@ -328,6 +331,7 @@ export async function updateUser(
   if (updates.nome) dbUpdate.nome = updates.nome;
   if (normalizedEmail) dbUpdate.email = normalizedEmail;
   if (updates.telefone !== undefined) dbUpdate.telefone = updates.telefone;
+  if (updates.creci !== undefined) dbUpdate.creci = updates.creci;
   if (updates.role) dbUpdate.role = updates.role;
   if (updates.imobiliaria) dbUpdate.imobiliaria = updates.imobiliaria;
   if (senhaHash) dbUpdate.senha_hash = senhaHash;
@@ -337,7 +341,7 @@ export async function updateUser(
       .from('users')
       .update(dbUpdate)
       .eq('id', id)
-      .select('id, nome, email, telefone, role, imobiliaria, instance_name, avatar_url, created_at')
+      .select('id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, created_at')
       .single();
 
     if (!error && data) {
@@ -346,7 +350,8 @@ export async function updateUser(
         nome: data.nome,
         email: data.email,
         telefone: data.telefone,
-        role: data.role as 'admin' | 'corretor',
+        creci: data.creci,
+        role: data.role as UserRole,
         imobiliaria: data.imobiliaria,
         instance_name: data.instance_name || generateInstanceName(data.id),
         avatar_url: data.avatar_url,
@@ -376,6 +381,7 @@ export async function updateUser(
       ...(updates.nome ? { nome: updates.nome } : {}),
       ...(normalizedEmail ? { email: normalizedEmail } : {}),
       ...(updates.telefone !== undefined ? { telefone: updates.telefone } : {}),
+      ...(updates.creci !== undefined ? { creci: updates.creci } : {}),
       ...(updates.role ? { role: updates.role } : {}),
       ...(updates.imobiliaria ? { imobiliaria: updates.imobiliaria } : {}),
       ...(senhaHash ? { senha_hash: senhaHash } : {}),
@@ -608,6 +614,8 @@ export async function createSessionToken(
     avatar: user.avatar,
     imobiliaria: user.imobiliaria,
     instance_name: instanceName,
+    telefone: user.telefone,
+    creci: user.creci,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -636,6 +644,8 @@ export async function verifySessionToken(token: string): Promise<UserSession | n
       avatar: payload.avatar as string | undefined,
       imobiliaria: (payload.imobiliaria as string) || 'EasyMob',
       instance_name: (payload.instance_name as string) || generateInstanceName(payload.sub as string),
+      telefone: (payload.telefone as string) || undefined,
+      creci: (payload.creci as string) || undefined,
     };
   } catch {
     return null;
