@@ -713,9 +713,24 @@ export function WhatsAppConfigForm() {
                               className="w-52 h-52 object-contain rounded-xl"
                             />
                           </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-xs mx-auto">
-                            Abra o WhatsApp no seu celular: Configurações &gt; Aparelhos Conectados &gt; Conectar Aparelho
-                          </p>
+                          {/* Passo a Passo de Instruções */}
+                          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left w-full max-w-sm mx-auto space-y-2.5 shadow-2xs">
+                            <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                              <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                              <span>Abra o WhatsApp no celular e siga o caminho:</span>
+                            </div>
+                            <ol className="space-y-2 text-[11px] text-slate-600 dark:text-slate-400 pl-4 list-decimal font-medium leading-relaxed">
+                              <li>
+                                Vá em <strong className="text-slate-900 dark:text-slate-100">Configurações &gt; Aparelhos Conectados &gt; Conectar Aparelho</strong>.
+                              </li>
+                              <li>
+                                Aponte a câmera e escaneie o <strong className="text-slate-900 dark:text-slate-100">QR Code acima</strong>.
+                              </li>
+                              <li>
+                                Assim que o celular exibir a mensagem <span className="text-emerald-700 dark:text-emerald-400 font-bold">&quot;Conectando...&quot;</span>, o sistema validará automaticamente o status da conexão.
+                              </li>
+                            </ol>
+                          </div>
                         </div>
                       ) : pairingCode ? (
                         <div className="space-y-2 py-4">

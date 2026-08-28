@@ -260,9 +260,25 @@ export function WhatsAppStatusBadge({
                     className="w-56 h-56 sm:w-64 sm:h-64 object-contain rounded-xl mx-auto"
                   />
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium max-w-xs mx-auto leading-relaxed">
-                  Abra o WhatsApp no seu celular: <strong>Configurações &gt; Aparelhos Conectados &gt; Conectar Aparelho</strong>
-                </p>
+
+                {/* Passo a Passo de Instruções */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left w-full max-w-sm mx-auto space-y-2.5 shadow-2xs">
+                  <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                    <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>Abra o WhatsApp no celular e siga o caminho:</span>
+                  </div>
+                  <ol className="space-y-2 text-[11px] text-slate-600 dark:text-slate-400 pl-4 list-decimal font-medium leading-relaxed">
+                    <li>
+                      Vá em <strong className="text-slate-900 dark:text-slate-100">Configurações &gt; Aparelhos Conectados &gt; Conectar Aparelho</strong>.
+                    </li>
+                    <li>
+                      Aponte a câmera e escaneie o <strong className="text-slate-900 dark:text-slate-100">QR Code acima</strong>.
+                    </li>
+                    <li>
+                      Assim que o celular exibir a mensagem <span className="text-emerald-700 dark:text-emerald-400 font-bold">&quot;Conectando...&quot;</span>, clique no botão <strong className="text-emerald-700 dark:text-emerald-400 font-bold">[ Concluir ]</strong> abaixo para finalizar a validação.
+                    </li>
+                  </ol>
+                </div>
               </div>
             ) : pairingCode ? (
               <div className="space-y-3 py-6">
@@ -287,33 +303,40 @@ export function WhatsAppStatusBadge({
           </div>
 
           {/* Botões de Ação do Rodapé */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 w-full">
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={handleOpenReconnectModal}
-              isLoading={isLoadingQr}
-              className="flex-1 w-full text-xs sm:text-sm font-bold h-11"
-            >
-              <RefreshCw className="w-4 h-4 mr-2 shrink-0" />
-              <span>Atualizar QR Code</span>
-            </Button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 pt-2 w-full">
+            <div className="flex-1 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={handleOpenReconnectModal}
+                isLoading={isLoadingQr}
+                className="w-full text-xs sm:text-sm font-bold h-11"
+              >
+                <RefreshCw className="w-4 h-4 mr-2 shrink-0" />
+                <span>Atualizar QR Code</span>
+              </Button>
+            </div>
 
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              onClick={async () => {
-                await checkConnectionState();
-                isActivelyPairingRef.current = false;
-                setIsModalOpen(false);
-              }}
-              className="flex-1 w-full text-xs sm:text-sm font-bold h-11"
-            >
-              <CheckCircle2 className="w-4 h-4 mr-2 shrink-0" />
-              <span>Concluir</span>
-            </Button>
+            <div className="flex-1 w-full flex flex-col items-center gap-1.5">
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={async () => {
+                  await checkConnectionState();
+                  isActivelyPairingRef.current = false;
+                  setIsModalOpen(false);
+                }}
+                className="w-full text-xs sm:text-sm font-bold h-11 shadow-md shadow-emerald-600/20"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2 shrink-0" />
+                <span>Concluir</span>
+              </Button>
+              <span className="text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                ✨ Clique após escanear
+              </span>
+            </div>
           </div>
         </div>
       </Modal>
