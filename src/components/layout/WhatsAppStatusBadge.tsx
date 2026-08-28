@@ -242,26 +242,26 @@ export function WhatsAppStatusBadge({
         subtitle="Escaneie o QR Code para parear seu WhatsApp"
         maxWidth="md"
       >
-        <div className="space-y-4 text-center px-1 sm:px-2">
+        <div className="space-y-4 text-center">
           {/* Container do QR Code */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center min-h-[260px] space-y-3">
+          <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center min-h-[300px] space-y-4">
             {isLoadingQr ? (
-              <div className="space-y-3 py-8 text-slate-500">
-                <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
+              <div className="space-y-3 py-10 text-slate-500">
+                <RefreshCw className="w-9 h-9 animate-spin text-emerald-600 mx-auto" />
                 <p className="text-xs font-medium">Gerando QR Code na Evolution API...</p>
               </div>
             ) : qrCodeBase64 ? (
-              <div className="space-y-3 w-full flex flex-col items-center">
-                <div className="p-2 sm:p-3 rounded-2xl bg-white shadow-md border border-slate-200 inline-block">
+              <div className="space-y-4 w-full flex flex-col items-center">
+                <div className="p-3 rounded-2xl bg-white shadow-md border border-slate-200 inline-block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
                     alt="QR Code WhatsApp"
-                    className="w-48 h-48 sm:w-52 sm:h-52 object-contain rounded-xl mx-auto"
+                    className="w-56 h-56 sm:w-64 sm:h-64 object-contain rounded-xl mx-auto"
                   />
                 </div>
                 <p className="text-xs text-slate-600 dark:text-slate-400 font-medium max-w-xs mx-auto leading-relaxed">
-                  Abra o WhatsApp no seu celular: Configurações &gt; Aparelhos Conectados &gt; Conectar Aparelho
+                  Abra o WhatsApp no seu celular: <strong>Configurações &gt; Aparelhos Conectados &gt; Conectar Aparelho</strong>
                 </p>
               </div>
             ) : pairingCode ? (
@@ -273,8 +273,8 @@ export function WhatsAppStatusBadge({
                 </div>
               </div>
             ) : (
-              <div className="space-y-3 py-6 text-slate-400">
-                <QrCode className="w-12 h-12 mx-auto opacity-40" />
+              <div className="space-y-3 py-8 text-slate-400">
+                <QrCode className="w-14 h-14 mx-auto opacity-40" />
                 <p className="text-xs">Clique no botão abaixo para gerar um novo QR Code.</p>
               </div>
             )}
@@ -287,16 +287,16 @@ export function WhatsAppStatusBadge({
           </div>
 
           {/* Botões de Ação do Rodapé */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 w-full">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 w-full">
             <Button
               type="button"
               variant="outline"
               size="md"
               onClick={handleOpenReconnectModal}
               isLoading={isLoadingQr}
-              className="flex-1 w-full text-xs sm:text-sm font-bold h-10"
+              className="flex-1 w-full text-xs sm:text-sm font-bold h-11"
             >
-              <RefreshCw className="w-4 h-4 mr-1.5 shrink-0" />
+              <RefreshCw className="w-4 h-4 mr-2 shrink-0" />
               <span>Atualizar QR Code</span>
             </Button>
 
@@ -309,9 +309,9 @@ export function WhatsAppStatusBadge({
                 isActivelyPairingRef.current = false;
                 setIsModalOpen(false);
               }}
-              className="flex-1 w-full text-xs sm:text-sm font-bold h-10"
+              className="flex-1 w-full text-xs sm:text-sm font-bold h-11"
             >
-              <CheckCircle2 className="w-4 h-4 mr-1.5 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 mr-2 shrink-0" />
               <span>Concluir</span>
             </Button>
           </div>
