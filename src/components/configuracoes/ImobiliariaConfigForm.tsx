@@ -448,14 +448,12 @@ export function ImobiliariaConfigForm() {
                 </span>
                 <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between min-h-[48px]">
                   {logoUrl ? (
-                    <div className="p-1 px-2.5 rounded-xl bg-slate-100/95 shadow-sm border border-slate-200/90 flex items-center justify-center shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={logoUrl}
-                        alt={nome || 'Logo'}
-                        className="max-h-7 max-w-[140px] w-auto h-auto object-contain"
-                      />
-                    </div>
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={logoUrl}
+                      alt={nome || 'Logo'}
+                      className="max-h-7 max-w-[150px] w-auto h-auto object-contain"
+                    />
                   ) : (
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-extrabold text-xs shrink-0">

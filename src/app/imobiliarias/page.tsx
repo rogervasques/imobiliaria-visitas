@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -23,7 +23,7 @@ import {
   ShieldCheck,
   Kanban,
 } from 'lucide-react';
-import { Imobiliaria, Imovel, Visita } from '@/types';
+import { Imobiliaria, Imovel, Visita, Usuario } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useTenant } from '@/context/TenantContext';
 import { useData } from '@/context/DataContext';
@@ -37,6 +37,22 @@ export default function ImobiliariasPage() {
   const { showToast, allImoveis, allVisitas, renomearImobiliariaCascade } = useData();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<Usuario[]>([]);
+
+  useEffect(() => {
+    async function loadUsers() {
+      try {
+        const res = await fetch('/api/users', { cache: 'no-store' });
+        const data = await res.json();
+        if (data.success && data.users) {
+          setUsers(data.users);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    loadUsers();
+  }, []);
 
   // Modal Criação
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -315,12 +331,49 @@ export default function ImobiliariasPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredImobiliarias.map((imo) => {
           const isSelected = imo.nome.toLowerCase() === currentTenant?.nome?.toLowerCase();
-          const imoImoveisCount = (allImoveis || []).filter(
-            (i: Imovel) => i.imobiliaria && i.imobiliaria.toLowerCase() === imo.nome.toLowerCase()
-          ).length;
-          const imoVisitasCount = (allVisitas || []).filter(
-            (v: Visita) => v.imobiliaria && v.imobiliaria.toLowerCase() === imo.nome.toLowerCase()
-          ).length;
+          const isPrimeiraImobiliaria = imobiliarias[0]?.id === imo.id;
+
+          const imoImoveisCount = (allImoveis || []).filter((i: Imovel) => {
+            if (i.imobiliaria_id && i.imobiliaria_id === imo.id) return true;
+            if (i.imobiliaria && i.imobiliaria.trim().toLowerCase() === imo.nome.trim().toLowerCase()) return true;
+            if (
+              isPrimeiraImobiliaria &&
+              (!i.imobiliaria ||
+                i.imobiliaria.toLowerCase() === 'easymob imóveis' ||
+                i.imobiliaria.toLowerCase() === 'easymob')
+            ) {
+              return true;
+            }
+            return false;
+          }).length;
+
+          const imoVisitasCount = (allVisitas || []).filter((v: Visita) => {
+            if (v.imobiliaria_id && v.imobiliaria_id === imo.id) return true;
+            if (v.imobiliaria && v.imobiliaria.trim().toLowerCase() === imo.nome.trim().toLowerCase()) return true;
+            if (
+              isPrimeiraImobiliaria &&
+              (!v.imobiliaria ||
+                v.imobiliaria.toLowerCase() === 'easymob imóveis' ||
+                v.imobiliaria.toLowerCase() === 'easymob')
+            ) {
+              return true;
+            }
+            return false;
+          }).length;
+
+          const imoUsersCount = (users || []).filter((u: Usuario) => {
+            if (u.imobiliaria_id && u.imobiliaria_id === imo.id) return true;
+            if (u.imobiliaria && u.imobiliaria.trim().toLowerCase() === imo.nome.trim().toLowerCase()) return true;
+            if (
+              isPrimeiraImobiliaria &&
+              (!u.imobiliaria ||
+                u.imobiliaria.toLowerCase() === 'easymob imóveis' ||
+                u.imobiliaria.toLowerCase() === 'easymob')
+            ) {
+              return true;
+            }
+            return false;
+          }).length;
 
           return (
             <Card
@@ -415,8 +468,8 @@ export default function ImobiliariasPage() {
                   )}
                 </div>
 
-                {/* Métricas dessa Imobiliária */}
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-center">
+                {/* Métricas dessa Imobiliária: Imóveis, Visitas e Membros */}
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-center">
                   <div className="p-2 rounded-lg bg-slate-50/50 dark:bg-slate-800/30">
                     <div className="font-black text-sm text-slate-900 dark:text-slate-100">
                       {imoImoveisCount}
@@ -428,6 +481,12 @@ export default function ImobiliariasPage() {
                       {imoVisitasCount}
                     </div>
                     <div className="text-[10px] text-slate-400 font-medium">Visitas</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50/50 dark:bg-slate-800/30">
+                    <div className="font-black text-sm text-slate-900 dark:text-slate-100">
+                      {imoUsersCount}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">Membros</div>
                   </div>
                 </div>
 
