@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteUser, updateUser, getSessionUser } from '@/lib/auth';
+import { deleteUser, updateUser, getSessionUser, getUserById } from '@/lib/auth';
 
 export async function PUT(
   req: NextRequest,
@@ -8,9 +8,9 @@ export async function PUT(
   try {
     const sessionUser = await getSessionUser();
 
-    if (!sessionUser || sessionUser.role !== 'admin') {
+    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'gestor' && (sessionUser.role as string) !== 'gerente')) {
       return NextResponse.json(
-        { success: false, error: 'Acesso não autorizado. Apenas administradores podem editar usuários.' },
+        { success: false, error: 'Acesso não autorizado. Apenas administradores e gerentes podem gerenciar membros.' },
         { status: 403 }
       );
     }
@@ -21,17 +21,39 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'ID do usuário não fornecido.' }, { status: 400 });
     }
 
+    // Se for gerente, verifica se o usuário alvo pertence à mesma imobiliária
+    if (sessionUser.role !== 'admin') {
+      const targetUser = await getUserById(id);
+      if (targetUser && targetUser.imobiliaria?.toLowerCase() !== sessionUser.imobiliaria?.toLowerCase()) {
+        return NextResponse.json(
+          { success: false, error: 'Você só pode gerenciar membros da sua própria imobiliária.' },
+          { status: 403 }
+        );
+      }
+    }
+
     const body = await req.json();
-    const { nome, email, telefone, imobiliaria, role, password, nova_senha } = body;
+    const { nome, email, telefone, creci, imobiliaria, role, password, nova_senha, ativo } = body;
 
     const newPass = password || nova_senha;
+
+    let targetRole: 'admin' | 'gestor' | 'corretor' | undefined = undefined;
+    if (role === 'admin' && sessionUser.role === 'admin') {
+      targetRole = 'admin';
+    } else if (role === 'gestor') {
+      targetRole = 'gestor';
+    } else if (role === 'corretor') {
+      targetRole = 'corretor';
+    }
 
     const updatedUser = await updateUser(id, {
       nome: typeof nome === 'string' ? nome.trim() : undefined,
       email: typeof email === 'string' ? email.trim() : undefined,
       telefone: typeof telefone === 'string' ? telefone.trim() : undefined,
-      imobiliaria: typeof imobiliaria === 'string' ? imobiliaria.trim() : undefined,
-      role: role === 'admin' || role === 'gestor' || role === 'corretor' ? role : undefined,
+      creci: typeof creci === 'string' ? creci.trim() : undefined,
+      imobiliaria: sessionUser.role === 'admin' && typeof imobiliaria === 'string' ? imobiliaria.trim() : undefined,
+      role: targetRole,
+      ativo: typeof ativo === 'boolean' ? ativo : undefined,
       password: typeof newPass === 'string' && newPass.trim().length > 0 ? newPass.trim() : undefined,
     });
 
@@ -42,7 +64,7 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       user: updatedUser,
-      message: 'Usuário atualizado com sucesso.',
+      message: 'Dados do membro atualizados com sucesso.',
     });
   } catch (err) {
     console.error('Erro ao editar usuário:', err);
@@ -57,9 +79,9 @@ export async function DELETE(
   try {
     const sessionUser = await getSessionUser();
 
-    if (!sessionUser || sessionUser.role !== 'admin') {
+    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'gestor' && (sessionUser.role as string) !== 'gerente')) {
       return NextResponse.json(
-        { success: false, error: 'Acesso não autorizado. Apenas administradores podem excluir usuários.' },
+        { success: false, error: 'Acesso não autorizado. Apenas administradores e gerentes podem remover membros.' },
         { status: 403 }
       );
     }
@@ -70,16 +92,26 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'ID do usuário não fornecido.' }, { status: 400 });
     }
 
-    // Impede o administrador de excluir sua própria conta
+    // Impede o usuário de excluir sua própria conta
     if (sessionUser.id === id) {
       return NextResponse.json(
-        { success: false, error: 'Você não pode excluir sua própria conta de administrador ativa.' },
+        { success: false, error: 'Você não pode excluir sua própria conta ativa.' },
         { status: 400 }
       );
     }
 
+    if (sessionUser.role !== 'admin') {
+      const targetUser = await getUserById(id);
+      if (targetUser && targetUser.imobiliaria?.toLowerCase() !== sessionUser.imobiliaria?.toLowerCase()) {
+        return NextResponse.json(
+          { success: false, error: 'Você só pode excluir membros da sua própria imobiliária.' },
+          { status: 403 }
+        );
+      }
+    }
+
     await deleteUser(id);
-    return NextResponse.json({ success: true, message: 'Usuário excluído com sucesso.' });
+    return NextResponse.json({ success: true, message: 'Usuário removido com sucesso.' });
   } catch (err) {
     console.error('Erro ao excluir usuário:', err);
     return NextResponse.json({ success: false, error: 'Erro ao excluir usuário.' }, { status: 500 });

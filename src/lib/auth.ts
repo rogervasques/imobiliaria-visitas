@@ -214,12 +214,13 @@ export async function getAllUsers(): Promise<Usuario[]> {
   try {
     const { data: dbUsers, error } = await supabase
       .from('users')
-      .select('id, nome, email, telefone, role, imobiliaria, instance_name, avatar_url, created_at')
+      .select('id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, ativo, ultimo_acesso, created_at')
       .order('created_at', { ascending: false });
 
     if (!error && dbUsers && dbUsers.length > 0) {
       return dbUsers.map((u) => ({
         ...u,
+        ativo: u.ativo !== false,
         instance_name: u.instance_name || generateInstanceName(u.id),
       }));
     }
@@ -227,17 +228,54 @@ export async function getAllUsers(): Promise<Usuario[]> {
     // Fallback
   }
 
-  return globalUsersStore.map(({ id, nome, email, telefone, role, imobiliaria, instance_name, avatar_url, created_at }) => ({
+  return globalUsersStore.map(({ id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, ativo, ultimo_acesso, created_at }) => ({
     id,
     nome,
     email,
     telefone,
+    creci,
     role,
     imobiliaria,
     instance_name: instance_name || generateInstanceName(id),
     avatar_url,
+    ativo: ativo !== false,
+    ultimo_acesso,
     created_at,
   }));
+}
+
+/**
+ * Busca um usuário por ID
+ */
+export async function getUserById(id: string): Promise<Usuario | null> {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, ativo, ultimo_acesso, created_at')
+      .eq('id', id)
+      .single();
+
+    if (!error && data) {
+      return {
+        ...data,
+        ativo: data.ativo !== false,
+        instance_name: data.instance_name || generateInstanceName(data.id),
+      };
+    }
+  } catch {
+    // Fallback
+  }
+
+  const local = globalUsersStore.find((u) => u.id === id);
+  if (local) {
+    return {
+      ...local,
+      ativo: local.ativo !== false,
+      instance_name: local.instance_name || generateInstanceName(local.id),
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -318,6 +356,8 @@ export async function updateUser(
     role?: 'admin' | 'gestor' | 'corretor';
     imobiliaria?: string;
     password?: string;
+    ativo?: boolean;
+    ultimo_acesso?: string;
   }
 ): Promise<Usuario | null> {
   let senhaHash: string | undefined;
@@ -334,6 +374,8 @@ export async function updateUser(
   if (updates.creci !== undefined) dbUpdate.creci = updates.creci;
   if (updates.role) dbUpdate.role = updates.role;
   if (updates.imobiliaria) dbUpdate.imobiliaria = updates.imobiliaria;
+  if (updates.ativo !== undefined) dbUpdate.ativo = updates.ativo;
+  if (updates.ultimo_acesso !== undefined) dbUpdate.ultimo_acesso = updates.ultimo_acesso;
   if (senhaHash) dbUpdate.senha_hash = senhaHash;
 
   try {
@@ -341,7 +383,7 @@ export async function updateUser(
       .from('users')
       .update(dbUpdate)
       .eq('id', id)
-      .select('id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, created_at')
+      .select('id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, ativo, ultimo_acesso, created_at')
       .single();
 
     if (!error && data) {
@@ -355,6 +397,8 @@ export async function updateUser(
         imobiliaria: data.imobiliaria,
         instance_name: data.instance_name || generateInstanceName(data.id),
         avatar_url: data.avatar_url,
+        ativo: data.ativo !== false,
+        ultimo_acesso: data.ultimo_acesso,
         created_at: data.created_at,
       };
 
@@ -384,6 +428,8 @@ export async function updateUser(
       ...(updates.creci !== undefined ? { creci: updates.creci } : {}),
       ...(updates.role ? { role: updates.role } : {}),
       ...(updates.imobiliaria ? { imobiliaria: updates.imobiliaria } : {}),
+      ...(updates.ativo !== undefined ? { ativo: updates.ativo } : {}),
+      ...(updates.ultimo_acesso !== undefined ? { ultimo_acesso: updates.ultimo_acesso } : {}),
       ...(senhaHash ? { senha_hash: senhaHash } : {}),
     };
     return globalUsersStore[idx];

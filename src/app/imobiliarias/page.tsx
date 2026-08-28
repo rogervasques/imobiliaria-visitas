@@ -46,6 +46,7 @@ export default function ImobiliariasPage() {
   const [createEndereco, setCreateEndereco] = useState('');
   const [createLogoUrl, setCreateLogoUrl] = useState('');
   const [createModuloCrmAtivo, setCreateModuloCrmAtivo] = useState(true);
+  const [createLimiteUsuarios, setCreateLimiteUsuarios] = useState<number>(10);
   const [isCreating, setIsCreating] = useState(false);
 
   // Modal Edição
@@ -56,6 +57,7 @@ export default function ImobiliariasPage() {
   const [editEndereco, setEditEndereco] = useState('');
   const [editLogoUrl, setEditLogoUrl] = useState('');
   const [editModuloCrmAtivo, setEditModuloCrmAtivo] = useState(true);
+  const [editLimiteUsuarios, setEditLimiteUsuarios] = useState<number>(10);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Exclusão
@@ -96,6 +98,7 @@ export default function ImobiliariasPage() {
         endereco: createEndereco.trim() || undefined,
         logo_url: createLogoUrl.trim() || undefined,
         modulo_crm_ativo: createModuloCrmAtivo,
+        limite_usuarios: Number(createLimiteUsuarios) || 10,
       });
 
       showToast(`Imobiliária "${created.nome}" cadastrada com sucesso!`, 'success');
@@ -105,6 +108,7 @@ export default function ImobiliariasPage() {
       setCreateEndereco('');
       setCreateLogoUrl('');
       setCreateModuloCrmAtivo(true);
+      setCreateLimiteUsuarios(10);
       setIsCreateModalOpen(false);
     } catch {
       showToast('Erro ao cadastrar imobiliária.', 'error');
@@ -121,6 +125,7 @@ export default function ImobiliariasPage() {
     setEditEndereco(imo.endereco || '');
     setEditLogoUrl(imo.logo_url || '');
     setEditModuloCrmAtivo(imo.modulo_crm_ativo !== false);
+    setEditLimiteUsuarios(imo.limite_usuarios || 10);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -144,6 +149,7 @@ export default function ImobiliariasPage() {
         endereco: editEndereco.trim() || undefined,
         logo_url: editLogoUrl.trim() || undefined,
         modulo_crm_ativo: editModuloCrmAtivo,
+        limite_usuarios: Number(editLimiteUsuarios) || 10,
       });
 
       if (oldName.toLowerCase() !== newName.toLowerCase()) {
@@ -354,16 +360,10 @@ export default function ImobiliariasPage() {
                       </span>
                     )}
 
-                    {imo.modulo_crm_ativo !== false ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 border border-sky-200/80 dark:border-sky-800/80 shrink-0" title="Módulo CRM ativado para esta imobiliária">
-                        <Kanban className="w-2.5 h-2.5 text-sky-500" />
-                        CRM Ativo
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 shrink-0" title="Módulo CRM desativado para esta imobiliária">
-                        CRM Inativo
-                      </span>
-                    )}
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/80 shrink-0" title="Limite total de usuários/licenças contratadas">
+                      <Users className="w-2.5 h-2.5 text-amber-500" />
+                      {imo.limite_usuarios || 10} Licenças
+                    </span>
 
                     <button
                       type="button"
@@ -509,17 +509,35 @@ export default function ImobiliariasPage() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-              Endereço Completo
-            </label>
-            <input
-              type="text"
-              value={createEndereco}
-              onChange={(e) => setCreateEndereco(e.target.value)}
-              placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Endereço Completo
+              </label>
+              <input
+                type="text"
+                value={createEndereco}
+                onChange={(e) => setCreateEndereco(e.target.value)}
+                placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Limite de Licenças / Usuários Contratados <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                required
+                value={createLimiteUsuarios}
+                onChange={(e) => setCreateLimiteUsuarios(parseInt(e.target.value) || 1)}
+                placeholder="10"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+              />
+            </div>
           </div>
 
           {/* Upload de Logo */}
@@ -617,16 +635,33 @@ export default function ImobiliariasPage() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                Endereço Completo
-              </label>
-              <input
-                type="text"
-                value={editEndereco}
-                onChange={(e) => setEditEndereco(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Endereço Completo
+                </label>
+                <input
+                  type="text"
+                  value={editEndereco}
+                  onChange={(e) => setEditEndereco(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Limite de Licenças / Usuários Contratados <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  required
+                  value={editLimiteUsuarios}
+                  onChange={(e) => setEditLimiteUsuarios(parseInt(e.target.value) || 1)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                />
+              </div>
             </div>
 
             {/* Upload de Logo */}

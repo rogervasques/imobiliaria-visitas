@@ -3,6 +3,7 @@ import {
   ensureInitialAdminUser,
   findUserByEmailForAuth,
   verifyPassword,
+  updateUser,
   createSessionToken,
   SESSION_COOKIE_NAME,
   UserSession,
@@ -63,11 +64,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 3.1 Verifica se o usuário está ativo
+    if (user.ativo === false) {
+      console.warn(`[Auth Login Bloqueado] Usuário inativo: "${normalizedEmail}"`);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Sua conta de usuário está desativada. Entre em contato com a gestão da imobiliária ou administrador.',
+        },
+        { status: 403 }
+      );
+    }
+
+    // 3.2 Registra último acesso
+    const nowIso = new Date().toISOString();
+    updateUser(user.id, { ultimo_acesso: nowIso }).catch(() => {});
+
     // 4. Monta a sessão autenticada do usuário
     const authenticatedUser: UserSession = {
       id: user.id,
       name: user.nome || 'Usuário',
       email: user.email,
+      telefone: user.telefone,
+      creci: user.creci,
       role: user.role || 'corretor',
       avatar: user.avatar_url,
       imobiliaria: user.imobiliaria || 'EasyMob Imóveis',

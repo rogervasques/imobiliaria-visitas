@@ -23,6 +23,7 @@ export interface Imobiliaria {
   cep?: string;
   ativo?: boolean;
   modulo_crm_ativo?: boolean;
+  limite_usuarios?: number; // Limite total de licenças contratadas (padrão: 10)
   criado_em?: string;
   atualizado_em?: string;
 }
@@ -135,12 +136,17 @@ export type StatusDisparoWhatsApp =
 
 export interface Visita {
   id: string;
+  codigo?: string;
   imovel_id: string;
   imoveis_ids?: string[]; // IDs de múltiplos imóveis no roteiro
   cliente_id: string;
+  cliente_nome?: string;
+  cliente_telefone?: string;
   corretor_nome?: string;
   corretor_telefone?: string;
   data_hora_visita: string;
+  data_hora?: string;
+  data_hora_fim?: string;
   lembrete_agendado_para?: string;
   pos_visita_agendado_para?: string;
   
@@ -271,6 +277,8 @@ export interface Usuario {
   imobiliaria_id?: string;
   instance_name?: string;
   avatar_url?: string;
+  ativo?: boolean; // Status Ativo / Inativo (padrão: true)
+  ultimo_acesso?: string; // Data do último acesso ao sistema
   created_at?: string;
 }
 

@@ -69,6 +69,16 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
       badge: `${metrics.totalClientesAtivos}`,
       description: 'Base de compradores e locatários',
     },
+    ...(user?.role === 'admin' || user?.role === 'gestor' || (user?.role as string) === 'gerente'
+      ? [
+          {
+            label: 'Equipe',
+            href: '/equipe',
+            icon: UserCog,
+            description: 'Gestão de corretores, gerentes e convites',
+          },
+        ]
+      : []),
     ...(user?.role === 'admin'
       ? [
           {
@@ -76,12 +86,6 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
             href: '/imobiliarias',
             icon: Store,
             description: 'Gestão multi-tenant de empresas',
-          },
-          {
-            label: 'Usuários',
-            href: '/usuarios',
-            icon: UserCog,
-            description: 'Gestão de equipe e convites',
           },
           {
             label: 'Infraestrutura',

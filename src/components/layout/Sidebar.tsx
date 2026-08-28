@@ -89,6 +89,8 @@ export function Sidebar() {
     return c.status !== 'fechado' && c.status !== 'inativo';
   }).length;
 
+  const podeVerEquipe = user?.role === 'admin' || user?.role === 'gestor' || (user?.role as string) === 'gerente';
+
   const navItems = [
     { label: 'Hoje', href: '/dashboard', icon: LayoutDashboard, badge: metrics.totalVisitasHoje ? `${metrics.totalVisitasHoje}` : undefined },
     { label: 'Agenda', href: '/agenda', icon: CalendarDays },
@@ -98,10 +100,12 @@ export function Sidebar() {
     { label: 'Imóveis', href: '/imoveis', icon: Building2, badge: `${metrics.totalImoveisAtivos}` },
     { label: 'Proprietários', href: '/proprietarios', icon: UserCheck, badge: `${proprietarios.length}` },
     { label: 'Clientes', href: '/clientes', icon: Users, badge: `${metrics.totalClientesAtivos}` },
+    ...(podeVerEquipe
+      ? [{ label: 'Equipe', href: '/equipe', icon: UserCog }]
+      : []),
     ...(user?.role === 'admin'
       ? [
           { label: 'Imobiliárias', href: '/imobiliarias', icon: Store, badge: `${imobiliarias.length}` },
-          { label: 'Usuários', href: '/usuarios', icon: UserCog },
           { label: 'Infraestrutura', href: '/infraestrutura', icon: Activity },
         ]
       : []),

@@ -26,6 +26,7 @@ export const DEFAULT_IMOBILIARIAS: Imobiliaria[] = [
     telefone: '11999999999',
     email: 'contato@lagomimoveis.com.br',
     modulo_crm_ativo: true,
+    limite_usuarios: 10,
     criado_em: new Date().toISOString(),
   },
   {
@@ -35,6 +36,7 @@ export const DEFAULT_IMOBILIARIAS: Imobiliaria[] = [
     telefone: '11988887777',
     email: 'contato@primeimoveis.com.br',
     modulo_crm_ativo: true,
+    limite_usuarios: 10,
     criado_em: new Date().toISOString(),
   },
   {
@@ -44,6 +46,7 @@ export const DEFAULT_IMOBILIARIAS: Imobiliaria[] = [
     telefone: '11977776666',
     email: 'atendimento@novaera.com.br',
     modulo_crm_ativo: true,
+    limite_usuarios: 10,
     criado_em: new Date().toISOString(),
   },
 ];
