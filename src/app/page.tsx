@@ -52,7 +52,7 @@ export default function LandingPage() {
   };
 
   const WHATSAPP_SUPPORT_URL =
-    'https://wa.me/5511999999999?text=Ol%C3%A1%21+Gostaria+de+saber+mais+sobre+o+EasyMob+e+agendar+uma+demonstra%C3%A7%C3%A3o.';
+    'https://wa.me/5535991179596?text=Ol%C3%A1%21+Gostaria+de+saber+mais+sobre+o+EasyMob+e+agendar+uma+demonstra%C3%A7%C3%A3o.';
 
   const faqs = [
     {
