@@ -137,14 +137,22 @@ const MODELOS_VARGINHA: {
 /**
  * Gera conjunto completo de dados sintéticos para Varginha/MG
  */
-export function generateTestSeedData(adminUserId: string = 'user-admin-master', adminUserNome: string = 'Roger Vasques Berchembrock') {
+export function generateTestSeedData(
+  adminUserId: string = 'user-admin-master',
+  adminUserNome: string = 'Roger Vasques Berchembrock',
+  imobiliariaNome: string = 'Lagom Imóveis',
+  imobiliariaId?: string
+) {
+  const activeTenant = (imobiliariaNome || 'Lagom Imóveis').trim();
+
   // 1. Gera 30 Proprietários
   const proprietarios: Proprietario[] = PROPRIETARIOS_VARGINHA.map((p, idx) => ({
     id: `prop-${String(idx + 1).padStart(3, '0')}`,
     nome: p.nome,
     telefone: TELEFONE_PROPRIETARIOS_PADRAO,
     email: p.email,
-    imobiliaria: 'Lagom Imóveis',
+    imobiliaria: activeTenant,
+    imobiliaria_id: imobiliariaId,
     criado_em: new Date(Date.now() - (30 - idx) * 86400000).toISOString(),
   }));
 
@@ -222,7 +230,8 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
       proprietario_nome: proprietario.nome,
       proprietario_telefone: TELEFONE_PROPRIETARIOS_PADRAO,
       proprietario_email: proprietario.email,
-      imobiliaria: 'Lagom Imóveis',
+      imobiliaria: activeTenant,
+      imobiliaria_id: imobiliariaId,
       criado_em: new Date(Date.now() - (60 - i) * 86400000).toISOString(),
     });
   }
@@ -260,7 +269,8 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
       status: 'ativo' as StatusCliente,
       prioridade: (idx % 2 === 0 ? 'alta' : 'media') as 'alta' | 'media' | 'baixa',
       observacoes: `Cliente qualificado para compra em Varginha. Procura ${tipoDesejado} com 3 quartos nos bairros ${bairroInteresse1} ou ${bairroInteresse2}. Faixa: ${faixaPreco}.`,
-      imobiliaria: 'Lagom Imóveis',
+      imobiliaria: activeTenant,
+      imobiliaria_id: imobiliariaId,
       criado_em: new Date(Date.now() - (45 - idx) * 86400000).toISOString(),
     };
   });
@@ -336,7 +346,8 @@ export function generateTestSeedData(adminUserId: string = 'user-admin-master', 
         whatsapp_pos_visita_cliente: status === 'concluida' ? 'lido' : 'pendente',
         feedback_cliente: status === 'concluida' ? (visitaCount % 2 === 0 ? 'Adorou o acabamento e a localização em Varginha. Ficou de analisar a proposta no fim de semana.' : 'Gostou bastante do espaço interno e da varanda gourmet.') : undefined,
         observacoes: qtdImoveisRoteiro > 1 ? `Roteiro composto por ${qtdImoveisRoteiro} imóveis em Varginha (${primaryImovel.bairro}).` : `Visita ao imóvel ${primaryImovel.titulo}.`,
-        imobiliaria: 'Lagom Imóveis',
+        imobiliaria: activeTenant,
+        imobiliaria_id: imobiliariaId,
         created_by_user_id: adminUserId,
         created_by_user_nome: adminUserNome,
         criado_em: new Date(Date.now() - 20 * 86400000).toISOString(),

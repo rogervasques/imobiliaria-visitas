@@ -32,12 +32,14 @@ import {
   Smile,
   Mic,
   UserCheck,
-  User,
   ShieldCheck,
+  Trash2,
 } from 'lucide-react';
+import { Modal } from '../ui/Modal';
 import { ProvedorWhatsApp } from '@/types';
 import { compileTemplate } from '@/lib/whatsapp';
 import { useAuth } from '@/context/AuthContext';
+import { useTenant } from '@/context/TenantContext';
 import { generateInstanceName } from '@/lib/auth';
 
 /**
@@ -65,6 +67,7 @@ function renderWhatsAppFormattedHtml(rawText: string) {
 export function WhatsAppConfigForm() {
   const { configWhatsApp, atualizarConfigWhatsApp, executarRotinaLembretes30m, showToast } = useData();
   const { user } = useAuth();
+  const { currentTenant } = useTenant();
   const userDynamicInstance = user?.instance_name || (user?.id ? generateInstanceName(user.id) : 'easymob');
 
   const provedor: ProvedorWhatsApp = configWhatsApp.provedor || 'evolution_api';
@@ -80,6 +83,12 @@ export function WhatsAppConfigForm() {
   );
   const [instanciaNome, setInstanciaNome] = useState(userDynamicInstance);
   const [ativo, setAtivo] = useState(configWhatsApp.ativo);
+
+  // Estados de Limpeza e Dupla Verificação
+  const [isCleanModalOpen, setIsCleanModalOpen] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+  const [cleanConfirmedCheckbox, setCleanConfirmedCheckbox] = useState(false);
+  const [cleanConfirmText, setCleanConfirmText] = useState('');
 
   useEffect(() => {
     if (userDynamicInstance) {
@@ -455,7 +464,10 @@ export function WhatsAppConfigForm() {
   const [seedResult, setSeedResult] = useState<string | null>(null);
 
   const handleSeedData = async () => {
-    if (!confirm('Deseja realmente limpar as tabelas operacionais (visitas, imóveis, clientes, proprietários) e popular 30 proprietários, 80 imóveis, 50 clientes e ~38 visitas? As contas de usuários (users/invites) serão preservadas.')) {
+    const activeTenantName = currentTenant?.nome || 'Lagom Imóveis';
+    const activeTenantId = currentTenant?.id;
+
+    if (!confirm(`Deseja realmente limpar as tabelas operacionais e popular 30 proprietários, 70 imóveis em Varginha/MG, 50 clientes e 47 visitas vinculadas à "${activeTenantName}"? As contas de administradores e convites serão preservadas.`)) {
       return;
     }
 
@@ -463,7 +475,14 @@ export function WhatsAppConfigForm() {
     setSeedResult(null);
 
     try {
-      const res = await fetch('/api/admin/seed-test-data', { method: 'POST' });
+      const res = await fetch('/api/admin/seed-test-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imobiliaria: activeTenantName,
+          imobiliaria_id: activeTenantId,
+        }),
+      });
       const data = await res.json();
 
       if (res.ok && data.success) {
@@ -477,19 +496,13 @@ export function WhatsAppConfigForm() {
           localStorage.removeItem('imobiliaria_visitas_imoveis');
           localStorage.removeItem('imobiliaria_visitas_clientes');
           localStorage.removeItem('imobiliaria_visitas_proprietarios');
-
-          if (data.data) {
-            localStorage.setItem('easymob_visitas_proprietarios', JSON.stringify(data.data.proprietarios));
-            localStorage.setItem('easymob_visitas_imoveis', JSON.stringify(data.data.imoveis));
-            localStorage.setItem('easymob_visitas_clientes', JSON.stringify(data.data.clientes));
-            localStorage.setItem('easymob_visitas_visitas', JSON.stringify(data.data.visitas));
-          }
+          localStorage.removeItem('easymob_item_tenants_map');
         } catch {
           // ignore
         }
 
-        showToast('Base operacional reinicializada e populada com sucesso!', 'success');
-        setSeedResult(`✅ Sucesso: ${data.summary.proprietarios} proprietários, ${data.summary.imoveis} imóveis, ${data.summary.clientes} clientes e ${data.summary.visitas} visitas geradas.`);
+        showToast(`Base de demonstração vinculada à "${activeTenantName}" populada com sucesso!`, 'success');
+        setSeedResult(`✅ Sucesso: ${data.summary.proprietarios} proprietários, ${data.summary.imoveis} imóveis em Varginha/MG, ${data.summary.clientes} clientes e ${data.summary.visitas} visitas geradas.`);
         setTimeout(() => {
           window.location.reload();
         }, 1200);
@@ -502,6 +515,62 @@ export function WhatsAppConfigForm() {
       setSeedResult('❌ Erro de conexão com o servidor.');
     } finally {
       setIsSeeding(false);
+    }
+  };
+
+  const handleCleanData = async () => {
+    if (!cleanConfirmedCheckbox || cleanConfirmText.trim().toUpperCase() !== 'LIMPAR') {
+      showToast('Por favor, marque o consentimento e digite LIMPAR para confirmar.', 'error');
+      return;
+    }
+
+    setIsCleaning(true);
+    try {
+      const activeTenantName = currentTenant?.nome || 'Lagom Imóveis';
+      const activeTenantId = currentTenant?.id;
+
+      const res = await fetch('/api/admin/clean-database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmText: cleanConfirmText.trim().toUpperCase(),
+          imobiliaria: activeTenantName,
+          imobiliaria_id: activeTenantId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao limpar base de dados.');
+      }
+
+      // Limpar caches do localStorage
+      try {
+        localStorage.removeItem('easymob_visitas_visitas');
+        localStorage.removeItem('easymob_visitas_imoveis');
+        localStorage.removeItem('easymob_visitas_clientes');
+        localStorage.removeItem('easymob_visitas_proprietarios');
+        localStorage.removeItem('imobiliaria_visitas_visitas');
+        localStorage.removeItem('imobiliaria_visitas_imoveis');
+        localStorage.removeItem('imobiliaria_visitas_clientes');
+        localStorage.removeItem('imobiliaria_visitas_proprietarios');
+        localStorage.removeItem('easymob_item_tenants_map');
+      } catch {
+        // ignore
+      }
+
+      showToast(`Base de dados da imobiliária "${activeTenantName}" limpa com sucesso!`, 'success');
+      setIsCleanModalOpen(false);
+      setCleanConfirmedCheckbox(false);
+      setCleanConfirmText('');
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } catch (err: any) {
+      showToast(err.message || 'Falha ao limpar base de dados.', 'error');
+    } finally {
+      setIsCleaning(false);
     }
   };
 
@@ -1649,34 +1718,51 @@ $$);`}
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2 text-emerald-900 dark:text-emerald-300">
                 <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                Reset Operacional &amp; População de Dados de Teste - Varginha/MG
+                Gestão Operacional de Dados - {currentTenant?.nome || 'Varginha/MG'}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Esta rotina limpa as tabelas operacionais e popula automaticamente <strong>30 proprietários</strong> (Tel seguro: <code>(35) 99999-9999</code>), <strong>70 imóveis em Varginha/MG</strong> com galeria de 5 fotos, <strong>50 clientes</strong> (Tel seguro: <code>(35) 98888-8888</code>) distribuídos nas 7 etapas do CRM e <strong>47 visitas</strong> distribuídas ao longo de 30 dias (passado e futuro). As contas de administradores permanecem intactas.
+                Gerencie os dados operacionais da imobiliária <strong>{currentTenant?.nome || 'Lagom Imóveis'}</strong>. Você pode popular a base completa de demonstração em Varginha/MG (30 proprietários, 70 imóveis, 50 clientes e 47 visitas) ou limpar permanentemente os dados operacionais com dupla verificação de segurança.
               </p>
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800">
                 <div>
                   <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    Executar Seed de Dados (Varginha/MG)
+                    Ações de Base de Dados ({currentTenant?.nome || 'Ativa'})
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Endpoint: <code className="font-mono text-emerald-600 dark:text-emerald-400">POST /api/admin/seed-test-data</code>
+                    Operações vinculadas exclusivamente ao tenant selecionado.
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  onClick={handleSeedData}
-                  isLoading={isSeeding}
-                  variant="primary"
-                  size="sm"
-                  className="shrink-0 font-bold shadow-md bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <RefreshCw className="w-4 h-4 mr-1.5" />
-                  Limpar e Popular Base (Varginha/MG)
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setCleanConfirmedCheckbox(false);
+                      setCleanConfirmText('');
+                      setIsCleanModalOpen(true);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 font-bold border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1.5" />
+                    Limpar Base ({currentTenant?.nome || 'Imobiliária'})
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={handleSeedData}
+                    isLoading={isSeeding}
+                    variant="primary"
+                    size="sm"
+                    className="shrink-0 font-bold shadow-md bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-1.5" />
+                    Popular Base (Varginha/MG)
+                  </Button>
+                </div>
               </div>
 
               {seedResult && (
@@ -1686,6 +1772,83 @@ $$);`}
               )}
             </CardContent>
           </Card>
+
+          {/* ─── MODAL LIMPEZA DE DADOS (DUPLA VERIFICAÇÃO) ─── */}
+          <Modal
+            isOpen={isCleanModalOpen}
+            onClose={() => !isCleaning && setIsCleanModalOpen(false)}
+            title="Limpar Base Operacional (Dupla Verificação)"
+            subtitle={`Exclusão permanente dos dados operacionais da imobiliária ${currentTenant?.nome || 'ativa'}`}
+          >
+            <div className="space-y-4">
+              {/* Alerta de Perigo */}
+              <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-900 dark:text-rose-300 space-y-2">
+                <div className="font-black flex items-center gap-2 text-sm text-rose-700 dark:text-rose-400">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                  Atenção: Ação Destrutiva e Irreversível!
+                </div>
+                <p className="text-[11px] leading-relaxed text-rose-800 dark:text-rose-300/90">
+                  Esta ação apagará permanentemente todos os <strong>imóveis</strong>, <strong>clientes</strong>, <strong>proprietários</strong>, <strong>agendamentos de visitas</strong> e <strong>logs</strong> da imobiliária <strong>{currentTenant?.nome || 'Lagom Imóveis'}</strong>.
+                </p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  As contas de usuários administradores e convites não serão afetadas.
+                </p>
+              </div>
+
+              {/* 1ª Verificação: Checkbox de Ciência */}
+              <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={cleanConfirmedCheckbox}
+                  onChange={(e) => setCleanConfirmedCheckbox(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 text-rose-600 rounded border-slate-300 focus:ring-rose-500"
+                />
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
+                  1ª Verificação: Estou ciente de que esta ação é irreversível e apagará todos os dados operacionais da <strong>{currentTenant?.nome || 'imobiliária'}</strong>.
+                </span>
+              </label>
+
+              {/* 2ª Verificação: Digitar LIMPAR */}
+              <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  2ª Verificação: Digite <code className="text-rose-600 dark:text-rose-400 font-mono font-black bg-rose-100 dark:bg-rose-950/60 px-1 py-0.5 rounded">LIMPAR</code> para desbloquear o botão:
+                </label>
+                <input
+                  type="text"
+                  value={cleanConfirmText}
+                  onChange={(e) => setCleanConfirmText(e.target.value)}
+                  placeholder="Digite LIMPAR"
+                  disabled={!cleanConfirmedCheckbox || isCleaning}
+                  className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono font-black tracking-widest text-rose-600 dark:text-rose-400 uppercase placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:opacity-50"
+                />
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isCleaning}
+                  onClick={() => setIsCleanModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  isLoading={isCleaning}
+                  disabled={!cleanConfirmedCheckbox || cleanConfirmText.trim().toUpperCase() !== 'LIMPAR' || isCleaning}
+                  onClick={handleCleanData}
+                  className="bg-rose-600 hover:bg-rose-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold text-xs shadow-md"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Confirmar e Limpar Banco
+                </Button>
+              </div>
+            </div>
+          </Modal>
         </div>
       )}
     </div>

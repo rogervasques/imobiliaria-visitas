@@ -22,6 +22,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Kanban,
+  AlertTriangle,
 } from 'lucide-react';
 import { Imobiliaria, Imovel, Visita, Usuario } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -58,6 +59,11 @@ export default function ImobiliariasPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSeedModalOpen, setIsSeedModalOpen] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isCleanModalOpen, setIsCleanModalOpen] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+  const [cleanConfirmedCheckbox, setCleanConfirmedCheckbox] = useState(false);
+  const [cleanConfirmText, setCleanConfirmText] = useState('');
+
   const [createNome, setCreateNome] = useState('');
   const [createEmail, setCreateEmail] = useState('');
   const [createTelefone, setCreateTelefone] = useState('');
@@ -70,7 +76,18 @@ export default function ImobiliariasPage() {
   const handleExecuteSeed = async () => {
     setIsSeeding(true);
     try {
-      const res = await fetch('/api/admin/seed-test-data', { method: 'POST' });
+      const activeTenantName = currentTenant?.nome || 'Lagom Imóveis';
+      const activeTenantId = currentTenant?.id;
+
+      const res = await fetch('/api/admin/seed-test-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imobiliaria: activeTenantName,
+          imobiliaria_id: activeTenantId,
+        }),
+      });
+
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Erro ao gerar dados de teste.');
@@ -86,11 +103,12 @@ export default function ImobiliariasPage() {
         localStorage.removeItem('imobiliaria_visitas_imoveis');
         localStorage.removeItem('imobiliaria_visitas_clientes');
         localStorage.removeItem('imobiliaria_visitas_proprietarios');
+        localStorage.removeItem('easymob_item_tenants_map');
       } catch {
         // ignore
       }
 
-      showToast('Base de demonstração (Varginha/MG) populada com sucesso! Recarregando dados...', 'success');
+      showToast(`Base de demonstração (Varginha/MG) vinculada à "${activeTenantName}" populada com sucesso! Recarregando...`, 'success');
       setIsSeedModalOpen(false);
       setTimeout(() => {
         window.location.reload();
@@ -99,6 +117,62 @@ export default function ImobiliariasPage() {
       showToast(err.message || 'Falha ao popular base de dados.', 'error');
     } finally {
       setIsSeeding(false);
+    }
+  };
+
+  const handleExecuteClean = async () => {
+    if (!cleanConfirmedCheckbox || cleanConfirmText.trim().toUpperCase() !== 'LIMPAR') {
+      showToast('Por favor, confirme o checkbox e digite a palavra LIMPAR para continuar.', 'error');
+      return;
+    }
+
+    setIsCleaning(true);
+    try {
+      const activeTenantName = currentTenant?.nome || 'Lagom Imóveis';
+      const activeTenantId = currentTenant?.id;
+
+      const res = await fetch('/api/admin/clean-database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmText: cleanConfirmText.trim().toUpperCase(),
+          imobiliaria: activeTenantName,
+          imobiliaria_id: activeTenantId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao limpar banco de dados.');
+      }
+
+      // Limpar caches do localStorage
+      try {
+        localStorage.removeItem('easymob_visitas_visitas');
+        localStorage.removeItem('easymob_visitas_imoveis');
+        localStorage.removeItem('easymob_visitas_clientes');
+        localStorage.removeItem('easymob_visitas_proprietarios');
+        localStorage.removeItem('imobiliaria_visitas_visitas');
+        localStorage.removeItem('imobiliaria_visitas_imoveis');
+        localStorage.removeItem('imobiliaria_visitas_clientes');
+        localStorage.removeItem('imobiliaria_visitas_proprietarios');
+        localStorage.removeItem('easymob_item_tenants_map');
+      } catch {
+        // ignore
+      }
+
+      showToast(`Base de dados da imobiliária "${activeTenantName}" limpa com sucesso!`, 'success');
+      setIsCleanModalOpen(false);
+      setCleanConfirmedCheckbox(false);
+      setCleanConfirmText('');
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } catch (err: any) {
+      showToast(err.message || 'Falha ao limpar base de dados.', 'error');
+    } finally {
+      setIsCleaning(false);
     }
   };
 
@@ -273,14 +347,30 @@ export default function ImobiliariasPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Botão de Limpeza com Dupla Verificação */}
+          <Button
+            variant="outline"
+            onClick={() => {
+              setCleanConfirmedCheckbox(false);
+              setCleanConfirmText('');
+              setIsCleanModalOpen(true);
+            }}
+            className="border-rose-300 dark:border-rose-800/80 hover:bg-rose-50 text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/40 flex items-center gap-2 font-bold text-xs shadow-xs"
+            title={`Limpar imóveis, clientes, proprietários e visitas de ${currentTenant?.nome || 'Lagom Imóveis'}`}
+          >
+            <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+            Limpar Base ({currentTenant?.nome || 'Imobiliária'})
+          </Button>
+
+          {/* Botão de Povoamento no Tenant Ativo */}
           <Button
             variant="outline"
             onClick={() => setIsSeedModalOpen(true)}
             className="border-emerald-500/40 hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 flex items-center gap-2 font-bold text-xs shadow-xs"
-            title="Popular base com 30 proprietários, 70 imóveis em Varginha/MG, 50 clientes e 47 visitas"
+            title={`Popular base de teste em Varginha/MG vinculada à ${currentTenant?.nome || 'Lagom Imóveis'}`}
           >
             <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            + Povoar Dados de Teste (Varginha/MG)
+            + Povoar Base ({currentTenant?.nome || 'Varginha/MG'})
           </Button>
 
           <Button
@@ -865,6 +955,83 @@ export default function ImobiliariasPage() {
             >
               <Sparkles className="w-4 h-4 mr-1.5" />
               Confirmar e Povoar Base
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ─── MODAL LIMPEZA DE DADOS (DUPLA VERIFICAÇÃO) ─── */}
+      <Modal
+        isOpen={isCleanModalOpen}
+        onClose={() => !isCleaning && setIsCleanModalOpen(false)}
+        title="Limpar Base Operacional (Dupla Verificação)"
+        subtitle={`Exclusão permanente dos dados operacionais da imobiliária ${currentTenant?.nome || 'ativa'}`}
+      >
+        <div className="space-y-4">
+          {/* Alerta de Perigo */}
+          <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-900 dark:text-rose-300 space-y-2">
+            <div className="font-black flex items-center gap-2 text-sm text-rose-700 dark:text-rose-400">
+              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+              Atenção: Ação Destrutiva e Irreversível!
+            </div>
+            <p className="text-[11px] leading-relaxed text-rose-800 dark:text-rose-300/90">
+              Esta ação apagará permanentemente todos os <strong>imóveis</strong>, <strong>clientes</strong>, <strong>proprietários</strong>, <strong>agendamentos de visitas</strong> e <strong>logs</strong> da imobiliária <strong>{currentTenant?.nome || 'Lagom Imóveis'}</strong>.
+            </p>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400">
+              As contas de usuários e convites não serão afetadas.
+            </p>
+          </div>
+
+          {/* 1ª Verificação: Checkbox de Ciência */}
+          <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={cleanConfirmedCheckbox}
+              onChange={(e) => setCleanConfirmedCheckbox(e.target.checked)}
+              className="w-4 h-4 mt-0.5 text-rose-600 rounded border-slate-300 focus:ring-rose-500"
+            />
+            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
+              1ª Verificação: Estou ciente de que esta ação é irreversível e apagará todos os dados operacionais da <strong>{currentTenant?.nome || 'imobiliária'}</strong>.
+            </span>
+          </label>
+
+          {/* 2ª Verificação: Digitar LIMPAR */}
+          <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              2ª Verificação: Digite <code className="text-rose-600 dark:text-rose-400 font-mono font-black bg-rose-100 dark:bg-rose-950/60 px-1 py-0.5 rounded">LIMPAR</code> para desbloquear o botão:
+            </label>
+            <input
+              type="text"
+              value={cleanConfirmText}
+              onChange={(e) => setCleanConfirmText(e.target.value)}
+              placeholder="Digite LIMPAR"
+              disabled={!cleanConfirmedCheckbox || isCleaning}
+              className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono font-black tracking-widest text-rose-600 dark:text-rose-400 uppercase placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:opacity-50"
+            />
+          </div>
+
+          {/* Botões de Ação */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isCleaning}
+              onClick={() => setIsCleanModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              isLoading={isCleaning}
+              disabled={!cleanConfirmedCheckbox || cleanConfirmText.trim().toUpperCase() !== 'LIMPAR' || isCleaning}
+              onClick={handleExecuteClean}
+              className="bg-rose-600 hover:bg-rose-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold text-xs shadow-md"
+            >
+              <Trash2 className="w-4 h-4 mr-1.5" />
+              Confirmar e Limpar Banco
             </Button>
           </div>
         </div>

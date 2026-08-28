@@ -19,10 +19,22 @@ export async function POST(req: NextRequest) {
       console.warn('[Seed] Aviso ao buscar admin:', e);
     }
 
-    // 2. Gera todos os dados operacionais sintéticos e verossímeis
-    const seedData = generateTestSeedData(adminUserId, adminUserNome);
+    // 2. Extrai imobiliária ativa do payload (se informado)
+    let targetImobiliariaNome = 'Lagom Imóveis';
+    let targetImobiliariaId: string | undefined = undefined;
 
-    // 3. Limpeza de dados operacionais antigos no Supabase (Preservando users e invites)
+    try {
+      const body = await req.json().catch(() => ({}));
+      if (body && body.imobiliaria) targetImobiliariaNome = String(body.imobiliaria).trim();
+      if (body && body.imobiliaria_id) targetImobiliariaId = String(body.imobiliaria_id).trim();
+    } catch {
+      // ignore
+    }
+
+    // 3. Gera todos os dados operacionais sintéticos e verossímeis vinculados ao tenant
+    const seedData = generateTestSeedData(adminUserId, adminUserNome, targetImobiliariaNome, targetImobiliariaId);
+
+    // 4. Limpeza de dados operacionais antigos no Supabase (Preservando users e invites)
     try {
       // Limpa logs
       await supabase.from('whatsapp_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
