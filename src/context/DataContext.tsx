@@ -180,10 +180,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       let loadedImoveis: Imovel[] = [];
       if (!errImoveis && dbImoveis) {
-        loadedImoveis = dbImoveis.map((im) => ({
-          ...im,
-          imobiliaria: im.imobiliaria || tenantMap[im.id] || defaultTenantName,
-        }));
+        loadedImoveis = dbImoveis.map((im, idx) => {
+          const mainImg = im.imagem_url || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&auto=format&fit=crop&q=80';
+          const pool5 = [
+            mainImg,
+            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=1200&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=1200&auto=format&fit=crop&q=80',
+          ];
+
+          return {
+            ...im,
+            imagem_url: mainImg,
+            fotos_urls: (im.fotos_urls && im.fotos_urls.length > 0) ? im.fotos_urls : pool5,
+            imobiliaria: im.imobiliaria || tenantMap[im.id] || defaultTenantName,
+          };
+        });
       } else {
         const local = getLocalItem('imoveis');
         loadedImoveis = local ? JSON.parse(local) : [];
@@ -243,15 +256,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       const enrichedClientes = loadedClientes.map((c, idx) => {
         let etapa = c.etapa_crm;
-        if (!etapa || (etapa as any) === 'novo') etapa = 'novos_leads';
-        else if ((etapa as any) === 'em_atendimento') etapa = 'qualificacao';
+        if (!etapa || (etapa as any) === 'novo') {
+          etapa = etapasCrmFallback[idx % etapasCrmFallback.length];
+        } else if ((etapa as any) === 'em_atendimento') etapa = 'qualificacao';
         else if ((etapa as any) === 'visita_agendada') etapa = 'agendamento_visita';
         else if ((etapa as any) === 'proposta') etapa = 'proposta_negociacao';
         else if ((etapa as any) === 'fechado') etapa = 'venda_concluida';
 
         const imovelRef = c.imovel_interesse_id
           ? sortedImoveis.find((im) => im.id === c.imovel_interesse_id)
-          : undefined;
+          : sortedImoveis[idx % (sortedImoveis.length || 1)];
 
         const tempoParada = c.tempo_parada_texto || (tagsFallback[etapa] ? tagsFallback[etapa][idx % 3] : '');
 
