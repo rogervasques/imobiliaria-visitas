@@ -441,7 +441,7 @@ export function NovaVisitaModal({
                       Gravar histórico de atendimento
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Registra conversas
+                      Registra conversas até 48h depois da visita
                     </div>
                   </td>
                   <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
