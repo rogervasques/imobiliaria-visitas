@@ -77,30 +77,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3.1.1 Verifica se a imobiliária do corretor/gestor ainda existe e está ativa
-    if (user.role !== 'admin' && user.imobiliaria) {
-      try {
-        const { data: tenantData } = await supabase
-          .from('imobiliarias')
-          .select('id, nome, ativo')
-          .ilike('nome', user.imobiliaria.trim())
-          .maybeSingle();
-
-        if (!tenantData || tenantData.ativo === false) {
-          console.warn(`[Auth Login Bloqueado] Imobiliária "${user.imobiliaria}" foi excluída ou desativada.`);
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'Acesso negado: A imobiliária vinculada a este usuário foi excluída ou desativada pelo administrador.',
-            },
-            { status: 403 }
-          );
-        }
-      } catch (errTenant) {
-        console.warn('[Auth Login] Erro ao validar imobiliária no banco:', errTenant);
-      }
-    }
-
     // 3.2 Registra último acesso
     const nowIso = new Date().toISOString();
     updateUser(user.id, { ultimo_acesso: nowIso }).catch(() => {});

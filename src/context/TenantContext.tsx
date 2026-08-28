@@ -150,20 +150,30 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
     // Se o usuário for Corretor ou Gestor, ele é ESTRITAMENTE restrito à sua imobiliária
     if (user.role === 'corretor' || user.role === 'gestor') {
-      const userTenantName = (user.imobiliaria || '').trim();
-      if (!isLoadingTenants && imobiliarias.length > 0) {
+      const userTenantName = (user.imobiliaria || 'Lagom Imóveis').trim();
+      if (!isLoadingTenants) {
         const match = imobiliarias.find(
           (i) => i.nome.toLowerCase() === userTenantName.toLowerCase()
         );
         if (match) {
           setCurrentTenantState(match);
         } else {
-          // Imobiliária não existe mais / foi excluída -> Desconecta imediatamente
-          console.warn(`[TenantContext] Imobiliária "${userTenantName}" do usuário não encontrada. Encerrando sessão.`);
-          if (typeof window !== 'undefined') {
-            alert('Aviso de Segurança: A imobiliária vinculada à sua conta foi desativada ou excluída pelo administrador.');
-            window.location.href = '/api/auth/logout';
-          }
+          const newTenantObj: Imobiliaria = {
+            id: `tenant-${userTenantName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+            nome: userTenantName,
+            modulo_crm_ativo: true,
+            limite_usuarios: 10,
+            criado_em: new Date().toISOString(),
+          };
+          setImobiliarias((prev) => {
+            if (prev.some((p) => p.nome.toLowerCase() === userTenantName.toLowerCase())) return prev;
+            const updated = [...prev, newTenantObj];
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(TENANT_LIST_STORAGE_KEY, JSON.stringify(updated));
+            }
+            return updated;
+          });
+          setCurrentTenantState(newTenantObj);
         }
       }
       return;

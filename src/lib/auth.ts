@@ -735,7 +735,7 @@ export async function deleteUsersByTenant(tenantName: string, tenantId?: string)
 }
 
 /**
- * Verifica se o usuário ainda existe e está ativo no sistema, validando se sua imobiliária ainda existe
+ * Verifica se o usuário ainda existe e está ativo no sistema
  */
 export async function verifyUserExists(id: string, email?: string): Promise<boolean> {
   const adminEmail = INITIAL_ADMIN_EMAIL.toLowerCase().trim();
@@ -752,40 +752,7 @@ export async function verifyUserExists(id: string, email?: string): Promise<bool
       .maybeSingle();
 
     if (!error && data) {
-      if (data.ativo === false) return false;
-
-      // Se for corretor ou gestor, valida se a imobiliária ainda existe
-      if (data.role !== 'admin' && data.imobiliaria) {
-        let tenantFound = false;
-        try {
-          const { data: tenant } = await supabase
-            .from('imobiliarias')
-            .select('id, nome, ativo')
-            .ilike('nome', data.imobiliaria.trim())
-            .maybeSingle();
-
-          if (tenant && tenant.ativo !== false) {
-            tenantFound = true;
-          } else {
-            const { data: altTenant } = await supabase
-              .from('tenants')
-              .select('id, nome, ativo')
-              .ilike('nome', data.imobiliaria.trim())
-              .maybeSingle();
-
-            if (altTenant && altTenant.ativo !== false) {
-              tenantFound = true;
-            }
-          }
-        } catch {
-          // fallback
-        }
-
-        if (!tenantFound) {
-          return false; // Imobiliária excluída ou inativa
-        }
-      }
-      return true;
+      return data.ativo !== false;
     }
 
     if (email) {
@@ -796,39 +763,7 @@ export async function verifyUserExists(id: string, email?: string): Promise<bool
         .maybeSingle();
 
       if (!errEmail && dataEmail) {
-        if (dataEmail.ativo === false) return false;
-
-        if (dataEmail.role !== 'admin' && dataEmail.imobiliaria) {
-          let tenantFound = false;
-          try {
-            const { data: tenant } = await supabase
-              .from('imobiliarias')
-              .select('id, nome, ativo')
-              .ilike('nome', dataEmail.imobiliaria.trim())
-              .maybeSingle();
-
-            if (tenant && tenant.ativo !== false) {
-              tenantFound = true;
-            } else {
-              const { data: altTenant } = await supabase
-                .from('tenants')
-                .select('id, nome, ativo')
-                .ilike('nome', dataEmail.imobiliaria.trim())
-                .maybeSingle();
-
-              if (altTenant && altTenant.ativo !== false) {
-                tenantFound = true;
-              }
-            }
-          } catch {
-            // fallback
-          }
-
-          if (!tenantFound) {
-            return false;
-          }
-        }
-        return true;
+        return dataEmail.ativo !== false;
       }
     }
   } catch {
