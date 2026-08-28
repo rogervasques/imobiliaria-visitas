@@ -305,13 +305,15 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
           {/* Lado Esquerdo: Marca da Imobiliária dona do imóvel */}
           <div className="flex items-center min-w-0">
             {logoImobiliaria ? (
-              /* COM LOGO: Substituição Completa da Marca */
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={logoImobiliaria}
-                alt={imobiliariaExibicao}
-                className="max-h-9 max-w-[180px] w-auto h-auto object-contain"
-              />
+              /* COM LOGO: Envolvida em cápsula com fundo cinza claro para destacar logos transparentes ou escuras */
+              <div className="p-1.5 px-3 rounded-xl bg-slate-100/95 shadow-sm border border-slate-200/90 flex items-center justify-center shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logoImobiliaria}
+                  alt={imobiliariaExibicao}
+                  className="max-h-7 sm:max-h-8 max-w-[140px] sm:max-w-[175px] w-auto h-auto object-contain"
+                />
+              </div>
             ) : (
               /* SEM LOGO (FALLBACK): [ Ícone com Iniciais ] + [ Nome da Imobiliária em Texto ] */
               <div className="flex items-center gap-2.5 min-w-0">
