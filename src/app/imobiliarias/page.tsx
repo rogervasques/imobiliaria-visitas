@@ -56,6 +56,8 @@ export default function ImobiliariasPage() {
 
   // Modal Criação
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSeedModalOpen, setIsSeedModalOpen] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const [createNome, setCreateNome] = useState('');
   const [createEmail, setCreateEmail] = useState('');
   const [createTelefone, setCreateTelefone] = useState('');
@@ -64,6 +66,41 @@ export default function ImobiliariasPage() {
   const [createModuloCrmAtivo, setCreateModuloCrmAtivo] = useState(true);
   const [createLimiteUsuarios, setCreateLimiteUsuarios] = useState<number>(10);
   const [isCreating, setIsCreating] = useState(false);
+
+  const handleExecuteSeed = async () => {
+    setIsSeeding(true);
+    try {
+      const res = await fetch('/api/admin/seed-test-data', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao gerar dados de teste.');
+      }
+
+      // Limpar caches do localStorage
+      try {
+        localStorage.removeItem('easymob_visitas_visitas');
+        localStorage.removeItem('easymob_visitas_imoveis');
+        localStorage.removeItem('easymob_visitas_clientes');
+        localStorage.removeItem('easymob_visitas_proprietarios');
+        localStorage.removeItem('imobiliaria_visitas_visitas');
+        localStorage.removeItem('imobiliaria_visitas_imoveis');
+        localStorage.removeItem('imobiliaria_visitas_clientes');
+        localStorage.removeItem('imobiliaria_visitas_proprietarios');
+      } catch {
+        // ignore
+      }
+
+      showToast('Base de demonstração (Varginha/MG) populada com sucesso! Recarregando dados...', 'success');
+      setIsSeedModalOpen(false);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } catch (err: any) {
+      showToast(err.message || 'Falha ao popular base de dados.', 'error');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   // Modal Edição
   const [editingTenant, setEditingTenant] = useState<Imobiliaria | null>(null);
@@ -235,14 +272,26 @@ export default function ImobiliariasPage() {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="shadow-md flex items-center gap-2 font-bold text-xs"
-        >
-          <Plus className="w-4 h-4" />
-          Cadastrar Nova Imobiliária
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsSeedModalOpen(true)}
+            className="border-emerald-500/40 hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 flex items-center gap-2 font-bold text-xs shadow-xs"
+            title="Popular base com 30 proprietários, 70 imóveis em Varginha/MG, 50 clientes e 47 visitas"
+          >
+            <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            + Povoar Dados de Teste (Varginha/MG)
+          </Button>
+
+          <Button
+            variant="primary"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="shadow-md flex items-center gap-2 font-bold text-xs"
+          >
+            <Plus className="w-4 h-4" />
+            Cadastrar Nova Imobiliária
+          </Button>
+        </div>
       </div>
 
       {/* ─── CARDS DE MÉTRICAS ─── */}
@@ -769,6 +818,56 @@ export default function ImobiliariasPage() {
             </div>
           </form>
         )}
+      </Modal>
+
+      {/* ─── MODAL CONFIRMAÇÃO SEED VARGINHA/MG ─── */}
+      <Modal
+        isOpen={isSeedModalOpen}
+        onClose={() => !isSeeding && setIsSeedModalOpen(false)}
+        title="Popular Base de Testes - Varginha/MG"
+        subtitle="Geração de massa de dados realistas e verossímeis"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-slate-700 dark:text-slate-300 space-y-2">
+            <div className="font-extrabold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5 text-sm">
+              <Sparkles className="w-4 h-4 text-emerald-600" />
+              O que será gerado no sistema:
+            </div>
+            <ul className="space-y-1.5 list-disc pl-4 text-[11px] text-slate-600 dark:text-slate-300">
+              <li><strong>30 Proprietários</strong> com telefone seguro: <code className="font-mono bg-emerald-100 dark:bg-emerald-900/60 px-1 py-0.5 rounded text-emerald-800 dark:text-emerald-300">(35) 99999-9999</code></li>
+              <li><strong>70 Imóveis em Varginha/MG</strong> (bairros reais: Vila Pinto, Jd. Eliana, Centro, etc.) com galeria de 5 fotos de alta resolução</li>
+              <li><strong>50 Clientes / Leads</strong> com preferências de busca no CRM (Tel: <code className="font-mono bg-emerald-100 dark:bg-emerald-900/60 px-1 py-0.5 rounded text-emerald-800 dark:text-emerald-300">(35) 98888-8888</code>)</li>
+              <li><strong>47 Visitas &amp; Roteiros Multi-Imóveis</strong> distribuídos ao longo de 30 dias (15 dias passados e 15 dias futuros)</li>
+            </ul>
+          </div>
+
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Esta rotina limpa as tabelas operacionais e insere o conjunto completo de demonstração. As contas de usuários (Administrador) permanecem preservadas.
+          </p>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isSeeding}
+              onClick={() => setIsSeedModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              isLoading={isSeeding}
+              onClick={handleExecuteSeed}
+              className="bg-emerald-600 hover:bg-emerald-700 font-bold text-xs"
+            >
+              <Sparkles className="w-4 h-4 mr-1.5" />
+              Confirmar e Povoar Base
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

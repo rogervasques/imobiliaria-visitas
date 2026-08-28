@@ -1,542 +1,355 @@
 import { Cliente, Imovel, Proprietario, Visita, TipoImovel, FinalidadeImovel, StatusImovel, StatusCliente, OrigemLead, StatusVisita, EtapaCRM } from '@/types';
 
-// Lista de 30 Proprietários com dados brasileiros realistas
-export const PROPRIETARIOS_DATA = [
-  { nome: 'Carlos Eduardo Mendonça', telefone: '11987654321', email: 'carlos.mendonca@email.com' },
-  { nome: 'Mariana Albuquerque', telefone: '11991234567', email: 'mariana.albuquerque@email.com' },
-  { nome: 'Roberto Silveira Lima', telefone: '11977778888', email: 'roberto.lima@email.com' },
-  { nome: 'Camila Brandão Fonseca', telefone: '21984561234', email: 'camila.fonseca@email.com' },
-  { nome: 'Henrique Siqueira Dias', telefone: '21973219876', email: 'henrique.dias@email.com' },
-  { nome: 'Beatriz Monteiro Castro', telefone: '31998765432', email: 'beatriz.castro@email.com' },
-  { nome: 'Rodrigo Peixoto Vianna', telefone: '31987651122', email: 'rodrigo.vianna@email.com' },
-  { nome: 'Juliana Vasconcelos Ramos', telefone: '41991112233', email: 'juliana.ramos@email.com' },
-  { nome: 'Marcelo Queiroz Guimarães', telefone: '41988883344', email: 'marcelo.guimaraes@email.com' },
-  { nome: 'Patrícia Borges Nogueira', telefone: '51992224455', email: 'patricia.nogueira@email.com' },
-  { nome: 'Fernando Meirelles Toledo', telefone: '51983335566', email: 'fernando.toledo@email.com' },
-  { nome: 'Luciana Prado Magalhães', telefone: '61994446677', email: 'luciana.magalhaes@email.com' },
-  { nome: 'Gustavo Amaral Couto', telefone: '61985557788', email: 'gustavo.couto@email.com' },
-  { nome: 'Vanessa Paiva Bittencourt', telefone: '71996668899', email: 'vanessa.bittencourt@email.com' },
-  { nome: 'Eduardo Cavalcanti Farias', telefone: '71987779900', email: 'eduardo.cavalcanti@email.com' },
-  { nome: 'Renata Gouveia Lins', telefone: '81998880011', email: 'renata.lins@email.com' },
-  { nome: 'André Dantas Medeiros', telefone: '81989991122', email: 'andre.medeiros@email.com' },
-  { nome: 'Larissa Chaves Fontes', telefone: '85991233344', email: 'larissa.fontes@email.com' },
-  { nome: 'Tiago Rezende Vasques', telefone: '85982344455', email: 'tiago.vasques@email.com' },
-  { nome: 'Aline Saraiva Camargo', telefone: '19993455566', email: 'aline.camargo@email.com' },
-  { nome: 'Bruno Pacheco Drummond', telefone: '19984566677', email: 'bruno.drummond@email.com' },
-  { nome: 'Cláudia Fagundes Xavier', telefone: '27995677788', email: 'claudia.xavier@email.com' },
-  { nome: 'Daniel Gomide Arruda', telefone: '27986788899', email: 'daniel.arruda@email.com' },
-  { nome: 'Elisa Marcondes Paes', telefone: '48997899900', email: 'elisa.paes@email.com' },
-  { nome: 'Flávio Antunes Aguiar', telefone: '48988900011', email: 'flavio.aguiar@email.com' },
-  { nome: 'Gabriela Neves Saldanha', telefone: '62999011122', email: 'gabriela.saldanha@email.com' },
-  { nome: 'Leonardo Franco Vilela', telefone: '62980122233', email: 'leonardo.vilela@email.com' },
-  { nome: 'Priscila Dutra Alencar', telefone: '91991236677', email: 'priscila.alencar@email.com' },
-  { nome: 'Vinícius Sampaio Correa', telefone: '92982347788', email: 'vinicius.correa@email.com' },
-  { nome: 'Tatiana Holanda Peixoto', telefone: '11994568899', email: 'tatiana.peixoto@email.com' },
+// Telefone seguro de teste para todos os proprietários e clientes
+export const TELEFONE_PROPRIETARIOS_PADRAO = '35999999999';
+export const TELEFONE_CLIENTES_PADRAO = '35988888888';
+
+// Lista de 30 Proprietários com nomes brasileiros completos
+export const PROPRIETARIOS_VARGINHA = [
+  { nome: 'Carlos Eduardo Silveira', email: 'proprietario1@teste.com' },
+  { nome: 'Mariana Alvarenga Bueno', email: 'proprietario2@teste.com' },
+  { nome: 'Roberto Mendes Rezende', email: 'proprietario3@teste.com' },
+  { nome: 'Juliana Figueiredo Nogueira', email: 'proprietario4@teste.com' },
+  { nome: 'Fernando Henrique Paiva', email: 'proprietario5@teste.com' },
+  { nome: 'Beatriz Vasconcelos Prado', email: 'proprietario6@teste.com' },
+  { nome: 'Lucas Gabriel Antunes', email: 'proprietario7@teste.com' },
+  { nome: 'Camila Cristina Ferreira', email: 'proprietario8@teste.com' },
+  { nome: 'Marcelo Augusto Faria', email: 'proprietario9@teste.com' },
+  { nome: 'Patrícia Helena Tavares', email: 'proprietario10@teste.com' },
+  { nome: 'Thiago Henrique Oliveira', email: 'proprietario11@teste.com' },
+  { nome: 'Vanessa Cristina Gomes', email: 'proprietario12@teste.com' },
+  { nome: 'Rodrigo Ramos Esteves', email: 'proprietario13@teste.com' },
+  { nome: 'Larissa Danielle Barbosa', email: 'proprietario14@teste.com' },
+  { nome: 'Guilherme Castro Vilela', email: 'proprietario15@teste.com' },
+  { nome: 'Aline Moreira Magalhães', email: 'proprietario16@teste.com' },
+  { nome: 'Renato Prado Albuquerque', email: 'proprietario17@teste.com' },
+  { nome: 'Fernanda Lima Pimenta', email: 'proprietario18@teste.com' },
+  { nome: 'Eduardo Salgado Junqueira', email: 'proprietario19@teste.com' },
+  { nome: 'Priscila Helena Ramos', email: 'proprietario20@teste.com' },
+  { nome: 'Gustavo Henrique Toledo', email: 'proprietario21@teste.com' },
+  { nome: 'Daniela Cristina Ribeiro', email: 'proprietario22@teste.com' },
+  { nome: 'Fábio Luciano Naves', email: 'proprietario23@teste.com' },
+  { nome: 'Renata Valéria Silveira', email: 'proprietario24@teste.com' },
+  { nome: 'Henrique Duarte Sampaio', email: 'proprietario25@teste.com' },
+  { nome: 'Luciana Maria Pimentel', email: 'proprietario26@teste.com' },
+  { nome: 'Vinícius Rocha Esteves', email: 'proprietario27@teste.com' },
+  { nome: 'Sabrina Costa Guimarães', email: 'proprietario28@teste.com' },
+  { nome: 'Alexandre Magno Chaves', email: 'proprietario29@teste.com' },
+  { nome: 'Tatiane Cristina Vianna', email: 'proprietario30@teste.com' },
 ];
 
-// Imagens reais em alta resolução de arquitetura e interiores (Unsplash)
-const IMAGES_APARTAMENTOS = [
-  'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1502005229762-ee1b2b93e680?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+// Bairros de Varginha / MG
+export const BAIRROS_VARGINHA = [
+  'Vila Pinto', 'Jardim Eliana', 'Residencial Alameda', 'Santa Luiza',
+  'Centro', 'Park Real', 'Vale dos Ipês', 'Vila Paiva', 'Jardim Andere',
+  'Bom Pastor', 'Pinheiros', 'Sion', 'Santana', 'Rezende', 'Damasco',
+  'Bela Vista', 'Industrial', 'Jardim Petrópolis', 'Santa Terezinha',
+  'Sagrado Coração', 'Cidade Nova', 'Jardim Canaã', 'Imaculada Conceição',
+  'Treviso', 'Flamboyant', 'Residencial Portinari', 'Jardim Ribeiro',
+  'Jardim das Oliveiras', 'Alto da Vila Paiva', 'Parque Boa Vista'
 ];
 
-const IMAGES_CASAS = [
-  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
+// URLs reais de fotos de arquitetura/interiores do Unsplash
+export const FOTOS_POOL = [
+  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1502005229762-ee1b2b93e007?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1616137466211-f939a420be84?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1615873968403-89e068629265?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?w=1200&auto=format&fit=crop&q=80'
 ];
 
-const IMAGES_COBERTURAS = [
-  'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1600566752355-35792bedcfea?auto=format&fit=crop&w=800&q=80',
+// Nomes de 50 Clientes / Leads
+export const CLIENTES_VARGINHA = [
+  'Gabriel Silveira Miranda', 'Ana Paula Mendonça', 'Matheus Costa Rezende',
+  'Juliana Alvarenga Paiva', 'Felipe Augusto Toledo', 'Carolina Nogueira Prado',
+  'Lucas Eduardo Salgado', 'Mariana Esteves Faria', 'Rafael Henrique Junqueira',
+  'Camila Vilela Esteves', 'Rodrigo Barbosa Naves', 'Beatriz Pimenta Ramos',
+  'Vinícius Magalhães Chaves', 'Larissa Duarte Guimarães', 'Eduardo Sampaio Ribeiro',
+  'Fernanda Gomes Albuquerque', 'Thiago Lima Pimentel', 'Patrícia Castro Vianna',
+  'Gustavo Prado Rocha', 'Vanessa Valéria Silveira', 'Alexandre Henrique Tavares',
+  'Sabrina Helena Ferreira', 'Renato Luciano Gomes', 'Daniela Maria Esteves',
+  'Fábio Augusto Barbosa', 'Aline Cristina Nogueira', 'Marcelo Henrique Prado',
+  'Priscila Danielle Salgado', 'Henrique Magno Faria', 'Luciana Helena Junqueira',
+  'Guilherme Salgado Toledo', 'Tatiane Lima Esteves', 'Bruno César Albuquerque',
+  'Jéssica Mara Paiva', 'Diego Armando Rezende', 'Natália Freitas Silveira',
+  'Leonardo Gomes Prado', 'Isabela Cristina Vilela', 'Renan Augusto Sampaio',
+  'Taís Maria Naves', 'Caio Henrique Ramos', 'Bárbara Cristina Pimenta',
+  'Danilo Esteves Chaves', 'Letícia Danielle Guimarães', 'Vitor Hugo Ribeiro',
+  'Débora Cristina Pimentel', 'Otávio Augusto Rocha', 'Monique Helena Vianna',
+  'Murilo Silveira Tavares', 'Lorena Cristina Ferreira'
 ];
 
-const IMAGES_COMERCIAIS = [
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=800&q=80',
+// Modelos de imóveis para Varginha
+const MODELOS_VARGINHA: {
+  tipo: TipoImovel;
+  finalidade: FinalidadeImovel;
+  prefixo: string;
+  quartos: number;
+  suites: number;
+  vagas: number;
+  area: number;
+  valMin?: number;
+  valMax?: number;
+  locMin?: number;
+  locMax?: number;
+}[] = [
+  { tipo: 'casa', finalidade: 'venda', prefixo: 'Casa de Alto Padrão com Espaço Gourmet', quartos: 4, suites: 2, vagas: 3, area: 280, valMin: 750000, valMax: 1450000 },
+  { tipo: 'casa', finalidade: 'venda', prefixo: 'Excelente Sobrado Residencial', quartos: 3, suites: 1, vagas: 2, area: 195, valMin: 480000, valMax: 720000 },
+  { tipo: 'casa', finalidade: 'locacao', prefixo: 'Casa Térrea Espaçosa com Quintal', quartos: 3, suites: 1, vagas: 2, area: 160, locMin: 2200, locMax: 3800 },
+  { tipo: 'casa', finalidade: 'ambos', prefixo: 'Belíssima Residência com Piscina Aquecida', quartos: 4, suites: 3, vagas: 4, area: 360, valMin: 1200000, valMax: 2100000, locMin: 5500, locMax: 8500 },
+  { tipo: 'apartamento', finalidade: 'venda', prefixo: 'Apartamento Moderno com Varanda Gourmet', quartos: 3, suites: 1, vagas: 2, area: 110, valMin: 420000, valMax: 680000 },
+  { tipo: 'apartamento', finalidade: 'venda', prefixo: 'Apartamento Alto Padrão e Vista Panorâmica', quartos: 3, suites: 2, vagas: 2, area: 145, valMin: 650000, valMax: 980000 },
+  { tipo: 'apartamento', finalidade: 'locacao', prefixo: 'Apartamento Mobiliado e Decorado', quartos: 2, suites: 1, vagas: 1, area: 78, locMin: 1800, locMax: 2900 },
+  { tipo: 'apartamento', finalidade: 'ambos', prefixo: 'Apartamento Garden com Área Externa Privativa', quartos: 3, suites: 1, vagas: 2, area: 135, valMin: 550000, valMax: 850000, locMin: 2800, locMax: 4200 },
+  { tipo: 'cobertura', finalidade: 'venda', prefixo: 'Cobertura Duplex Cinematográfica com Hidro', quartos: 4, suites: 3, vagas: 3, area: 290, valMin: 1350000, valMax: 2600000 },
+  { tipo: 'cobertura', finalidade: 'ambos', prefixo: 'Cobertura Exclusiva com Solarium e Churrasqueira', quartos: 3, suites: 2, vagas: 3, area: 240, valMin: 1100000, valMax: 1950000, locMin: 4800, locMax: 7800 },
+  { tipo: 'casa', finalidade: 'venda', prefixo: 'Casa em Condomínio Fechado com Segurança 24h', quartos: 4, suites: 4, vagas: 4, area: 420, valMin: 1800000, valMax: 3500000 },
+  { tipo: 'comercial', finalidade: 'locacao', prefixo: 'Conjunto Comercial Pronto para Consultório/Escritório', quartos: 0, suites: 0, vagas: 2, area: 85, locMin: 2500, locMax: 5200 },
+  { tipo: 'comercial', finalidade: 'venda', prefixo: 'Prédio Comercial em Ponto Nobre e Estratégico', quartos: 0, suites: 0, vagas: 6, area: 480, valMin: 1900000, valMax: 3800000 },
+  { tipo: 'comercial', finalidade: 'locacao', prefixo: 'Galpão Industrial com Docas e Escritórios', quartos: 0, suites: 0, vagas: 8, area: 650, locMin: 7500, locMax: 14500 },
 ];
-
-const IMAGES_TERRENOS = [
-  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=80',
-];
-
-// 50 Clientes com preferências realistas
-export const CLIENTES_DATA = [
-  { nome: 'Lucas Ferraz Souza', telefone: '11998887766', email: 'lucas.ferraz@techcorp.com', perfil: 'Busca apto 3 dormitórios perto do metrô para família', orcamento: 'R$ 1.2M a 1.6M', origem: 'portal', status: 'ativo' },
-  { nome: 'Fernanda Vasconcelos', telefone: '11985554433', email: 'fernanda.vasconcelos@advocacia.com', perfil: 'Casa em condomínio com espaço para home office e quintal amplo', orcamento: 'R$ 2.5M a 3.2M', origem: 'indicacao', status: 'ativo' },
-  { nome: 'Guilherme Antunes', telefone: '11971112233', email: 'guilherme.antunes@invest.com', perfil: 'Studio ou 1 dormitório para investimento em locação', orcamento: 'R$ 500k a 700k', origem: 'instagram', status: 'ativo' },
-  { nome: 'Isabela Fontenelle Rocha', telefone: '11982223344', email: 'isabela.rocha@hospital.com.br', perfil: 'Apartamento de 2 ou 3 dorms em Moema ou Pinheiros', orcamento: 'R$ 800k a 1.1M', origem: 'site', status: 'negociando' },
-  { nome: 'Thiago Meireles Prado', telefone: '11993334455', email: 'thiago.prado@fintech.com', perfil: 'Cobertura duplex com vista livre e churrasqueira', orcamento: 'R$ 2.8M a 3.8M', origem: 'whatsapp', status: 'ativo' },
-  { nome: 'Mariana Drummond Silveira', telefone: '11984445566', email: 'mariana.drummond@design.com', perfil: 'Apartamento reformado com iluminação natural', orcamento: 'R$ 950k a 1.3M', origem: 'instagram', status: 'ativo' },
-  { nome: 'Felipe Albuquerque Castro', telefone: '21985556677', email: 'felipe.albuquerque@energia.com', perfil: 'Apartamento 3 quartos no Leblon ou Ipanema', orcamento: 'R$ 2.2M a 3.0M', origem: 'portal', status: 'negociando' },
-  { nome: 'Juliana Paes Marcondes', telefone: '21976667788', email: 'juliana.marcondes@globo.com', perfil: 'Casa contemporânea com piscina e segurança 24h', orcamento: 'R$ 3.5M a 4.5M', origem: 'indicacao', status: 'ativo' },
-  { nome: 'Renato Siqueira Gomide', telefone: '31997778899', email: 'renato.gomide@mineracao.com.br', perfil: 'Apartamento 4 suítes na Savassi ou Lourdes', orcamento: 'R$ 1.8M a 2.4M', origem: 'site', status: 'ativo' },
-  { nome: 'Camila Nogueira Borges', telefone: '31988889900', email: 'camila.borges@medicina.ufmg.br', perfil: 'Apartamento 2 quartos com varanda gourmet', orcamento: 'R$ 650k a 850k', origem: 'whatsapp', status: 'ativo' },
-  { nome: 'Bruno Toledo Meirelles', telefone: '41999990011', email: 'bruno.meirelles@logistica.com', perfil: 'Apartamento no Batel ou Ecoville com 3 vagas', orcamento: 'R$ 1.4M a 1.9M', origem: 'portal', status: 'negociando' },
-  { nome: 'Natália Amaral Coutinho', telefone: '41981110022', email: 'natalia.coutinho@arquitetura.com', perfil: 'Terreno em condomínio fechado para construir', orcamento: 'R$ 450k a 600k', origem: 'site', status: 'ativo' },
-  { nome: 'Diego Cavalcanti Farias', telefone: '51992221133', email: 'diego.cavalcanti@agro.com.br', perfil: 'Apartamento no Moinhos de Vento alto padrão', orcamento: 'R$ 1.5M a 2.2M', origem: 'indicacao', status: 'ativo' },
-  { nome: 'Amanda Lins Medeiros', telefone: '51983332244', email: 'amanda.medeiros@psicologia.com', perfil: 'Apartamento garden ou casa de vila aconchegante', orcamento: 'R$ 750k a 950k', origem: 'instagram', status: 'ativo' },
-  { nome: 'Rodrigo Fontes Rezende', telefone: '61994443355', email: 'rodrigo.rezende@ministerio.gov.br', perfil: 'Apartamento na Asa Sul ou Asa Norte 3 quartos', orcamento: 'R$ 1.3M a 1.7M', origem: 'portal', status: 'ativo' },
-  { nome: 'Beatriz Saraiva Camargo', telefone: '61985554466', email: 'beatriz.camargo@senado.leg.br', perfil: 'Casa no Lago Sul com área de lazer completa', orcamento: 'R$ 3.8M a 5.0M', origem: 'whatsapp', status: 'negociando' },
-  { nome: 'Gabriel Dantas Pacheco', telefone: '71996665577', email: 'gabriel.pacheco@advocacia.ba', perfil: 'Apartamento vista mar na Vitória ou Barra', orcamento: 'R$ 1.6M a 2.3M', origem: 'portal', status: 'ativo' },
-  { nome: 'Carolina Fagundes Arruda', telefone: '71987776688', email: 'carolina.arruda@hospital.ba', perfil: 'Casa em condomínio em Busca Vida ou Vilas do Atlântico', orcamento: 'R$ 1.8M a 2.5M', origem: 'indicacao', status: 'ativo' },
-  { nome: 'Mateus Marcondes Paes', telefone: '81998887799', email: 'mateus.paes@porto.digital.br', perfil: 'Flat ou studio em Boa Viagem para investimento', orcamento: 'R$ 380k a 550k', origem: 'instagram', status: 'fechado' },
-  { nome: 'Vanessa Antunes Aguiar', telefone: '81989998800', email: 'vanessa.aguiar@consultoria.com', perfil: 'Apartamento 4 quartos em Boa Viagem beira-mar', orcamento: 'R$ 2.4M a 3.2M', origem: 'site', status: 'ativo' },
-  { nome: 'Leandro Neves Saldanha', telefone: '85991119911', email: 'leandro.saldanha@comex.ce', perfil: 'Apartamento Meireles ou Aldeota com varanda', orcamento: 'R$ 900k a 1.4M', origem: 'portal', status: 'ativo' },
-  { nome: 'Priscila Franco Vilela', telefone: '85982220022', email: 'priscila.vilela@moda.com.br', perfil: 'Casa duplex em condomínio no Eusébio', orcamento: 'R$ 1.1M a 1.6M', origem: 'whatsapp', status: 'negociando' },
-  { nome: 'Alexandre Dutra Alencar', telefone: '19993331133', email: 'alexandre.alencar@techcampinas.com', perfil: 'Casa em condomínio em Paulínia ou Barão Geraldo', orcamento: 'R$ 1.3M a 1.8M', origem: 'indicacao', status: 'ativo' },
-  { nome: 'Clara Sampaio Correa', telefone: '19984442244', email: 'clara.correa@biotech.com', perfil: 'Apartamento Cambuí 3 suítes', orcamento: 'R$ 1.5M a 2.0M', origem: 'site', status: 'ativo' },
-  { nome: 'Eduardo Holanda Peixoto', telefone: '27995553355', email: 'eduardo.peixoto@vitoria.ind.br', perfil: 'Apartamento Praia do Canto 4 quartos', orcamento: 'R$ 1.7M a 2.5M', origem: 'portal', status: 'ativo' },
-  { nome: 'Tatiane Ribeiro Brandão', telefone: '27986664466', email: 'tatiane.brandao@clinica.com', perfil: 'Cobertura em Itapuã / Praia da Costa', orcamento: 'R$ 2.1M a 2.9M', origem: 'instagram', status: 'negociando' },
-  { nome: 'Vinícius Dias Monteiro', telefone: '48997775577', email: 'vinicius.monteiro@floripa.tech', perfil: 'Casa em Jurerê Internacional ou Cacupé', orcamento: 'R$ 3.5M a 4.8M', origem: 'portal', status: 'ativo' },
-  { nome: 'Helena Vianna Ramos', telefone: '48988886688', email: 'helena.ramos@arquitetura.sc', perfil: 'Apartamento na Beira-Mar Norte com vista mar', orcamento: 'R$ 2.0M a 2.8M', origem: 'indicacao', status: 'ativo' },
-  { nome: 'Arthur Queiroz Guimarães', telefone: '62999997799', email: 'arthur.guimaraes@agronegocio.go', perfil: 'Apartamento Bueno ou Marista com varanda gourmet', orcamento: 'R$ 1.2M a 1.7M', origem: 'whatsapp', status: 'ativo' },
-  { nome: 'Lívia Borges Toledo', telefone: '62981118800', email: 'livia.toledo@clinica.go', perfil: 'Casa em condomínio fechado Alphaville Flamboyant', orcamento: 'R$ 2.6M a 3.6M', origem: 'site', status: 'negociando' },
-  { nome: 'Marcelo Prado Amaral', telefone: '91992229911', email: 'marcelo.amaral@belem.com', perfil: 'Apartamento Umarizal alto padrão', orcamento: 'R$ 1.4M a 2.0M', origem: 'portal', status: 'ativo' },
-  { nome: 'Jéssica Couto Bittencourt', telefone: '92983330022', email: 'jessica.bittencourt@manaus.ind', perfil: 'Apartamento Ponta Negra com vista para o Rio Negro', orcamento: 'R$ 1.1M a 1.6M', origem: 'indicacao', status: 'ativo' },
-  { nome: 'Danilo Farias Lins', telefone: '11994441133', email: 'danilo.lins@banco.com.br', perfil: 'Apartamento Brooklin ou Vila Olímpia perto de escritórios', orcamento: 'R$ 900k a 1.3M', origem: 'site', status: 'ativo' },
-  { nome: 'Sabrina Medeiros Fontes', telefone: '11985552244', email: 'sabrina.fontes@startup.com', perfil: 'Studio em Perdizes ou Higienópolis para morar sozinha', orcamento: 'R$ 480k a 620k', origem: 'instagram', status: 'ativo' },
-  { nome: 'Caio Rezende Saraiva', telefone: '11976663355', email: 'caio.saraiva@consulting.com', perfil: 'Apartamento 3 dormitórios em Santana / Zona Norte', orcamento: 'R$ 750k a 980k', origem: 'portal', status: 'ativo' },
-  { nome: 'Monique Camargo Pacheco', telefone: '11987774466', email: 'monique.pacheco@marketing.com', perfil: 'Casa charmosa na Granja Viana ou Cotia', orcamento: 'R$ 1.6M a 2.2M', origem: 'indicacao', status: 'negociando' },
-  { nome: 'Otávio Drummond Xavier', telefone: '21998885577', email: 'otavio.xavier@cinema.art.br', perfil: 'Apartamento Botafogo ou Flamengo com vista Cristo/Pão de Açúcar', orcamento: 'R$ 1.1M a 1.5M', origem: 'portal', status: 'ativo' },
-  { nome: 'Bárbara Arruda Marcondes', telefone: '21989996688', email: 'barbara.marcondes@juridico.rj', perfil: 'Apartamento Barra da Tijuca na Península', orcamento: 'R$ 1.8M a 2.6M', origem: 'whatsapp', status: 'ativo' },
-  { nome: 'Igor Paes Antunes', telefone: '31991117799', email: 'igor.antunes@engenhariabh.com', perfil: 'Apartamento Vila da Serra 3 suítes', orcamento: 'R$ 1.3M a 1.8M', origem: 'site', status: 'ativo' },
-  { nome: 'Carla Aguiar Neves', telefone: '31982228800', email: 'carla.neves@educacao.mg.gov.br', perfil: 'Apartamento Santo Agostinho ou Gutierrez', orcamento: 'R$ 850k a 1.1M', origem: 'portal', status: 'fechado' },
-  { nome: 'Samuel Saldanha Franco', telefone: '41993339911', email: 'samuel.franco@curitiba.ind', perfil: 'Sobrado moderno no Cabral ou Juvevê', orcamento: 'R$ 890k a 1.2M', origem: 'instagram', status: 'ativo' },
-  { nome: 'Débora Vilela Dutra', telefone: '41984440022', email: 'debora.dutra@comunicacao.pr', perfil: 'Apartamento no Centro Cívico para locação', orcamento: 'R$ 2.500 a 3.800/mês', origem: 'portal', status: 'ativo' },
-  { nome: 'Vitor Alencar Sampaio', telefone: '51995551133', email: 'vitor.sampaio@ufrgs.br', perfil: 'Apartamento Petrópolis ou Menino Deus 2 quartos', orcamento: 'R$ 580k a 780k', origem: 'site', status: 'ativo' },
-  { nome: 'Julio Cesar Peixoto', telefone: '51986662244', email: 'julio.peixoto@poa.com.br', perfil: 'Casa em condomínio Zona Sul de Porto Alegre', orcamento: 'R$ 1.4M a 1.9M', origem: 'indicacao', status: 'negociando' },
-  { nome: 'Lorena Brandão Dias', telefone: '61997773355', email: 'lorena.dias@diplomacia.gov.br', perfil: 'Casa no Lago Norte com pier ou vista lago', orcamento: 'R$ 2.8M a 4.0M', origem: 'portal', status: 'ativo' },
-  { nome: 'Raquel Monteiro Vianna', telefone: '71988884466', email: 'raquel.vianna@bahia.tur.br', perfil: 'Village em Guarajuba ou Praia do Forte', orcamento: 'R$ 850k a 1.3M', origem: 'whatsapp', status: 'ativo' },
-  { nome: 'Mauro Ramos Queiroz', telefone: '81999995577', email: 'mauro.queiroz@recife.com.br', perfil: 'Apartamento Jaqueira ou Casa Forte tradicional', orcamento: 'R$ 1.2M a 1.7M', origem: 'portal', status: 'ativo' },
-  { nome: 'Érica Guimarães Borges', telefone: '85981116688', email: 'erica.borges@fortaleza.ce', perfil: 'Apartamento Beira Mar Fortaleza vista panorâmica', orcamento: 'R$ 1.9M a 2.7M', origem: 'site', status: 'ativo' },
-  { nome: 'Pedro Henrique Toledo', telefone: '19992227799', email: 'pedro.toledo@unicamp.br', perfil: 'Apartamento Taquaral próximo ao parque', orcamento: 'R$ 700k a 950k', origem: 'portal', status: 'ativo' },
-  { nome: 'Sofia Amaral Couto', telefone: '11983338800', email: 'sofia.couto@investimentos.sp', perfil: 'Apartamento Itaim Bibi com lazer completo e concierge', orcamento: 'R$ 2.4M a 3.4M', origem: 'indicacao', status: 'ativo' },
-];
-
-export interface GeneratedSeedData {
-  proprietarios: Proprietario[];
-  imoveis: Imovel[];
-  clientes: Cliente[];
-  visitas: Visita[];
-}
 
 /**
- * Gera a base completa de 30 proprietários, 80 imóveis, 50 clientes e ~38 visitas operacionais
+ * Gera conjunto completo de dados sintéticos para Varginha/MG
  */
-export function generateTestSeedData(adminUserId: string = 'user-admin-master', adminUserNome: string = 'Roger Vasques Berchembrock'): GeneratedSeedData {
-  const now = new Date();
-
+export function generateTestSeedData(adminUserId: string = 'user-admin-master', adminUserNome: string = 'Roger Vasques Berchembrock') {
   // 1. Gera 30 Proprietários
-  const proprietarios: Proprietario[] = PROPRIETARIOS_DATA.map((p, idx) => ({
+  const proprietarios: Proprietario[] = PROPRIETARIOS_VARGINHA.map((p, idx) => ({
     id: `prop-${String(idx + 1).padStart(3, '0')}`,
     nome: p.nome,
-    telefone: p.telefone,
+    telefone: TELEFONE_PROPRIETARIOS_PADRAO,
     email: p.email,
-    criado_em: new Date(now.getTime() - (30 - idx) * 86400000).toISOString(),
-    atualizado_em: new Date().toISOString(),
+    imobiliaria: 'Lagom Imóveis',
+    criado_em: new Date(Date.now() - (30 - idx) * 86400000).toISOString(),
   }));
 
-  // 2. Gera 80 Imóveis variados distribuídos entre os 30 proprietários
-  const bairrosSP = [
-    { bairro: 'Moema Pássaros', cidade: 'São Paulo', estado: 'SP', cep: '04524-001' },
-    { bairro: 'Pinheiros', cidade: 'São Paulo', estado: 'SP', cep: '05422-001' },
-    { bairro: 'Jardins', cidade: 'São Paulo', estado: 'SP', cep: '01420-002' },
-    { bairro: 'Itaim Bibi', cidade: 'São Paulo', estado: 'SP', cep: '04531-000' },
-    { bairro: 'Vila Mariana', cidade: 'São Paulo', estado: 'SP', cep: '04012-010' },
-    { bairro: 'Bela Vista', cidade: 'São Paulo', estado: 'SP', cep: '01310-200' },
-    { bairro: 'Perdizes', cidade: 'São Paulo', estado: 'SP', cep: '05015-000' },
-    { bairro: 'Granja Viana', cidade: 'Cotia', estado: 'SP', cep: '06700-000' },
-    { bairro: 'Alphaville', cidade: 'Barueri', estado: 'SP', cep: '06454-000' },
-    { bairro: 'Cambuí', cidade: 'Campinas', estado: 'SP', cep: '13025-000' },
-    { bairro: 'Leblon', cidade: 'Rio de Janeiro', estado: 'RJ', cep: '22430-040' },
-    { bairro: 'Ipanema', cidade: 'Rio de Janeiro', estado: 'RJ', cep: '22410-002' },
-    { bairro: 'Barra da Tijuca', cidade: 'Rio de Janeiro', estado: 'RJ', cep: '22631-000' },
-    { bairro: 'Savassi', cidade: 'Belo Horizonte', estado: 'MG', cep: '30140-060' },
-    { bairro: 'Lourdes', cidade: 'Belo Horizonte', estado: 'MG', cep: '30170-010' },
-    { bairro: 'Batel', cidade: 'Curitiba', estado: 'PR', cep: '80420-010' },
-    { bairro: 'Ecoville', cidade: 'Curitiba', estado: 'PR', cep: '81200-100' },
-    { bairro: 'Moinhos de Vento', cidade: 'Porto Alegre', estado: 'RS', cep: '90570-020' },
-    { bairro: 'Asa Sul', cidade: 'Brasília', estado: 'DF', cep: '70390-010' },
-    { bairro: 'Meireles', cidade: 'Fortaleza', estado: 'CE', cep: '60165-081' },
-  ];
-
-  const logradouros = [
-    'Avenida Paulista', 'Rua dos Pinheiros', 'Alameda dos Arapanés', 'Rua Oscar Freire',
-    'Rua Bela Cintra', 'Avenida Brigadeiro Faria Lima', 'Rua Haddock Lobo', 'Alameda Santos',
-    'Rua Harmonia', 'Avenida Horácio Lafer', 'Rua Curitiba', 'Avenida Vieira Souto',
-    'Avenida Delfim Moreira', 'Avenida Atlântica', 'Rua Visconde de Pirajá', 'Avenida das Américas',
-    'Rua da Bahia', 'Avenida Afonso Pena', 'Avenida Sete de Setembro', 'Avenida Batel',
-    'Rua Padre Chagas', 'SQS 308', 'Avenida Beira Mar', 'Alameda Rio Negro',
-  ];
-
+  // 2. Gera 70 Imóveis em Varginha/MG com 5 fotos
   const imoveis: Imovel[] = [];
+  for (let i = 0; i < 70; i++) {
+    const id = `imo-vg-${String(101 + i).padStart(3, '0')}`;
+    const codigo = `VG-${String(101 + i).padStart(3, '0')}`;
+    const modelo = MODELOS_VARGINHA[i % MODELOS_VARGINHA.length];
+    const bairro = BAIRROS_VARGINHA[i % BAIRROS_VARGINHA.length];
+    const proprietario = proprietarios[i % proprietarios.length];
 
-  for (let i = 1; i <= 80; i++) {
-    const prop = proprietarios[(i - 1) % proprietarios.length];
-    const loc = bairrosSP[(i - 1) % bairrosSP.length];
-    const street = logradouros[(i - 1) % logradouros.length];
-    const num = String(100 + ((i * 37) % 2500));
+    const startFotoIdx = (i * 3) % (FOTOS_POOL.length - 5);
+    const fotos5 = FOTOS_POOL.slice(startFotoIdx, startFotoIdx + 5);
+    const imagemPrincipal = fotos5[0];
 
-    let tipo: TipoImovel = 'apartamento';
-    let codigoPrefix = 'AP';
-    let titulo = '';
-    let finalidade: FinalidadeImovel = 'venda';
-    let valorVenda: number | null = null;
-    let valorLocacao: number | null = null;
-    let quartos = 2;
-    let suites = 1;
-    let banheiros = 2;
-    let vagas = 1;
-    let areaUtil = 75;
-    let imagemUrl = IMAGES_APARTAMENTOS[i % IMAGES_APARTAMENTOS.length];
+    const titulo = `${modelo.prefixo} no ${bairro}`;
+    const endereco = `Rua ${['das Acácias', 'São José', 'Presidente Vargas', 'Rio de Janeiro', 'Belo Horizonte', 'Minas Gerais', 'Tiradentes', 'Sete de Setembro', 'dos Ipês', 'da Saudade'][i % 10]}, ${50 + (i * 15)}`;
 
-    if (i <= 40) {
-      // 40 Apartamentos
-      tipo = 'apartamento';
-      codigoPrefix = 'AP';
-      quartos = 1 + (i % 4);
-      suites = Math.max(0, quartos - 1);
-      banheiros = suites + 1;
-      vagas = Math.min(3, Math.max(1, Math.floor(quartos / 1.5)));
-      areaUtil = 40 + quartos * 30 + (i % 15);
-      finalidade = i % 4 === 0 ? 'ambos' : i % 3 === 0 ? 'locacao' : 'venda';
-      valorVenda = finalidade !== 'locacao' ? 450000 + quartos * 280000 + (i % 10) * 45000 : null;
-      valorLocacao = finalidade !== 'venda' ? 2400 + quartos * 1100 + (i % 5) * 200 : null;
-      titulo = quartos === 1
-        ? `Studio Moderno e Mobiliado em ${loc.bairro}`
-        : `Apartamento ${quartos} Dormitórios com Varanda em ${loc.bairro}`;
-      imagemUrl = IMAGES_APARTAMENTOS[i % IMAGES_APARTAMENTOS.length];
-    } else if (i <= 60) {
-      // 20 Casas em Condomínio / Vilas
-      tipo = 'casa';
-      codigoPrefix = 'CS';
-      quartos = 3 + (i % 3);
-      suites = quartos - 1;
-      banheiros = quartos + 1;
-      vagas = 2 + (i % 3);
-      areaUtil = 180 + (i % 20) * 15;
-      finalidade = i % 5 === 0 ? 'locacao' : 'venda';
-      valorVenda = finalidade !== 'locacao' ? 1400000 + (i % 20) * 90000 : null;
-      valorLocacao = finalidade !== 'venda' ? 7500 + (i % 10) * 600 : null;
-      titulo = `Casa Contemporânea com Espaço Gourmet e Piscina em ${loc.bairro}`;
-      imagemUrl = IMAGES_CASAS[i % IMAGES_CASAS.length];
-    } else if (i <= 70) {
-      // 10 Coberturas
-      tipo = 'cobertura';
-      codigoPrefix = 'CB';
-      quartos = 3 + (i % 3);
-      suites = quartos;
-      banheiros = quartos + 2;
-      vagas = 3 + (i % 2);
-      areaUtil = 240 + (i % 10) * 35;
-      finalidade = 'venda';
-      valorVenda = 2600000 + (i % 10) * 240000;
-      valorLocacao = null;
-      titulo = `Cobertura Duplex Alto Padrão com Vista Panorâmica em ${loc.bairro}`;
-      imagemUrl = IMAGES_COBERTURAS[i % IMAGES_COBERTURAS.length];
-    } else if (i <= 75) {
-      // 5 Terrenos
-      tipo = 'terreno';
-      codigoPrefix = 'TR';
-      quartos = 0;
-      suites = 0;
-      banheiros = 0;
-      vagas = 0;
-      areaUtil = 360 + (i % 5) * 120;
-      finalidade = 'venda';
-      valorVenda = 450000 + (i % 5) * 150000;
-      valorLocacao = null;
-      titulo = `Terreno Plano em Condomínio Fechado com Lazer em ${loc.bairro}`;
-      imagemUrl = IMAGES_TERRENOS[i % IMAGES_TERRENOS.length];
-    } else {
-      // 5 Comerciais
-      tipo = 'comercial';
-      codigoPrefix = 'CM';
-      quartos = 0;
-      suites = 0;
-      banheiros = 2;
-      vagas = 2 + (i % 3);
-      areaUtil = 65 + (i % 5) * 40;
-      finalidade = i % 2 === 0 ? 'locacao' : 'venda';
-      valorVenda = finalidade === 'venda' ? 780000 + (i % 5) * 90000 : null;
-      valorLocacao = finalidade === 'locacao' ? 4200 + (i % 5) * 800 : null;
-      titulo = `Conjunto Comercial Pronto para Escritório / Consultório em ${loc.bairro}`;
-      imagemUrl = IMAGES_COMERCIAIS[i % IMAGES_COMERCIAIS.length];
+    let valorVenda = undefined;
+    let valorLocacao = undefined;
+
+    if (modelo.finalidade === 'venda' || modelo.finalidade === 'ambos') {
+      const min = modelo.valMin || 350000;
+      const max = modelo.valMax || 950000;
+      valorVenda = Math.round((min + ((max - min) * (i % 10)) / 10) / 10000) * 10000;
     }
 
+    if (modelo.finalidade === 'locacao' || modelo.finalidade === 'ambos') {
+      const min = modelo.locMin || 1500;
+      const max = modelo.locMax || 4500;
+      valorLocacao = Math.round((min + ((max - min) * (i % 10)) / 10) / 100) * 100;
+    }
+
+    const valorCondominio = modelo.tipo === 'apartamento' || modelo.tipo === 'cobertura' ? 250 + (i % 8) * 80 : modelo.tipo === 'casa' && i % 3 === 0 ? 380 : undefined;
+    const valorIptu = Math.round(45 + (i % 12) * 25);
+
+    const descricao = `Excelente oportunidade no tradicional e valorizado bairro ${bairro} em Varginha/MG. Imóvel espaçoso com acabamento refinado, iluminação natural privilegiada, ambientes integrados, armários planejados e localização nobre com fácil acesso ao comércio, escolas e principais vias da cidade.`;
+
+    const caracteristicas = [
+      'Varanda Gourmet', 'Piso Porcelanato', 'Armários Planejados',
+      'Portaria / Interfone', 'Esquadrias em Alumínio', 'Garagem Coberta',
+      'Excelente Iluminação', 'Localização Privilegiada'
+    ];
+
     imoveis.push({
-      id: `imo-${String(i).padStart(3, '0')}`,
-      codigo: `${codigoPrefix}-${String(1000 + i)}`,
+      id,
+      codigo,
       titulo,
-      tipo,
-      finalidade,
-      endereco: street,
-      numero: num,
-      complemento: tipo === 'apartamento' ? `Apto ${10 + (i % 18) * 10 + (i % 4)}` : tipo === 'cobertura' ? `Cobertura ${200 + i}` : undefined,
-      bairro: loc.bairro,
-      cidade: loc.cidade,
-      estado: loc.estado,
-      cep: loc.cep,
+      tipo: modelo.tipo,
+      finalidade: modelo.finalidade,
+      endereco,
+      bairro,
+      cidade: 'Varginha',
+      estado: 'MG',
+      cep: '37000-000',
       valor_venda: valorVenda,
       valor_locacao: valorLocacao,
-      valor_condominio: tipo !== 'terreno' ? 450 + (i % 15) * 80 : null,
-      valor_iptu: 150 + (i % 12) * 45,
-      quartos,
-      suites,
-      banheiros,
-      vagas,
-      area_util: areaUtil,
-      proprietario_id: prop.id,
-      proprietario_nome: prop.nome,
-      proprietario_telefone: prop.telefone,
-      proprietario_email: prop.email,
-      observacoes_chaves: i % 2 === 0 ? 'Chaves na portaria com o zelador' : 'Proprietário reside no imóvel, confirmar 30min antes',
-      status: 'disponivel',
-      imagem_url: imagemUrl,
-      criado_em: new Date(now.getTime() - (60 - (i % 50)) * 86400000).toISOString(),
-      atualizado_em: new Date().toISOString(),
+      valor_condominio: valorCondominio,
+      valor_iptu: valorIptu,
+      quartos: modelo.quartos,
+      suites: modelo.suites,
+      banheiros: Math.max(1, modelo.suites + 1),
+      vagas: modelo.vagas,
+      area_construida: modelo.area,
+      area_util: modelo.area,
+      area_terreno: Math.round(modelo.area * 1.3),
+      descricao_comercial: descricao,
+      caracteristicas,
+      observacoes_chaves: `Chaves na portaria com o zelador ou no cofre eletrônico (Código: 4${String(i).padStart(2, '0')}8). Agendar com 30min de antecedência.`,
+      status: 'disponivel' as StatusImovel,
+      imagem_url: imagemPrincipal,
+      fotos_urls: fotos5,
+      proprietario_id: proprietario.id,
+      proprietario_nome: proprietario.nome,
+      proprietario_telefone: TELEFONE_PROPRIETARIOS_PADRAO,
+      proprietario_email: proprietario.email,
+      imobiliaria: 'Lagom Imóveis',
+      criado_em: new Date(Date.now() - (60 - i) * 86400000).toISOString(),
     });
   }
 
-  // 3. Gera 50 Clientes com preferências completas e distribuição de 2 a 3 leads por etapa no CRM
-  const etapasCrmList: EtapaCRM[] = [
-    'novos_leads',
-    'qualificacao',
-    'agendamento_visita',
-    'proposta_negociacao',
-    'documentacao_credito',
-    'fechamento_contrato',
-    'venda_concluida',
+  // 3. Gera 50 Clientes / Leads com preferências de busca
+  const etapasCRM: EtapaCRM[] = [
+    'novos_leads', 'qualificacao', 'agendamento_visita',
+    'proposta_negociacao', 'documentacao_credito', 'fechamento_contrato', 'venda_concluida'
   ];
 
-  const tagsPorEtapa: Record<EtapaCRM, string[]> = {
-    novos_leads: ['Sem contato há 2 dias', 'Novo lead (Hoje)', 'Aguardando 1º contato (1 dia)'],
-    qualificacao: ['Em atendimento (Hoje)', 'Sem retorno há 3 dias', 'Perfil enviado ontem'],
-    agendamento_visita: ['Visita marcada amanhã 14h', 'Visita marcada sábado 10h', 'Visita confirmada hoje'],
-    proposta_negociacao: ['Proposta enviada há 2 dias', 'Contraproposta em análise', 'Valores em negociação'],
-    documentacao_credito: ['Docs enviados para Caixa', 'Crédito pré-aprovado', 'Aguardando certidões'],
-    fechamento_contrato: ['Minuta em revisão', 'Assinatura agendada p/ sexta', 'Aguardando comprovante de sinal'],
-    venda_concluida: ['Contrato assinado & Sinal pago', 'Chaves entregues com sucesso', 'Comissão liberada'],
-  };
+  const clientes: Cliente[] = CLIENTES_VARGINHA.map((nome, idx) => {
+    const id = `cli-vg-${String(idx + 1).padStart(3, '0')}`;
+    const email = `cliente${idx + 1}@teste.com`;
+    const etapa = etapasCRM[idx % etapasCRM.length];
 
-  const prioridadesPorEtapa: Record<EtapaCRM, ('alta' | 'media' | 'baixa')[]> = {
-    novos_leads: ['alta', 'alta', 'media'],
-    qualificacao: ['alta', 'media', 'baixa'],
-    agendamento_visita: ['alta', 'alta', 'media'],
-    proposta_negociacao: ['alta', 'alta', 'media'],
-    documentacao_credito: ['alta', 'media', 'media'],
-    fechamento_contrato: ['alta', 'alta', 'media'],
-    venda_concluida: ['baixa', 'baixa', 'baixa'],
-  };
+    const bairroInteresse1 = BAIRROS_VARGINHA[idx % BAIRROS_VARGINHA.length];
+    const bairroInteresse2 = BAIRROS_VARGINHA[(idx + 3) % BAIRROS_VARGINHA.length];
+    const tipoDesejado = idx % 3 === 0 ? 'Apartamento' : idx % 3 === 1 ? 'Casa' : 'Cobertura';
+    const faixaPreco = idx % 2 === 0 ? 'R$ 450k a 850k' : 'R$ 850k a 1.6M';
 
-  const clientes: Cliente[] = CLIENTES_DATA.map((c, idx) => {
-    let etapaCrm: EtapaCRM;
-    let tempoParada: string;
-    let prioridade: 'alta' | 'media' | 'baixa';
-
-    // Garante distribuição exata de 3 leads por etapa para as primeiras 21 entradas
-    if (idx < 21) {
-      const etapaIndex = Math.floor(idx / 3);
-      etapaCrm = etapasCrmList[etapaIndex];
-      const subIdx = idx % 3;
-      tempoParada = tagsPorEtapa[etapaCrm][subIdx];
-      prioridade = prioridadesPorEtapa[etapaCrm][subIdx];
-    } else {
-      // Distribui os demais nas etapas ativas
-      etapaCrm = etapasCrmList[idx % 6];
-      tempoParada = tagsPorEtapa[etapaCrm][idx % 3];
-      prioridade = idx % 2 === 0 ? 'alta' : 'media';
-    }
-
-    let statusCliente: StatusCliente = 'ativo';
-    if (etapaCrm === 'venda_concluida') statusCliente = 'fechado';
-    else if (etapaCrm === 'proposta_negociacao' || etapaCrm === 'documentacao_credito' || etapaCrm === 'fechamento_contrato') {
-      statusCliente = 'negociando';
-    }
-
-    // Primeiro lead é especificamente Carlos Eduardo Silva com Apto 3 Dorms — Até R$ 800k
-    let nomeCliente = c.nome;
-    let perfilCliente = c.perfil;
-    let orcamentoCliente = c.orcamento;
-    let telefoneCliente = c.telefone;
-
-    if (idx === 0) {
-      nomeCliente = 'Carlos Eduardo Silva';
-      telefoneCliente = '11987654321';
-      perfilCliente = 'Apto 3 Dorms — Até R$ 800k';
-      orcamentoCliente = 'Até R$ 800k';
-      tempoParada = 'Sem contato há 2 dias';
-      prioridade = 'alta';
-      etapaCrm = 'novos_leads';
-    } else if (idx === 1) {
-      nomeCliente = 'Mariana Albuquerque';
-      telefoneCliente = '11991234567';
-      perfilCliente = 'Cobertura Duplex — Até R$ 1.5M';
-      orcamentoCliente = 'Até R$ 1.5M';
-      tempoParada = 'Novo lead (Hoje)';
-      prioridade = 'alta';
-      etapaCrm = 'novos_leads';
-    } else if (idx === 2) {
-      nomeCliente = 'Lucas Ferreira Mendes';
-      telefoneCliente = '11977778888';
-      perfilCliente = 'Studio Jardins — Até R$ 450k';
-      orcamentoCliente = 'Até R$ 450k';
-      tempoParada = 'Aguardando 1º contato (1 dia)';
-      prioridade = 'media';
-      etapaCrm = 'novos_leads';
-    }
-
-    const imovelRef = imoveis[idx % imoveis.length];
-    const corretoresMock = ['João Silva', 'Roger Vasques', 'Carlos Mendes', 'Mariana Souza', 'Juliana Ramos'];
-    const corretorResp = corretoresMock[idx % corretoresMock.length];
+    const imovelAlvo = imoveis[idx % imoveis.length];
 
     return {
-      id: `cli-${String(idx + 1).padStart(3, '0')}`,
-      nome: nomeCliente,
-      telefone: telefoneCliente,
-      email: c.email,
-      tipo_cliente: idx % 6 === 0 ? 'proprietario' : 'comprador_inquilino',
-      perfil_interesse: perfilCliente,
-      faixa_orcamento: orcamentoCliente,
-      origem_lead: c.origem as OrigemLead,
-      status: statusCliente,
-      etapa_crm: etapaCrm,
-      imovel_interesse_id: imovelRef?.id,
-      imovel_interesse_titulo: imovelRef?.titulo,
-      imovel_interesse_foto: imovelRef?.imagem_url,
-      corretor_responsavel_nome: corretorResp,
-      prioridade,
-      tempo_parada_texto: tempoParada,
-      observacoes: `Lead qualificado via ${c.origem}. Preferência de contato por WhatsApp.`,
-      criado_em: new Date(now.getTime() - (45 - idx) * 86400000).toISOString(),
-      atualizado_em: new Date().toISOString(),
+      id,
+      nome,
+      telefone: TELEFONE_CLIENTES_PADRAO,
+      email,
+      etapa_crm: etapa,
+      perfil_interesse: `${tipoDesejado} 3Q em ${bairroInteresse1} ou ${bairroInteresse2}`.slice(0, 90),
+      faixa_orcamento: faixaPreco,
+      imovel_interesse_id: imovelAlvo.id,
+      imovel_interesse_titulo: imovelAlvo.titulo,
+      imovel_interesse_foto: imovelAlvo.imagem_url,
+      origem_lead: ['site', 'instagram', 'whatsapp', 'portal', 'indicacao'][idx % 5] as OrigemLead,
+      status: 'ativo' as StatusCliente,
+      prioridade: (idx % 2 === 0 ? 'alta' : 'media') as 'alta' | 'media' | 'baixa',
+      observacoes: `Cliente qualificado para compra em Varginha. Procura ${tipoDesejado} com 3 quartos nos bairros ${bairroInteresse1} ou ${bairroInteresse2}. Faixa: ${faixaPreco}.`,
+      imobiliaria: 'Lagom Imóveis',
+      criado_em: new Date(Date.now() - (45 - idx) * 86400000).toISOString(),
     };
   });
 
-  // 4. Gera 38 Visitas espalhadas pelos próximos 30 dias a partir de hoje
-  // Horários comerciais: 09:00, 10:30, 14:00, 15:30, 17:00
-  const slotsHorarios = [
-    { h: 9, m: 0 },
-    { h: 10, m: 30 },
-    { h: 14, m: 0 },
-    { h: 15, m: 30 },
-    { h: 17, m: 0 },
+  // 4. Gera 47 Visitas com roteiros multi-imóveis (15 dias passado e 15 dias futuro)
+  const visitas: Visita[] = [];
+  const now = new Date();
+  const horarios = [
+    { h: 9, m: 0 }, { h: 10, m: 30 }, { h: 14, m: 0 }, { h: 15, m: 30 }, { h: 17, m: 0 }
   ];
 
-  const visitas: Visita[] = [];
+  let visitaCount = 1;
+  for (let diaOffset = -15; diaOffset <= 15; diaOffset++) {
+    const visitasNoDia = diaOffset === 0 ? 3 : (Math.abs(diaOffset) % 2 === 0 ? 2 : 1);
 
-  // Distribuição de dias:
-  // Visitas 1-4: HOJE (horários diversos)
-  // Visitas 5-8: AMANHÃ
-  // Visitas 9-38: Distribuídas ao longo dos próximos 2 a 30 dias
-  for (let v = 1; v <= 38; v++) {
-    let dayOffset = 0;
-    if (v <= 4) {
-      dayOffset = 0; // Hoje
-    } else if (v <= 8) {
-      dayOffset = 1; // Amanhã
-    } else {
-      dayOffset = 2 + Math.floor(((v - 9) * 28) / 30);
-    }
+    for (let k = 0; k < visitasNoDia; k++) {
+      const id = `vis-vg-${String(visitaCount).padStart(4, '0')}`;
+      const codigo = `VIS-${String(visitaCount).padStart(4, '0')}`;
+      const slot = horarios[(k * 2 + (diaOffset + 15)) % horarios.length];
 
-    const slot = slotsHorarios[(v - 1) % slotsHorarios.length];
-    const visitDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayOffset, slot.h, slot.m, 0);
+      const visitDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diaOffset, slot.h, slot.m, 0);
+      const reminderDate = new Date(visitDate.getTime() - 60 * 60 * 1000);
+      const posDate = new Date(visitDate.getTime() + 2 * 60 * 60 * 1000);
 
-    const client = clientes[(v - 1) % clientes.length];
-    
-    // Define se terá roteiro de múltiplos imóveis (18 visitas terão 2 ou 3 imóveis)
-    const isMultiRoteiro = v <= 18 || v % 2 === 0;
-    const qtdImoveis = isMultiRoteiro ? (v % 3 === 0 ? 3 : 2) : 1;
-
-    const selectedImoveis: Imovel[] = [];
-    const baseIdx = (v * 3) % imoveis.length;
-    for (let k = 0; k < qtdImoveis; k++) {
-      const im = imoveis[(baseIdx + k) % imoveis.length];
-      if (im && !selectedImoveis.some((existing) => existing.id === im.id)) {
-        selectedImoveis.push(im);
+      let status: StatusVisita = 'agendada';
+      if (diaOffset < 0) {
+        if (visitaCount % 7 === 0) status = 'cancelada';
+        else if (visitaCount % 5 === 0) status = 'nao_compareceu';
+        else status = 'concluida';
+      } else {
+        status = 'agendada';
       }
+
+      const qtdImoveisRoteiro = (visitaCount % 3 === 0) ? 3 : (visitaCount % 2 === 0 ? 2 : 1);
+      const imoveisRoteiroIds: string[] = [];
+      const baseImoIdx = (visitaCount * 2) % imoveis.length;
+      for (let r = 0; r < qtdImoveisRoteiro; r++) {
+        imoveisRoteiroIds.push(imoveis[(baseImoIdx + r) % imoveis.length].id);
+      }
+      const primaryImovel = imoveis[baseImoIdx];
+      const cliente = clientes[(visitaCount - 1) % clientes.length];
+
+      visitas.push({
+        id,
+        codigo,
+        imovel_id: primaryImovel.id,
+        imoveis_ids: imoveisRoteiroIds,
+        cliente_id: cliente.id,
+        cliente_nome: cliente.nome,
+        cliente_telefone: TELEFONE_CLIENTES_PADRAO,
+        corretor_nome: adminUserNome,
+        corretor_telefone: '35999999999',
+        data_hora_visita: visitDate.toISOString(),
+        lembrete_agendado_para: reminderDate.toISOString(),
+        pos_visita_agendado_para: posDate.toISOString(),
+        status,
+        notificar_confirmacao: true,
+        notificar_confirmacao_cliente: true,
+        notificar_confirmacao_proprietario: true,
+        notificar_lembrete: true,
+        notificar_lembrete_cliente: true,
+        notificar_lembrete_proprietario: true,
+        notificar_pos_visita: true,
+        notificar_pos_visita_cliente: true,
+        notificar_comprovacao_proprietario: true,
+        gravar_logs: true,
+        gravar_logs_cliente: true,
+        gravar_logs_proprietario: true,
+        whatsapp_confirmacao_cliente: status === 'concluida' ? 'visualizado' : diaOffset <= 0 ? 'entregue' : 'enviado',
+        whatsapp_confirmacao_proprietario: status === 'concluida' ? 'visualizado' : diaOffset <= 0 ? 'entregue' : 'enviado',
+        whatsapp_lembrete_cliente: diaOffset < 0 ? 'entregue' : (diaOffset === 0 ? 'enviado' : 'pendente'),
+        whatsapp_lembrete_proprietario: diaOffset < 0 ? 'entregue' : (diaOffset === 0 ? 'enviado' : 'pendente'),
+        whatsapp_pos_visita_cliente: status === 'concluida' ? 'lido' : 'pendente',
+        feedback_cliente: status === 'concluida' ? (visitaCount % 2 === 0 ? 'Adorou o acabamento e a localização em Varginha. Ficou de analisar a proposta no fim de semana.' : 'Gostou bastante do espaço interno e da varanda gourmet.') : undefined,
+        observacoes: qtdImoveisRoteiro > 1 ? `Roteiro composto por ${qtdImoveisRoteiro} imóveis em Varginha (${primaryImovel.bairro}).` : `Visita ao imóvel ${primaryImovel.titulo}.`,
+        imobiliaria: 'Lagom Imóveis',
+        created_by_user_id: adminUserId,
+        created_by_user_nome: adminUserNome,
+        criado_em: new Date(Date.now() - 20 * 86400000).toISOString(),
+      });
+
+      visitaCount++;
     }
-    if (selectedImoveis.length === 0) {
-      selectedImoveis.push(imoveis[0]);
-    }
-
-    const primaryImovel = selectedImoveis[0];
-    const imoveisIds = selectedImoveis.map((im) => im.id);
-
-    const reminderDate = new Date(visitDate.getTime() - 60 * 60 * 1000);
-    const posVisitaDate = new Date(visitDate.getTime() + 120 * 60 * 1000);
-
-    let status: StatusVisita = 'agendada';
-    if (dayOffset === 0) {
-      status = v === 1 ? 'concluida' : 'agendada';
-    } else if (v % 7 === 0) {
-      status = 'cancelada';
-    } else if (v % 5 === 0) {
-      status = 'concluida';
-    } else if (v % 4 === 0) {
-      status = 'nao_compareceu';
-    } else {
-      status = 'agendada';
-    }
-
-    visitas.push({
-      id: `vis-${String(v).padStart(3, '0')}`,
-      imovel_id: primaryImovel.id,
-      imoveis_ids: imoveisIds,
-      cliente_id: client.id,
-      corretor_nome: adminUserNome,
-      corretor_telefone: '11999999999',
-      data_hora_visita: visitDate.toISOString(),
-      lembrete_agendado_para: reminderDate.toISOString(),
-      pos_visita_agendado_para: posVisitaDate.toISOString(),
-      created_by_user_id: adminUserId,
-      created_by_user_nome: adminUserNome,
-      notificar_confirmacao: true,
-      notificar_lembrete: true,
-      notificar_pos_visita: true,
-      status,
-      whatsapp_confirmacao_cliente: 'visualizado',
-      whatsapp_confirmacao_proprietario: 'entregue',
-      whatsapp_lembrete_cliente: dayOffset === 0 ? 'enviado' : 'pendente',
-      whatsapp_lembrete_proprietario: dayOffset === 0 ? 'enviado' : 'pendente',
-      whatsapp_pos_visita_cliente: 'pendente',
-      observacoes: qtdImoveis > 1
-        ? `Roteiro composto por ${qtdImoveis} imóveis na mesma região. Cliente pontual.`
-        : `Visita individual agendada pelo portal. Levar pasta de apresentação.`,
-      criado_em: new Date(now.getTime() - (10 - (v % 10)) * 86400000).toISOString(),
-      atualizado_em: new Date().toISOString(),
-      imovel: primaryImovel,
-      imoveis: selectedImoveis,
-      cliente: client,
-    });
   }
 
-  // Ordenação automática em ordem alfabética
-  const sortedProprietarios = [...proprietarios].sort((a, b) =>
-    (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' })
-  );
-  const sortedImoveis = [...imoveis].sort((a, b) =>
-    (a.titulo || '').localeCompare(b.titulo || '', 'pt-BR', { sensitivity: 'base' })
-  );
-  const sortedClientes = [...clientes].sort((a, b) =>
-    (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' })
-  );
-
   return {
-    proprietarios: sortedProprietarios,
-    imoveis: sortedImoveis,
-    clientes: sortedClientes,
+    proprietarios,
+    imoveis,
+    clientes,
     visitas,
   };
 }

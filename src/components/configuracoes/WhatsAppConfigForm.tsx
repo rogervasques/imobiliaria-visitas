@@ -1649,18 +1649,18 @@ $$);`}
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2 text-emerald-900 dark:text-emerald-300">
                 <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                Reset Operacional &amp; População de Dados de Teste (Seed)
+                Reset Operacional &amp; População de Dados de Teste - Varginha/MG
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Esta rotina limpa as tabelas operacionais (visitas, imóveis, clientes, proprietários e logs) e popula automaticamente <strong>30 proprietários</strong>, <strong>80 imóveis variados</strong>, <strong>50 clientes</strong> e <strong>~38 agendamentos de visitas</strong> distribuídos nos próximos 30 dias (sendo 18 com múltiplos imóveis no roteiro). Todas as contas de usuários e convites são mantidas intactas.
+                Esta rotina limpa as tabelas operacionais e popula automaticamente <strong>30 proprietários</strong> (Tel seguro: <code>(35) 99999-9999</code>), <strong>70 imóveis em Varginha/MG</strong> com galeria de 5 fotos, <strong>50 clientes</strong> (Tel seguro: <code>(35) 98888-8888</code>) distribuídos nas 7 etapas do CRM e <strong>47 visitas</strong> distribuídas ao longo de 30 dias (passado e futuro). As contas de administradores permanecem intactas.
               </p>
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800">
                 <div>
                   <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    Executar Seed de Dados de Teste
+                    Executar Seed de Dados (Varginha/MG)
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Endpoint: <code className="font-mono text-emerald-600 dark:text-emerald-400">POST /api/admin/seed-test-data</code>
@@ -1672,10 +1672,10 @@ $$);`}
                   isLoading={isSeeding}
                   variant="primary"
                   size="sm"
-                  className="shrink-0 font-bold shadow-md"
+                  className="shrink-0 font-bold shadow-md bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
                   <RefreshCw className="w-4 h-4 mr-1.5" />
-                  Limpar e Popular Base
+                  Limpar e Popular Base (Varginha/MG)
                 </Button>
               </div>
 
