@@ -251,7 +251,28 @@ ALTER TABLE public.whatsapp_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total whatsapp_logs" ON public.whatsapp_logs;
 CREATE POLICY "Acesso total whatsapp_logs" ON public.whatsapp_logs FOR ALL USING (true) WITH CHECK (true);
 
--- 9. CONFIGURAÇÃO DE BUCKETS DE STORAGE PÚBLICOS
+-- 9. TABELA: LOGS_MENSAGENS (Histórico de Atendimento e Gravação de Conversas com Criptografia AES-256)
+CREATE TABLE IF NOT EXISTS public.logs_mensagens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  visita_id UUID REFERENCES public.visitas(id) ON DELETE CASCADE,
+  message_id TEXT,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  remetente_tipo VARCHAR(50) NOT NULL, -- 'CLIENTE' | 'CORRETOR' | 'PROPRIETARIO' | 'SISTEMA'
+  remetente_nome VARCHAR(255),
+  remetente_telefone VARCHAR(30),
+  conteudo_texto TEXT NOT NULL, -- Criptografado com AES-256
+  tipo_midia VARCHAR(50) DEFAULT 'texto', -- 'texto' | 'imagem' | 'audio' | 'documento'
+  midia_url TEXT,
+  imobiliaria TEXT DEFAULT 'Lagom Imóveis',
+  imobiliaria_id TEXT,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.logs_mensagens ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Acesso total logs_mensagens" ON public.logs_mensagens;
+CREATE POLICY "Acesso total logs_mensagens" ON public.logs_mensagens FOR ALL USING (true) WITH CHECK (true);
+
+-- 10. CONFIGURAÇÃO DE BUCKETS DE STORAGE PÚBLICOS
 -- Criação de buckets oficiais para Fotos e Logos
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES

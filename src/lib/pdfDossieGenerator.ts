@@ -41,10 +41,12 @@ export function getVisitaLogs(visita: Visita): LogMensagem[] {
 
   const vDate = new Date(visita.data_hora_visita);
   const clienteNome = visita.cliente?.nome || 'Cliente';
-  const clienteTel = visita.cliente?.telefone || '3197712536';
+  const clienteTel = visita.cliente?.telefone || '35988888888';
+  const proprietarioNome = visita.imoveis?.[0]?.proprietario_nome || visita.imovel?.proprietario_nome || 'Proprietário';
+  const proprietarioTel = visita.imoveis?.[0]?.proprietario_telefone || visita.imovel?.proprietario_telefone || '35999999999';
   const corretorNome = visita.created_by_user_nome || visita.corretor_nome || 'Corretor Responsável';
-  const imovelTitulo = visita.imovel?.titulo || 'Imovel Selecionado';
-  const imovelEndereco = visita.imovel ? `${visita.imovel.endereco}${visita.imovel.numero ? `, ${visita.imovel.numero}` : ''} - ${visita.imovel.bairro}` : 'Endereco do Imovel';
+  const imovelTitulo = visita.imovel?.titulo || 'Imóvel Selecionado';
+  const imovelEndereco = visita.imovel ? `${visita.imovel.endereco}${visita.imovel.numero ? `, ${visita.imovel.numero}` : ''} - ${visita.imovel.bairro}` : 'Endereço do Imóvel';
 
   const t1 = new Date(vDate.getTime() - 24 * 60 * 60 * 1000);
   const t2 = new Date(vDate.getTime() - 23 * 60 * 60 * 1000 + 12 * 60 * 1000);
@@ -52,20 +54,21 @@ export function getVisitaLogs(visita: Visita): LogMensagem[] {
   const t4 = new Date(vDate.getTime() - 15 * 60 * 1000);
   const t5 = new Date(vDate.getTime() + 120 * 60 * 1000);
 
-  return [
+  // 1. Canal do Cliente
+  const clienteLogs: LogMensagem[] = [
     {
-      id: `log-${visita.id}-1`,
+      id: `log-${visita.id}-cli-1`,
       visita_id: visita.id,
       imobiliaria: visita.imobiliaria,
       message_id: `wamid.HBgLMjQ4OTYwMTEyNTQ4FQIAERgSM0VCMDQ1RjEyMzQ1Njc4OTA0_${visita.id.slice(0, 6)}`,
       timestamp: t1.toISOString(),
       remetente_tipo: 'SISTEMA',
-      remetente_nome: 'Sistema EasyMob (WhatsApp)',
-      conteudo_texto: `Ola, ${clienteNome}! Sua visita para o imovel "${imovelTitulo}" no endereco ${imovelEndereco} esta agendada para ${vDate.toLocaleDateString('pt-BR')} as ${vDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} com o corretor ${corretorNome}. Por favor, responda com SIM para confirmar.`,
+      remetente_nome: 'Sistema (WhatsApp Cliente)',
+      conteudo_texto: `Olá, ${clienteNome}! 👋 Confirmada nossa visita para ${vDate.toLocaleDateString('pt-BR')} às ${vDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} no imóvel "${imovelTitulo}" (${imovelEndereco}) com o corretor ${corretorNome}. Por favor, responda com SIM para confirmar.`,
       tipo_midia: 'texto',
     },
     {
-      id: `log-${visita.id}-2`,
+      id: `log-${visita.id}-cli-2`,
       visita_id: visita.id,
       imobiliaria: visita.imobiliaria,
       message_id: `wamid.HBgLNTU4NTk5ODg3NzY2FQIAEhgUM0VCMDlBQTExMjIzMzQ0NTU2_${visita.id.slice(0, 6)}`,
@@ -73,22 +76,22 @@ export function getVisitaLogs(visita: Visita): LogMensagem[] {
       remetente_tipo: 'CLIENTE',
       remetente_nome: clienteNome,
       remetente_telefone: clienteTel,
-      conteudo_texto: `Confirmado! Estarei presente no horario marcado. Muito obrigado.`,
+      conteudo_texto: `Confirmado! Estarei presente no horário marcado. Muito obrigado.`,
       tipo_midia: 'texto',
     },
     {
-      id: `log-${visita.id}-3`,
+      id: `log-${visita.id}-cli-3`,
       visita_id: visita.id,
       imobiliaria: visita.imobiliaria,
       message_id: `wamid.HBgLMjQ4OTYwMTEyNTQ4FQIAERgSM0VCMDg4OTk3Nzc2NTU0NDMz_${visita.id.slice(0, 6)}`,
       timestamp: t3.toISOString(),
       remetente_tipo: 'SISTEMA',
-      remetente_nome: 'Sistema EasyMob (WhatsApp)',
-      conteudo_texto: `Ola, ${clienteNome}! Lembrando que sua visita ao imovel acontecera em aproximadamente 1 hora. O corretor ${corretorNome} ja esta a caminho do local.`,
+      remetente_nome: 'Sistema (WhatsApp Cliente)',
+      conteudo_texto: `⏰ Lembrete de Visita: Olá, ${clienteNome}! Lembrando que sua visita ao imóvel acontecerá em aproximadamente 1 hora às ${vDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}. O corretor ${corretorNome} já está a caminho do local.`,
       tipo_midia: 'texto',
     },
     {
-      id: `log-${visita.id}-4`,
+      id: `log-${visita.id}-cli-4`,
       visita_id: visita.id,
       imobiliaria: visita.imobiliaria,
       message_id: `wamid.HBgLNTU4NTk5ODg3NzY2FQIAEhgUM0VCMDgwRkZBQkMxMTIyMzM0_${visita.id.slice(0, 6)}`,
@@ -96,23 +99,86 @@ export function getVisitaLogs(visita: Visita): LogMensagem[] {
       remetente_tipo: 'CLIENTE',
       remetente_nome: clienteNome,
       remetente_telefone: clienteTel,
-      conteudo_texto: `Estou chegando no portao principal do edificio. [AUDIO DE ATENDIMENTO]`,
+      conteudo_texto: `Estou chegando no portão principal do condomínio/edifício. [AUDIO DE ATENDIMENTO]`,
       tipo_midia: 'audio',
       midia_url: 'https://storage.easymob.com.br/audios/visita_atendimento_audio.mp3',
     },
     {
-      id: `log-${visita.id}-5`,
+      id: `log-${visita.id}-cli-5`,
       visita_id: visita.id,
       imobiliaria: visita.imobiliaria,
       message_id: `wamid.HBgLMjQ4OTYwMTEyNTQ4FQIAERgSM0VCMDExMjIzMzQ0NTU2Njc4_${visita.id.slice(0, 6)}`,
       timestamp: t5.toISOString(),
       remetente_tipo: 'CORRETOR',
       remetente_nome: corretorNome,
-      conteudo_texto: `Ola, ${clienteNome}! Foi um prazer apresentar o imovel hoje. Conforme conversamos, segue a foto da planta atualizada do condominio.`,
+      conteudo_texto: `Olá, ${clienteNome}! Foi um prazer apresentar o imóvel hoje. Conforme conversamos, segue a foto da planta atualizada do condomínio.`,
       tipo_midia: 'imagem',
       midia_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
     },
   ];
+
+  // 2. Canal do Proprietário
+  const propLogs: LogMensagem[] = [
+    {
+      id: `log-${visita.id}-prop-1`,
+      visita_id: visita.id,
+      imobiliaria: visita.imobiliaria,
+      message_id: `wamid.HBgLMjQ4OTYwMTEyNTQ4FQIAERgSM0VCMDQ1RjExMzk5ODg3NzY0_${visita.id.slice(0, 6)}`,
+      timestamp: t1.toISOString(),
+      remetente_tipo: 'SISTEMA',
+      remetente_nome: `Sistema (WhatsApp Proprietário - ${proprietarioNome})`,
+      conteudo_texto: `Olá, ${proprietarioNome}! Informamos que a equipe agendou uma visita ao seu imóvel "${imovelTitulo}" (${imovelEndereco}) para ${vDate.toLocaleDateString('pt-BR')} às ${vDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} com o cliente ${clienteNome} acompanhado pelo corretor ${corretorNome}.`,
+      tipo_midia: 'texto',
+    },
+    {
+      id: `log-${visita.id}-prop-2`,
+      visita_id: visita.id,
+      imobiliaria: visita.imobiliaria,
+      message_id: `wamid.HBgLNTU4NTk5ODg3NzY2FQIAEhgUM0VCMDlBQTk5ODg3NzY1NTQ0_${visita.id.slice(0, 6)}`,
+      timestamp: t2.toISOString(),
+      remetente_tipo: 'PROPRIETARIO',
+      remetente_nome: proprietarioNome,
+      remetente_telefone: proprietarioTel,
+      conteudo_texto: `Olá! Perfeito, visita autorizada. As chaves já estão no local conforme combinado. Obrigado pelo aviso!`,
+      tipo_midia: 'texto',
+    },
+    {
+      id: `log-${visita.id}-prop-3`,
+      visita_id: visita.id,
+      imobiliaria: visita.imobiliaria,
+      message_id: `wamid.HBgLMjQ4OTYwMTEyNTQ4FQIAERgSM0VCMDg4OTk5ODg3NzY2Nzc2_${visita.id.slice(0, 6)}`,
+      timestamp: t3.toISOString(),
+      remetente_tipo: 'SISTEMA',
+      remetente_nome: `Sistema (WhatsApp Proprietário - ${proprietarioNome})`,
+      conteudo_texto: `⏰ Lembrete de Visita: Olá, ${proprietarioNome}! Lembramos que a visita ao seu imóvel "${imovelTitulo}" com o cliente ${clienteNome} acontecerá hoje às ${vDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}. Corretor responsável: ${corretorNome}.`,
+      tipo_midia: 'texto',
+    },
+    {
+      id: `log-${visita.id}-prop-4`,
+      visita_id: visita.id,
+      imobiliaria: visita.imobiliaria,
+      message_id: `wamid.HBgLNTU4NTk5ODg3NzY2FQIAEhgUM0VCMDgwRkZBODg3NzY2NTU0_${visita.id.slice(0, 6)}`,
+      timestamp: t4.toISOString(),
+      remetente_tipo: 'PROPRIETARIO',
+      remetente_nome: proprietarioNome,
+      remetente_telefone: proprietarioTel,
+      conteudo_texto: `Tudo certo por aqui. Boa visita ao corretor e ao cliente!`,
+      tipo_midia: 'texto',
+    },
+    {
+      id: `log-${visita.id}-prop-5`,
+      visita_id: visita.id,
+      imobiliaria: visita.imobiliaria,
+      message_id: `wamid.HBgLMjQ4OTYwMTEyNTQ4FQIAERgSM0VCMDExMjIzOTk4ODc3NjU0_${visita.id.slice(0, 6)}`,
+      timestamp: t5.toISOString(),
+      remetente_tipo: 'CORRETOR',
+      remetente_nome: `${corretorNome} (Comprovação ao Proprietário)`,
+      conteudo_texto: `Olá, ${proprietarioNome}! Confirmamos que a visita ao seu imóvel "${imovelTitulo}" foi realizada com sucesso nesta data com o cliente ${clienteNome}. O imóvel foi trancado em segurança. Qualquer novidade sobre proposta, entraremos em contato imediatamente!`,
+      tipo_midia: 'texto',
+    },
+  ];
+
+  return [...clienteLogs, ...propLogs];
 }
 
 export interface GeneratePdfOptions {
@@ -173,10 +239,18 @@ export function gerarRelatorioAtendimentoPdf({
   const allLogs = getVisitaLogs(visita);
   const logs = allLogs.filter((log) => {
     if (filtroDestinatario === 'cliente') {
-      return log.remetente_tipo === 'CLIENTE' || log.remetente_tipo === 'SISTEMA' || (log.remetente_tipo === 'CORRETOR' && !log.remetente_nome?.toLowerCase().includes('propriet'));
+      return (
+        log.remetente_tipo === 'CLIENTE' ||
+        (log.remetente_tipo === 'SISTEMA' && !log.remetente_nome?.toLowerCase().includes('propriet') && !log.conteudo_texto?.toLowerCase().includes('ao seu imóvel') && !log.conteudo_texto?.toLowerCase().includes('proprietário')) ||
+        (log.remetente_tipo === 'CORRETOR' && !log.remetente_nome?.toLowerCase().includes('propriet') && !log.conteudo_texto?.toLowerCase().includes('ao seu imóvel'))
+      );
     }
     if (filtroDestinatario === 'proprietario') {
-      return log.remetente_tipo === 'PROPRIETARIO' || (log.remetente_tipo === 'CORRETOR' && log.remetente_nome?.toLowerCase().includes('propriet'));
+      return (
+        log.remetente_tipo === 'PROPRIETARIO' ||
+        (log.remetente_tipo === 'SISTEMA' && (log.remetente_nome?.toLowerCase().includes('propriet') || log.conteudo_texto?.toLowerCase().includes('ao seu imóvel') || log.conteudo_texto?.toLowerCase().includes('proprietário'))) ||
+        (log.remetente_tipo === 'CORRETOR' && (log.remetente_nome?.toLowerCase().includes('propriet') || log.conteudo_texto?.toLowerCase().includes('ao seu imóvel')))
+      );
     }
     return true;
   });

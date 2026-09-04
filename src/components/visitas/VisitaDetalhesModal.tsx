@@ -248,6 +248,8 @@ function LogItemCard({ log }: { log: LogMensagem }) {
             className={
               log.remetente_tipo === 'CLIENTE'
                 ? 'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                : log.remetente_tipo === 'PROPRIETARIO'
+                ? 'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                 : log.remetente_tipo === 'CORRETOR'
                 ? 'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
                 : 'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
@@ -378,13 +380,14 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
   const logsCliente = allLogs.filter(
     (log) =>
       log.remetente_tipo === 'CLIENTE' ||
-      log.remetente_tipo === 'SISTEMA' ||
-      (log.remetente_tipo === 'CORRETOR' && !log.remetente_nome?.toLowerCase().includes('propriet'))
+      (log.remetente_tipo === 'SISTEMA' && !log.remetente_nome?.toLowerCase().includes('propriet') && !log.conteudo_texto?.toLowerCase().includes('ao seu imóvel') && !log.conteudo_texto?.toLowerCase().includes('proprietário')) ||
+      (log.remetente_tipo === 'CORRETOR' && !log.remetente_nome?.toLowerCase().includes('propriet') && !log.conteudo_texto?.toLowerCase().includes('ao seu imóvel'))
   );
   const logsProprietario = allLogs.filter(
     (log) =>
       log.remetente_tipo === 'PROPRIETARIO' ||
-      (log.remetente_tipo === 'CORRETOR' && log.remetente_nome?.toLowerCase().includes('propriet'))
+      (log.remetente_tipo === 'SISTEMA' && (log.remetente_nome?.toLowerCase().includes('propriet') || log.conteudo_texto?.toLowerCase().includes('ao seu imóvel') || log.conteudo_texto?.toLowerCase().includes('proprietário'))) ||
+      (log.remetente_tipo === 'CORRETOR' && (log.remetente_nome?.toLowerCase().includes('propriet') || log.conteudo_texto?.toLowerCase().includes('ao seu imóvel')))
   );
 
   const handleDownloadDossie = (filtro: 'cliente' | 'proprietario' | 'todos' = 'todos') => {

@@ -88,6 +88,30 @@ export async function POST(req: NextRequest) {
         : undefined,
     });
 
+    // 🔒 Registra também na tabela de auditoria criptografada logs_mensagens (AES-256)
+    if (visitaId && message) {
+      try {
+        const { encryptText } = await import('@/lib/crypto');
+        const encryptedContent = encryptText(message);
+        const isProp = tipoDestinatario === 'proprietario' || String(tipoMensagem || '').includes('proprietario');
+
+        await supabase.from('logs_mensagens').insert({
+          visita_id: visitaId,
+          imobiliaria: config?.imobiliaria || 'Lagom Imóveis',
+          imobiliaria_id: config?.imobiliaria_id,
+          message_id: (result as any).data?.key?.id || `wamid.SEND_${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          remetente_tipo: isProp ? 'CORRETOR' : 'SISTEMA',
+          remetente_nome: isProp ? `Corretor (Mensagem ao Proprietário ${destinatarioNome || ''})` : `Sistema (Mensagem ao Cliente ${destinatarioNome || ''})`,
+          remetente_telefone: toPhone,
+          conteudo_texto: encryptedContent,
+          tipo_midia: 'texto',
+        });
+      } catch (logErr) {
+        console.warn('Aviso ao gravar logs_mensagens em whatsapp/send:', logErr);
+      }
+    }
+
     return NextResponse.json({ ...result, instanceUsed: resolvedInstanceName });
   } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : 'Erro interno ao processar envio';
