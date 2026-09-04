@@ -182,6 +182,11 @@ ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS notificar_confirmacao BOOLEA
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS notificar_lembrete BOOLEAN DEFAULT TRUE;
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS notificar_pos_visita BOOLEAN DEFAULT TRUE;
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS whatsapp_pos_visita_cliente VARCHAR(50) DEFAULT 'pendente';
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS whatsapp_comprovacao_proprietario VARCHAR(50) DEFAULT 'pendente';
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS gravar_logs BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS gravar_logs_cliente BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS gravar_logs_proprietario BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS fim_gravacao_logs_em TIMESTAMPTZ;
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS created_by_user_id TEXT;
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS created_by_user_nome TEXT;
 ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS imobiliaria TEXT DEFAULT 'Lagom Imóveis';

@@ -155,7 +155,28 @@ export const sanitizeProprietarioForDb = (prop: Partial<Proprietario>): Record<s
 };
 
 export const sanitizeVisitaForDb = (visita: Partial<Visita>): Record<string, any> => {
-  const { imovel, imoveis, cliente, ...rest } = visita as any;
+  const {
+    imovel,
+    imoveis,
+    cliente,
+    logs_mensagens,
+    cliente_nome,
+    cliente_telefone,
+    data_hora,
+    data_hora_fim,
+    gravar_logs,
+    gravar_logs_cliente,
+    gravar_logs_proprietario,
+    fim_gravacao_logs_em,
+    notificar_confirmacao_cliente,
+    notificar_confirmacao_proprietario,
+    notificar_lembrete_cliente,
+    notificar_lembrete_proprietario,
+    notificar_pos_visita_cliente,
+    notificar_comprovacao_proprietario,
+    whatsapp_comprovacao_proprietario,
+    ...rest
+  } = visita as any;
   return rest;
 };
 
@@ -1083,7 +1104,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       updates.fim_gravacao_logs_em = fimGravacaoLogs;
     }
 
-    const { error: updateErr } = await supabase.from('visitas').update(updates).eq('id', id);
+    const dbPayload = sanitizeVisitaForDb(updates);
+    const { error: updateErr } = await supabase.from('visitas').update(dbPayload).eq('id', id);
     if (updateErr) {
       console.error('Erro no Supabase ao atualizar status da visita:', updateErr);
       throw new Error(`Falha ao atualizar status no banco: ${updateErr.message}`);
