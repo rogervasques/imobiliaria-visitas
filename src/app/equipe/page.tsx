@@ -1123,6 +1123,7 @@ export default function EquipePage() {
                   type="button"
                   variant="outline"
                   size="sm"
+                  disabled={isSavingDrawer}
                   onClick={() => setSelectedMember(null)}
                 >
                   Cancelar
@@ -1286,6 +1287,7 @@ export default function EquipePage() {
                 type="button"
                 variant="outline"
                 size="sm"
+                disabled={isGeneratingInvite}
                 onClick={() => setIsInviteModalOpen(false)}
               >
                 Cancelar

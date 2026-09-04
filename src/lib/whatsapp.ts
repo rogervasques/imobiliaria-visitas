@@ -138,7 +138,44 @@ export function compileTemplate(template: string, ctx: TemplateContext): string 
 }
 
 /**
- * Envio de mensagem WhatsApp através do provedor configurado
+ * Utilitário de delay assíncrono para espaçamento de requisições
+ */
+export const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Fila sequencial assíncrona com intervalo mínimo de 1,5s (1500ms) entre disparos
+ * para garantir proteção contra Rate Limit nas chamadas da API de WhatsApp
+ */
+let lastDispatchTimestamp = 0;
+const MIN_DISPATCH_INTERVAL_MS = 1500;
+let whatsappQueue: Promise<unknown> = Promise.resolve();
+
+export function enqueueWhatsAppDispatch<T>(task: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    whatsappQueue = whatsappQueue
+      .then(async () => {
+        const now = Date.now();
+        const timeSinceLast = now - lastDispatchTimestamp;
+        if (lastDispatchTimestamp > 0 && timeSinceLast < MIN_DISPATCH_INTERVAL_MS) {
+          const waitTime = MIN_DISPATCH_INTERVAL_MS - timeSinceLast;
+          await delay(waitTime);
+        }
+        const res = await task();
+        lastDispatchTimestamp = Date.now();
+        return res;
+      })
+      .then((res) => {
+        resolve(res as T);
+      })
+      .catch((err) => {
+        lastDispatchTimestamp = Date.now();
+        reject(err);
+      });
+  });
+}
+
+/**
+ * Envio de mensagem WhatsApp através do provedor configurado com fila e intervalo mínimo de 1,5s
  */
 export async function sendWhatsAppMessage({
   toPhone,
@@ -158,11 +195,12 @@ export async function sendWhatsAppMessage({
     tipoDestinatario: 'cliente' | 'proprietario' | 'corretor';
   };
 }): Promise<{ success: boolean; data?: unknown; error?: string }> {
-  const formattedNumber = cleanPhoneForWhatsApp(toPhone);
+  return enqueueWhatsAppDispatch(async () => {
+    const formattedNumber = cleanPhoneForWhatsApp(toPhone);
 
-  if (!formattedNumber) {
-    return { success: false, error: 'Telefone inválido ou não informado' };
-  }
+    if (!formattedNumber) {
+      return { success: false, error: 'Telefone inválido ou não informado' };
+    }
 
   // Quando executado no navegador (client-side), roteia via endpoint do Next.js para evitar Mixed Content (HTTP/HTTPS) e CORS
   if (typeof window !== 'undefined') {
@@ -333,4 +371,6 @@ export async function sendWhatsAppMessage({
 
     return { success: false, error: errorMsg };
   }
+  });
 }
+

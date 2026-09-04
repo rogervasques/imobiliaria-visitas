@@ -21,8 +21,8 @@ import {
   mockLogs,
   mockVisitas,
 } from '@/lib/mockData';
-import { supabase } from '@/lib/supabase';
-import { buildTemplateContext, buildTemplateContextAsync, compileTemplate, sendWhatsAppMessage, TemplateContext } from '@/lib/whatsapp';
+import { supabase, RATE_LIMIT_MESSAGE } from '@/lib/supabase';
+import { buildTemplateContext, buildTemplateContextAsync, compileTemplate, sendWhatsAppMessage, TemplateContext, delay } from '@/lib/whatsapp';
 import { useAuth } from './AuthContext';
 import { useTenant } from './TenantContext';
 import { generateInstanceName } from '@/lib/auth';
@@ -214,6 +214,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const clearToast = useCallback(() => {
     setToastMessage(null);
   }, []);
+
+  // Listener global para capturar erros de Rate Limit HTTP 429 do Supabase
+  useEffect(() => {
+    const handleRateLimit429 = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const msg = customEvent?.detail?.message || RATE_LIMIT_MESSAGE;
+      showToast(msg, 'error');
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('supabase_rate_limit_429', handleRateLimit429);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('supabase_rate_limit_429', handleRateLimit429);
+      }
+    };
+  }, [showToast]);
 
   // Filtro de multi-tenant: filtra os dados para exibir exclusivamente os registros da imobiliária selecionada
   const matchesTenant = useCallback(
@@ -939,6 +957,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           },
         });
         novaVisita.whatsapp_confirmacao_cliente = resCliente.success ? 'enviado' : 'falha';
+        // Intervalo de segurança para fila de WhatsApp
+        await delay(1500);
       }
 
       // 2. Dispara confirmação para os proprietários dos imóveis visitados (se opção estiver ativa)
@@ -974,6 +994,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             },
           });
           if (resProp.success) propSuccessCount++;
+
+          // Intervalo de 1.5s entre proprietários
+          await delay(1500);
         }
 
         novaVisita.whatsapp_confirmacao_proprietario = propSuccessCount > 0 ? 'enviado' : 'falha';
@@ -1045,6 +1068,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         },
       });
       statusPosVisita = resCliente.success ? 'enviado' : 'falha';
+      // Intervalo de segurança para fila de WhatsApp
+      await delay(1500);
     }
 
     // 2. Enviar mensagem de comprovação ao Proprietário
@@ -1093,6 +1118,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           },
         });
         if (resProp.success) propSuccessCount++;
+
+        // Intervalo de segurança entre proprietários
+        await delay(1500);
       }
       statusComprovacao = propSuccessCount > 0 ? 'enviado' : 'falha';
     }
@@ -1262,6 +1290,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             ? { whatsapp_lembrete_cliente: 'enviado' }
             : { whatsapp_pos_visita_cliente: 'enviado' }),
         });
+        // Intervalo antes de enviar para os proprietários
+        await delay(1500);
       } else {
         errors.push(`Cliente: ${res.error}`);
       }
@@ -1306,6 +1336,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         } else {
           errors.push(`Proprietário (${im.proprietario_nome}): ${res.error}`);
         }
+
+        // Intervalo de segurança entre proprietários
+        await delay(1500);
       }
 
       if (successCount > 0) {
@@ -1363,6 +1396,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       } else {
         logsList.push(`❌ Falha no lembrete da visita ${v.id}: ${res.message}`);
       }
+      await delay(1500);
     }
 
     for (const v of visitasPosVisita) {
@@ -1374,6 +1408,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       } else {
         logsList.push(`❌ Falha pós-visita ${v.id}: ${res.message}`);
       }
+      await delay(1500);
     }
 
     const totalProcessadas = visitasLembrete.length + visitasPosVisita.length;

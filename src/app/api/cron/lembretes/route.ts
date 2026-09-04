@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { buildTemplateContext, buildTemplateContextAsync, compileTemplate, sendWhatsAppMessage } from '@/lib/whatsapp';
+import { buildTemplateContext, buildTemplateContextAsync, compileTemplate, sendWhatsAppMessage, delay } from '@/lib/whatsapp';
 import { Visita } from '@/types';
 import { generateInstanceName } from '@/lib/auth';
 
@@ -106,6 +106,9 @@ export async function GET(req: NextRequest) {
           }
         }
 
+        // Intervalo de segurança antes de disparar para o proprietário
+        await delay(1500);
+
         // Disparo para o Proprietário
         if (visita.imovel?.proprietario_telefone) {
           const msg = compileTemplate(config.template_lembrete_proprietario, ctx);
@@ -130,6 +133,9 @@ export async function GET(req: NextRequest) {
             logs.push(`Lembrete 1h proprietário enviado via [${creatorInstance}]: ${visita.imovel.proprietario_nome}`);
           }
         }
+
+        // Intervalo de segurança entre visitas
+        await delay(1500);
       }
     }
 
@@ -175,6 +181,9 @@ export async function GET(req: NextRequest) {
             logs.push(`Pós-visita cliente enviado via [${creatorInstance}]: ${visita.cliente.nome}`);
           }
         }
+
+        // Intervalo de segurança entre mensagens de pós-visita
+        await delay(1500);
       }
     }
 

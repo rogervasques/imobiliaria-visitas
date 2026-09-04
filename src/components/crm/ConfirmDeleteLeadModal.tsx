@@ -61,11 +61,12 @@ export function ConfirmDeleteLeadModal({ isOpen, onClose, lead, onConfirm }: Con
             type="button"
             variant="danger"
             onClick={handleConfirm}
-            disabled={isDeleting}
+            isLoading={isDeleting}
             size="sm"
             className="font-bold"
           >
-            {isDeleting ? 'Excluindo...' : 'Sim, Excluir Lead'}
+            <Trash2 className="w-3.5 h-3.5 mr-1" />
+            Sim, Excluir Lead
           </Button>
         </div>
       </div>

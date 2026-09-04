@@ -701,7 +701,7 @@ export function ImovelDetalhesModal({
 
             {/* Botões de Ação da Edição */}
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>
+              <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} disabled={isSubmitting}>
                 Cancelar
               </Button>
               <Button type="submit" variant="primary" isLoading={isSubmitting}>

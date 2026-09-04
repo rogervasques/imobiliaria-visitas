@@ -469,14 +469,14 @@ export function NovaVisitaModal({
 
         {/* ─── Botões do Rodapé ─── */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancelar
           </Button>
           <Button
             type="submit"
             variant="primary"
             isLoading={isSubmitting}
-            disabled={selectedImoveisIds.length === 0 || !clienteId || !dataHora}
+            disabled={selectedImoveisIds.length === 0 || !clienteId || !dataHora || isSubmitting}
           >
             <Send className="w-4 h-4 mr-1.5" />
             Salvar e Agendar Visita {imoveisSelecionados.length > 0 ? `(${imoveisSelecionados.length} imóvel${imoveisSelecionados.length === 1 ? '' : 'is'})` : ''}

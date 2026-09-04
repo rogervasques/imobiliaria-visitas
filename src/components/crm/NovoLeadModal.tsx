@@ -202,8 +202,13 @@ export function NovoLeadModal({ isOpen, onClose, initialEtapa = 'novos_leads' }:
           <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" variant="primary" disabled={isSubmitting || !nome || !telefone}>
-            {isSubmitting ? 'Salvando...' : 'Adicionar Lead ao Funil'}
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={isSubmitting}
+            disabled={isSubmitting || !nome.trim() || !telefone.trim()}
+          >
+            Adicionar Lead ao Funil
           </Button>
         </div>
       </form>
