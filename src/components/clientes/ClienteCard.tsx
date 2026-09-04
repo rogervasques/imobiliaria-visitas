@@ -12,7 +12,7 @@ import {
   CalendarCheck,
   Zap,
 } from 'lucide-react';
-import { formatPhone, getInitials, getWhatsAppDirectLink } from '@/lib/utils';
+import { formatPhone, getInitials, getWhatsAppDirectLink, formatCurrency } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
 import { useTenant } from '@/context/TenantContext';
 import { getImoveisCompativeis } from '@/lib/imovelMatching';
@@ -86,22 +86,34 @@ export function ClienteCard({ cliente, onClick, onOpenMatches }: ClienteCardProp
           )}
         </div>
 
-        {/* ─── 2. Linha 1: Perfil de Interesse Completo ─── */}
-        {cliente.perfil_interesse && (
+        {/* ─── 2. Linha 1: Preferências / Perfil de Interesse ─── */}
+        {(cliente.preferencia_tipo || cliente.preferencia_quartos || cliente.preferencia_finalidade || cliente.perfil_interesse) && (
           <div className="flex items-start gap-1.5 text-xs text-slate-700 dark:text-slate-300">
             <Tag className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
             <span className="font-semibold line-clamp-2 leading-relaxed" title={cliente.perfil_interesse}>
-              {cliente.perfil_interesse}
+              {(cliente.preferencia_tipo || cliente.preferencia_quartos || cliente.preferencia_finalidade) ? (
+                <>
+                  {cliente.preferencia_tipo && cliente.preferencia_tipo !== 'todos' ? cliente.preferencia_tipo.toUpperCase() : 'Todos os Tipos'}
+                  {cliente.preferencia_quartos ? ` • ${cliente.preferencia_quartos}+ qts` : ''}
+                  {cliente.preferencia_finalidade ? ` • ${cliente.preferencia_finalidade === 'locacao' ? 'Locação' : cliente.preferencia_finalidade === 'venda' ? 'Venda' : 'Venda/Locação'}` : ''}
+                </>
+              ) : (
+                cliente.perfil_interesse
+              )}
             </span>
           </div>
         )}
 
         {/* ─── 3. Linha 2: Faixa de Orçamento em Destaque ─── */}
-        {cliente.faixa_orcamento && (
+        {(cliente.orcamento_min || cliente.orcamento_max || cliente.faixa_orcamento) && (
           <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
             <DollarSign className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
             <span>
-              Orçamento: <strong className="text-slate-900 dark:text-slate-100 font-bold">{cliente.faixa_orcamento}</strong>
+              Orçamento: <strong className="text-slate-900 dark:text-slate-100 font-bold">
+                {(cliente.orcamento_min || cliente.orcamento_max)
+                  ? `${cliente.orcamento_min ? formatCurrency(cliente.orcamento_min) : 'R$ 0'} a ${cliente.orcamento_max ? formatCurrency(cliente.orcamento_max) : 'Ilimitado'}`
+                  : cliente.faixa_orcamento}
+              </strong>
             </span>
           </div>
         )}

@@ -29,7 +29,7 @@ import {
   Sparkles,
   Home,
 } from 'lucide-react';
-import { formatCurrency, formatPhone, formatDateTime, getInitials, getWhatsAppDirectLink } from '@/lib/utils';
+import { formatCurrency, formatPhone, formatDateTime, getInitials, getWhatsAppDirectLink, formatCurrencyInput, parseCurrencyInput } from '@/lib/utils';
 import { EnviarImovelModal } from './EnviarImovelModal';
 
 interface ClienteDetalhesModalProps {
@@ -58,8 +58,16 @@ export function ClienteDetalhesModal({
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [email, setEmail] = useState('');
-  const [perfilInteresse, setPerfilInteresse] = useState('');
-  const [faixaOrcamento, setFaixaOrcamento] = useState('');
+  
+  // Orçamento Estruturado
+  const [orcamentoMin, setOrcamentoMin] = useState('');
+  const [orcamentoMax, setOrcamentoMax] = useState('');
+
+  // Preferências Estruturadas
+  const [preferenciaTipo, setPreferenciaTipo] = useState('todos');
+  const [preferenciaQuartos, setPreferenciaQuartos] = useState('0');
+  const [preferenciaFinalidade, setPreferenciaFinalidade] = useState<'ambos' | 'venda' | 'locacao'>('ambos');
+
   const [status, setStatus] = useState<StatusCliente>('ativo');
   const [observacoes, setObservacoes] = useState('');
 
@@ -69,8 +77,11 @@ export function ClienteDetalhesModal({
       setNome(cliente.nome || '');
       setTelefone(cliente.telefone || '');
       setEmail(cliente.email || '');
-      setPerfilInteresse(cliente.perfil_interesse || '');
-      setFaixaOrcamento(cliente.faixa_orcamento || '');
+      setOrcamentoMin(cliente.orcamento_min ? formatCurrencyInput(cliente.orcamento_min) : '');
+      setOrcamentoMax(cliente.orcamento_max ? formatCurrencyInput(cliente.orcamento_max) : '');
+      setPreferenciaTipo(cliente.preferencia_tipo || 'todos');
+      setPreferenciaQuartos(String(cliente.preferencia_quartos || 0));
+      setPreferenciaFinalidade(cliente.preferencia_finalidade || 'ambos');
       setStatus(cliente.status || 'ativo');
       setObservacoes(cliente.observacoes || '');
       setIsEditing(false);
@@ -142,12 +153,37 @@ export function ClienteDetalhesModal({
 
     setIsSubmitting(true);
     try {
+      const numMin = parseCurrencyInput(orcamentoMin);
+      const numMax = parseCurrencyInput(orcamentoMax);
+      const numQuartos = parseInt(preferenciaQuartos, 10) || 0;
+
+      // Gera texto amigável de faixa de orçamento para compatibilidade retroativa
+      let faixaTexto = '';
+      if (numMin > 0 && numMax > 0) {
+        faixaTexto = `${formatCurrency(numMin)} a ${formatCurrency(numMax)}`;
+      } else if (numMin > 0) {
+        faixaTexto = `A partir de ${formatCurrency(numMin)}`;
+      } else if (numMax > 0) {
+        faixaTexto = `Até ${formatCurrency(numMax)}`;
+      }
+
+      // Gera descrição amigável de perfil de interesse
+      const tipoLabel = preferenciaTipo !== 'todos' ? preferenciaTipo.charAt(0).toUpperCase() + preferenciaTipo.slice(1) : '';
+      const quartosLabel = numQuartos > 0 ? `${numQuartos}+ quartos` : '';
+      const finalidadeLabel = preferenciaFinalidade === 'locacao' ? 'Locação' : preferenciaFinalidade === 'venda' ? 'Venda' : '';
+      const perfilDesc = [tipoLabel, quartosLabel, finalidadeLabel].filter(Boolean).join(' • ');
+
       await atualizarCliente(cliente.id, {
         nome,
         telefone,
         email: email || undefined,
-        perfil_interesse: perfilInteresse || undefined,
-        faixa_orcamento: faixaOrcamento || undefined,
+        orcamento_min: numMin > 0 ? numMin : undefined,
+        orcamento_max: numMax > 0 ? numMax : undefined,
+        preferencia_tipo: preferenciaTipo,
+        preferencia_quartos: numQuartos,
+        preferencia_finalidade: preferenciaFinalidade,
+        faixa_orcamento: faixaTexto || undefined,
+        perfil_interesse: perfilDesc || undefined,
         status,
         observacoes: observacoes || undefined,
       });
@@ -180,7 +216,7 @@ export function ClienteDetalhesModal({
         isOpen={isOpen && !isConfirmingDelete}
         onClose={onClose}
         title={isEditing ? 'Editar Cliente' : cliente.nome}
-        subtitle={isEditing ? 'Atualize as informações do cliente' : 'Ficha completa do cliente e histórico de visitas'}
+        subtitle={isEditing ? 'Atualize as informações, orçamento e preferências do cliente' : 'Ficha completa do cliente e histórico de visitas'}
         maxWidth="2xl"
       >
         {/* ─── MODAL EM MODO EDIÇÃO ─── */}
@@ -223,35 +259,95 @@ export function ClienteDetalhesModal({
               />
             </div>
 
-            <Input
-              label="Perfil de Interesse"
-              value={perfilInteresse}
-              onChange={(e) => setPerfilInteresse(e.target.value)}
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input
-                label="Faixa de Orçamento"
-                value={faixaOrcamento}
-                onChange={(e) => setFaixaOrcamento(e.target.value)}
-              />
-              <Select
-                label="Status do Cliente"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as StatusCliente)}
-              >
-                <option value="ativo">Ativo</option>
-                <option value="negociando">Em Negociação</option>
-                <option value="fechado">Fechado</option>
-                <option value="inativo">Inativo</option>
-              </Select>
+            {/* ─── Faixa de Orçamento (Mínimo e Máximo) ─── */}
+            <div className="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 space-y-2.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-emerald-600" />
+                Faixa de Orçamento (Matching)
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Valor Mínimo (R$)"
+                  value={orcamentoMin}
+                  onChange={(e) => setOrcamentoMin(formatCurrencyInput(e.target.value))}
+                  placeholder="Ex: R$ 500.000"
+                />
+                <Input
+                  label="Valor Máximo (R$)"
+                  value={orcamentoMax}
+                  onChange={(e) => setOrcamentoMax(formatCurrencyInput(e.target.value))}
+                  placeholder="Ex: R$ 950.000"
+                />
+              </div>
             </div>
 
+            {/* ─── Preferências de Imóvel Estruturadas (Dropdowns) ─── */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Home className="w-4 h-4 text-emerald-500" />
+                Preferências de Imóvel (Matching)
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Select
+                  label="Tipo de Imóvel"
+                  value={preferenciaTipo}
+                  onChange={(e) => setPreferenciaTipo(e.target.value)}
+                >
+                  <option value="todos">Todos os Tipos</option>
+                  <option value="apartamento">Apartamento</option>
+                  <option value="casa">Casa</option>
+                  <option value="sobrado">Sobrado</option>
+                  <option value="terreno">Terreno</option>
+                  <option value="comercial">Comercial</option>
+                  <option value="cobertura">Cobertura</option>
+                  <option value="studio">Studio</option>
+                  <option value="rural">Rural / Chácara</option>
+                  <option value="outro">Outro</option>
+                </Select>
+
+                <Select
+                  label="Mínimo de Quartos"
+                  value={preferenciaQuartos}
+                  onChange={(e) => setPreferenciaQuartos(e.target.value)}
+                >
+                  <option value="0">Qualquer</option>
+                  <option value="1">1+ quarto</option>
+                  <option value="2">2+ quartos</option>
+                  <option value="3">3+ quartos</option>
+                  <option value="4">4+ quartos</option>
+                </Select>
+
+                <Select
+                  label="Finalidade"
+                  value={preferenciaFinalidade}
+                  onChange={(e) => setPreferenciaFinalidade(e.target.value as any)}
+                >
+                  <option value="ambos">Venda e Locação</option>
+                  <option value="venda">Venda</option>
+                  <option value="locacao">Locação</option>
+                </Select>
+              </div>
+            </div>
+
+            {/* Status do Cliente */}
+            <Select
+              label="Status do Cliente"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as StatusCliente)}
+            >
+              <option value="ativo">Ativo</option>
+              <option value="negociando">Em Negociação</option>
+              <option value="fechado">Fechado</option>
+              <option value="inativo">Inativo</option>
+            </Select>
+
+            {/* Campo Livre: Observações / Perfil Geral */}
             <Textarea
-              label="Observações sobre o Cliente"
+              label="Observações / Perfil Geral"
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
-              rows={2}
+              placeholder="Ex: Busca imóvel próximo a escolas, andar alto, aceita permuta, financiamento aprovado..."
+              rows={3}
             />
 
             {/* Rodapé da Edição */}
@@ -372,30 +468,45 @@ export function ClienteDetalhesModal({
 
             {/* Informações de Perfil de Interesse & Orçamento */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                  <Tag className="w-3 h-3 text-emerald-500" /> Perfil de Interesse
+                  <Home className="w-3 h-3 text-emerald-500" /> Preferências de Imóvel
                 </span>
-                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                  {cliente.perfil_interesse || 'Não especificado'}
-                </p>
+                <div className="flex items-center gap-1.5 flex-wrap text-slate-800 dark:text-slate-200 font-bold text-xs">
+                  <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px]">
+                    {cliente.preferencia_tipo && cliente.preferencia_tipo !== 'todos' ? cliente.preferencia_tipo.toUpperCase() : 'Todos os Tipos'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px]">
+                    {cliente.preferencia_quartos && cliente.preferencia_quartos > 0 ? `${cliente.preferencia_quartos}+ quartos` : 'Qualquer quarto'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px]">
+                    {cliente.preferencia_finalidade === 'locacao' ? 'Locação' : cliente.preferencia_finalidade === 'venda' ? 'Venda' : 'Venda e Locação'}
+                  </span>
+                </div>
+                {cliente.perfil_interesse && !cliente.preferencia_tipo && (
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    {cliente.perfil_interesse}
+                  </p>
+                )}
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
                   <DollarSign className="w-3 h-3 text-emerald-500" /> Faixa de Orçamento
                 </span>
-                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                  {cliente.faixa_orcamento || 'Não especificado'}
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 text-sm">
+                  {(cliente.orcamento_min || cliente.orcamento_max)
+                    ? `${cliente.orcamento_min ? formatCurrency(cliente.orcamento_min) : 'R$ 0'} a ${cliente.orcamento_max ? formatCurrency(cliente.orcamento_max) : 'Ilimitado'}`
+                    : cliente.faixa_orcamento || 'Não especificado'}
                 </p>
               </div>
             </div>
 
-            {/* Observações do Cliente */}
+            {/* Observações / Perfil Geral */}
             {cliente.observacoes && (
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                  <FileText className="w-3 h-3 text-emerald-500" /> Observações Internas
+                  <FileText className="w-3 h-3 text-emerald-500" /> Observações / Perfil Geral
                 </span>
                 <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                   {cliente.observacoes}

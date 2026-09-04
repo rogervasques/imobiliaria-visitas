@@ -18,6 +18,31 @@ export function formatCurrency(value?: number | null): string {
 }
 
 /**
+ * Formata um valor digitado para moeda BRL em tempo real (ex: "500000" -> "R$ 500.000")
+ */
+export function formatCurrencyInput(val?: number | string | null): string {
+  if (val === undefined || val === null || val === '') return '';
+  const digits = String(val).replace(/\D/g, '');
+  if (!digits) return '';
+  const num = parseInt(digits, 10);
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0,
+  }).format(num);
+}
+
+/**
+ * Extrai o número inteiro puro de uma string com máscara de moeda
+ */
+export function parseCurrencyInput(val?: string | number | null): number {
+  if (val === undefined || val === null || val === '') return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  const digits = String(val).replace(/\D/g, '');
+  return digits ? parseInt(digits, 10) : 0;
+}
+
+/**
  * Formata um número de telefone brasileiro para (11) 98765-4321 ou (11) 8765-4321
  */
 export function formatPhone(phone?: string | null): string {

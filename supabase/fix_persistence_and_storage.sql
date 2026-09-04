@@ -110,6 +110,11 @@ CREATE TABLE IF NOT EXISTS public.clientes (
   atualizado_em TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS orcamento_min NUMERIC(15,2);
+ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS orcamento_max NUMERIC(15,2);
+ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS preferencia_tipo TEXT DEFAULT 'todos';
+ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS preferencia_quartos INTEGER DEFAULT 0;
+ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS preferencia_finalidade TEXT DEFAULT 'ambos';
 ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS tipo_cliente TEXT DEFAULT 'comprador_inquilino';
 ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS etapa_crm TEXT DEFAULT 'novos_leads';
 ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS imovel_interesse_id UUID;

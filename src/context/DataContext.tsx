@@ -145,7 +145,19 @@ export const sanitizeImovelForDb = (im: Partial<Imovel>): Record<string, any> =>
 };
 
 export const sanitizeClienteForDb = (cl: Partial<Cliente>): Record<string, any> => {
-  const clean: Record<string, any> = { ...cl };
+  const { ...rest } = cl as any;
+  const clean: Record<string, any> = { ...rest };
+
+  if ('orcamento_min' in clean) {
+    clean.orcamento_min = typeof clean.orcamento_min === 'number' && !isNaN(clean.orcamento_min) ? clean.orcamento_min : (clean.orcamento_min ? Number(clean.orcamento_min) : null);
+  }
+  if ('orcamento_max' in clean) {
+    clean.orcamento_max = typeof clean.orcamento_max === 'number' && !isNaN(clean.orcamento_max) ? clean.orcamento_max : (clean.orcamento_max ? Number(clean.orcamento_max) : null);
+  }
+  if ('preferencia_quartos' in clean) {
+    clean.preferencia_quartos = typeof clean.preferencia_quartos === 'number' && !isNaN(clean.preferencia_quartos) ? clean.preferencia_quartos : (clean.preferencia_quartos ? parseInt(clean.preferencia_quartos, 10) : 0);
+  }
+
   return clean;
 };
 

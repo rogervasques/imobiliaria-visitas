@@ -54,36 +54,49 @@ export function ImoveisCompativeisModal({
         <div className="space-y-4">
           {/* Resumo do Perfil do Cliente */}
           <div className="p-3.5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-            <div className="space-y-0.5">
+            <div className="space-y-1 min-w-0 flex-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 Critérios de Busca do Lead
               </span>
-              <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                {cliente.perfil_interesse || 'Imóveis residenciais na região'}
-              </p>
-            </div>
-            {cliente.faixa_orcamento && (
-              <div className="sm:text-right shrink-0">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Orçamento
+              <div className="flex items-center gap-1.5 flex-wrap text-slate-800 dark:text-slate-200 font-bold">
+                <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/80 text-[11px]">
+                  Tipo: {cliente.preferencia_tipo && cliente.preferencia_tipo !== 'todos' ? cliente.preferencia_tipo.toUpperCase() : 'TODOS'}
                 </span>
-                <span className="font-extrabold text-emerald-700 dark:text-emerald-300">
-                  {cliente.faixa_orcamento}
+                <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/80 text-[11px]">
+                  Quartos: {cliente.preferencia_quartos && cliente.preferencia_quartos > 0 ? `${cliente.preferencia_quartos}+` : 'QUALQUER'}
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/80 text-[11px]">
+                  {cliente.preferencia_finalidade === 'locacao' ? 'LOCAÇÃO' : cliente.preferencia_finalidade === 'venda' ? 'VENDA' : 'VENDA / LOCAÇÃO'}
                 </span>
               </div>
-            )}
+              {cliente.observacoes && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  Obs: {cliente.observacoes}
+                </p>
+              )}
+            </div>
+            <div className="sm:text-right shrink-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                Faixa de Orçamento
+              </span>
+              <span className="font-extrabold text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm">
+                {(cliente.orcamento_min || cliente.orcamento_max)
+                  ? `${cliente.orcamento_min ? formatCurrency(cliente.orcamento_min) : 'R$ 0'} a ${cliente.orcamento_max ? formatCurrency(cliente.orcamento_max) : 'Ilimitado'}`
+                  : cliente.faixa_orcamento || 'Não especificado'}
+              </span>
+            </div>
           </div>
 
           {/* Lista de Imóveis Compatíveis */}
           {imoveis.length === 0 ? (
-            <div className="p-8 text-center rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
-              <Building2 className="w-8 h-8 text-slate-400 mx-auto" />
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Nenhum imóvel diretamente compatível no momento
+            <div className="p-8 text-center rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2.5">
+              <Building2 className="w-10 h-10 text-slate-400 mx-auto" />
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                Preencha o orçamento e preferências para ver imóveis compatíveis
               </p>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Cadastre novas opções no portfólio para receber sugestões de match automático.
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                Defina a faixa de valor mínimo/máximo, tipo de imóvel ou quartos na ficha do cliente para o sistema cruzar automaticamente com as opções disponíveis no portfólio.
               </p>
             </div>
           ) : (

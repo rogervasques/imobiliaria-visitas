@@ -103,6 +103,17 @@ export interface Cliente {
   telefone: string;
   email?: string;
   tipo_cliente?: 'comprador_inquilino' | 'proprietario';
+  
+  // Orçamento Estruturado
+  orcamento_min?: number;
+  orcamento_max?: number;
+  
+  // Preferências Estruturadas
+  preferencia_tipo?: string; // 'todos' | 'apartamento' | 'casa' | 'sobrado' | 'terreno' | 'comercial' | 'cobertura' | 'studio' | 'rural' | 'outro'
+  preferencia_quartos?: number; // 0 = qualquer, 1, 2, 3, 4+
+  preferencia_finalidade?: 'venda' | 'locacao' | 'ambos';
+
+  // Campos Legados / Compatibilidade
   perfil_interesse?: string;
   faixa_orcamento?: string;
   origem_lead?: OrigemLead;
