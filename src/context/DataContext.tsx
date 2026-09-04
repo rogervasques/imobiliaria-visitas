@@ -259,10 +259,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       let loadedImoveis: Imovel[] = [];
       if (!errImoveis && dbImoveis) {
         loadedImoveis = dbImoveis.map((im) => {
-          const mainImg = im.imagem_url || (im.fotos_urls && im.fotos_urls[0]) || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&auto=format&fit=crop&q=80';
-          const fotos = (im.fotos_urls && Array.isArray(im.fotos_urls) && im.fotos_urls.length > 0)
-            ? im.fotos_urls
-            : [mainImg];
+          let fotos: string[] = [];
+          if (Array.isArray(im.fotos_urls) && im.fotos_urls.length > 0) {
+            fotos = im.fotos_urls.filter(Boolean);
+          } else if (typeof im.fotos_urls === 'string' && im.fotos_urls.trim()) {
+            try {
+              const parsed = JSON.parse(im.fotos_urls);
+              if (Array.isArray(parsed)) fotos = parsed.filter(Boolean);
+              else if (typeof parsed === 'string') fotos = [parsed];
+            } catch {
+              fotos = im.fotos_urls.split(',').map((s: string) => s.trim()).filter(Boolean);
+            }
+          }
+
+          if (fotos.length === 0 && im.imagem_url) {
+            fotos = [im.imagem_url];
+          }
+
+          const mainImg = im.imagem_url || fotos[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&auto=format&fit=crop&q=80';
+          if (fotos.length === 0) {
+            fotos = [mainImg];
+          }
 
           const imoTenant =
             im.imobiliaria ||

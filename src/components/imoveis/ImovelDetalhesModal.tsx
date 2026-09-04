@@ -174,9 +174,25 @@ export function ImovelDetalhesModal({
       setObservacoesChaves(imovel.observacoes_chaves || '');
       setStatus(imovel.status || 'disponivel');
 
-      const initialFotos = imovel.fotos_urls && imovel.fotos_urls.length > 0
-        ? imovel.fotos_urls
-        : (imovel.imagem_url ? [imovel.imagem_url] : []);
+      let initialFotos: string[] = [];
+      if (Array.isArray(imovel.fotos_urls) && imovel.fotos_urls.length > 0) {
+        initialFotos = imovel.fotos_urls.filter(Boolean);
+      } else if (typeof imovel.fotos_urls === 'string' && (imovel.fotos_urls as string).trim()) {
+        try {
+          const parsed = JSON.parse(imovel.fotos_urls);
+          if (Array.isArray(parsed)) initialFotos = parsed.filter(Boolean);
+          else if (typeof parsed === 'string') initialFotos = [parsed];
+        } catch {
+          initialFotos = (imovel.fotos_urls as string).split(',').map((s: string) => s.trim()).filter(Boolean);
+        }
+      }
+
+      if (initialFotos.length === 0 && imovel.imagem_url) {
+        initialFotos = [imovel.imagem_url];
+      } else if (imovel.imagem_url && !initialFotos.includes(imovel.imagem_url)) {
+        initialFotos = [imovel.imagem_url, ...initialFotos];
+      }
+
       setFotosUrls(initialFotos);
       setImagemUrl(imovel.imagem_url || initialFotos[0] || '');
       setActivePhotoIndex(0);
