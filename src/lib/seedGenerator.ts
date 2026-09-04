@@ -38,7 +38,7 @@ export const PROPRIETARIOS_VARGINHA = [
   { nome: 'Tatiane Cristina Vianna', email: 'proprietario30@teste.com' },
 ];
 
-// Bairros de Varginha / MG
+// Bairros valorizados de Varginha / MG
 export const BAIRROS_VARGINHA = [
   'Vila Pinto', 'Jardim Eliana', 'Residencial Alameda', 'Santa Luiza',
   'Centro', 'Park Real', 'Vale dos Ipês', 'Vila Paiva', 'Jardim Andere',
@@ -49,7 +49,7 @@ export const BAIRROS_VARGINHA = [
   'Jardim das Oliveiras', 'Alto da Vila Paiva', 'Parque Boa Vista'
 ];
 
-// URLs reais de fotos de arquitetura/interiores do Unsplash
+// URLs reais de fotos de arquitetura/interiores de alta resolução (Unsplash)
 export const FOTOS_POOL = [
   'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
@@ -76,11 +76,19 @@ export const FOTOS_POOL = [
   'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=1200&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-161821195710-dd6b41faaea6?w=1200&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1616137466211-f939a420be84?w=1200&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=1200&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1615873968403-89e068629265?w=1200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?w=1200&auto=format&fit=crop&q=80'
+  'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600585154363-67eb9e2e2099?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600573472592-401b489a3cdc?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600566752734-2a0cd660991c?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1600607688969-a5bfcd646154?w=1200&auto=format&fit=crop&q=80'
 ];
 
 // Nomes de 50 Clientes / Leads
@@ -104,13 +112,14 @@ export const CLIENTES_VARGINHA = [
   'Murilo Silveira Tavares', 'Lorena Cristina Ferreira'
 ];
 
-// Modelos de imóveis para Varginha
-const MODELOS_VARGINHA: {
+// Modelos de imóveis para Varginha com faixas de valores e características precisas
+export const MODELOS_VARGINHA: {
   tipo: TipoImovel;
   finalidade: FinalidadeImovel;
   prefixo: string;
   quartos: number;
   suites: number;
+  banheiros: number;
   vagas: number;
   area: number;
   valMin?: number;
@@ -118,24 +127,26 @@ const MODELOS_VARGINHA: {
   locMin?: number;
   locMax?: number;
 }[] = [
-  { tipo: 'casa', finalidade: 'venda', prefixo: 'Casa de Alto Padrão com Espaço Gourmet', quartos: 4, suites: 2, vagas: 3, area: 280, valMin: 750000, valMax: 1450000 },
-  { tipo: 'casa', finalidade: 'venda', prefixo: 'Excelente Sobrado Residencial', quartos: 3, suites: 1, vagas: 2, area: 195, valMin: 480000, valMax: 720000 },
-  { tipo: 'casa', finalidade: 'locacao', prefixo: 'Casa Térrea Espaçosa com Quintal', quartos: 3, suites: 1, vagas: 2, area: 160, locMin: 2200, locMax: 3800 },
-  { tipo: 'casa', finalidade: 'ambos', prefixo: 'Belíssima Residência com Piscina Aquecida', quartos: 4, suites: 3, vagas: 4, area: 360, valMin: 1200000, valMax: 2100000, locMin: 5500, locMax: 8500 },
-  { tipo: 'apartamento', finalidade: 'venda', prefixo: 'Apartamento Moderno com Varanda Gourmet', quartos: 3, suites: 1, vagas: 2, area: 110, valMin: 420000, valMax: 680000 },
-  { tipo: 'apartamento', finalidade: 'venda', prefixo: 'Apartamento Alto Padrão e Vista Panorâmica', quartos: 3, suites: 2, vagas: 2, area: 145, valMin: 650000, valMax: 980000 },
-  { tipo: 'apartamento', finalidade: 'locacao', prefixo: 'Apartamento Mobiliado e Decorado', quartos: 2, suites: 1, vagas: 1, area: 78, locMin: 1800, locMax: 2900 },
-  { tipo: 'apartamento', finalidade: 'ambos', prefixo: 'Apartamento Garden com Área Externa Privativa', quartos: 3, suites: 1, vagas: 2, area: 135, valMin: 550000, valMax: 850000, locMin: 2800, locMax: 4200 },
-  { tipo: 'cobertura', finalidade: 'venda', prefixo: 'Cobertura Duplex Cinematográfica com Hidro', quartos: 4, suites: 3, vagas: 3, area: 290, valMin: 1350000, valMax: 2600000 },
-  { tipo: 'cobertura', finalidade: 'ambos', prefixo: 'Cobertura Exclusiva com Solarium e Churrasqueira', quartos: 3, suites: 2, vagas: 3, area: 240, valMin: 1100000, valMax: 1950000, locMin: 4800, locMax: 7800 },
-  { tipo: 'casa', finalidade: 'venda', prefixo: 'Casa em Condomínio Fechado com Segurança 24h', quartos: 4, suites: 4, vagas: 4, area: 420, valMin: 1800000, valMax: 3500000 },
-  { tipo: 'comercial', finalidade: 'locacao', prefixo: 'Conjunto Comercial Pronto para Consultório/Escritório', quartos: 0, suites: 0, vagas: 2, area: 85, locMin: 2500, locMax: 5200 },
-  { tipo: 'comercial', finalidade: 'venda', prefixo: 'Prédio Comercial em Ponto Nobre e Estratégico', quartos: 0, suites: 0, vagas: 6, area: 480, valMin: 1900000, valMax: 3800000 },
-  { tipo: 'comercial', finalidade: 'locacao', prefixo: 'Galpão Industrial com Docas e Escritórios', quartos: 0, suites: 0, vagas: 8, area: 650, locMin: 7500, locMax: 14500 },
+  { tipo: 'casa', finalidade: 'venda', prefixo: 'Casa de Alto Padrão com Espaço Gourmet', quartos: 4, suites: 2, banheiros: 3, vagas: 3, area: 280, valMin: 750000, valMax: 1450000 },
+  { tipo: 'casa', finalidade: 'venda', prefixo: 'Excelente Sobrado Residencial', quartos: 3, suites: 1, banheiros: 2, vagas: 2, area: 195, valMin: 480000, valMax: 720000 },
+  { tipo: 'casa', finalidade: 'locacao', prefixo: 'Casa Térrea Espaçosa com Quintal', quartos: 3, suites: 1, banheiros: 2, vagas: 2, area: 160, locMin: 2200, locMax: 3800 },
+  { tipo: 'casa', finalidade: 'ambos', prefixo: 'Belíssima Residência com Piscina Aquecida', quartos: 4, suites: 3, banheiros: 4, vagas: 4, area: 360, valMin: 1200000, valMax: 2100000, locMin: 5500, locMax: 8500 },
+  { tipo: 'apartamento', finalidade: 'venda', prefixo: 'Apartamento Moderno com Varanda Gourmet', quartos: 3, suites: 1, banheiros: 2, vagas: 2, area: 110, valMin: 420000, valMax: 680000 },
+  { tipo: 'apartamento', finalidade: 'venda', prefixo: 'Apartamento Alto Padrão e Vista Panorâmica', quartos: 3, suites: 2, banheiros: 3, vagas: 2, area: 145, valMin: 650000, valMax: 980000 },
+  { tipo: 'apartamento', finalidade: 'locacao', prefixo: 'Apartamento Mobiliado e Decorado', quartos: 2, suites: 1, banheiros: 2, vagas: 1, area: 78, locMin: 1800, locMax: 2900 },
+  { tipo: 'apartamento', finalidade: 'ambos', prefixo: 'Apartamento Garden com Área Externa Privativa', quartos: 3, suites: 1, banheiros: 2, vagas: 2, area: 135, valMin: 550000, valMax: 850000, locMin: 2800, locMax: 4200 },
+  { tipo: 'cobertura', finalidade: 'venda', prefixo: 'Cobertura Duplex Cinematográfica com Hidro', quartos: 4, suites: 3, banheiros: 4, vagas: 3, area: 290, valMin: 1350000, valMax: 2600000 },
+  { tipo: 'cobertura', finalidade: 'ambos', prefixo: 'Cobertura Exclusiva com Solarium e Churrasqueira', quartos: 3, suites: 2, banheiros: 3, vagas: 3, area: 240, valMin: 1100000, valMax: 1950000, locMin: 4800, locMax: 7800 },
+  { tipo: 'casa', finalidade: 'venda', prefixo: 'Casa em Condomínio Fechado com Segurança 24h', quartos: 4, suites: 4, banheiros: 5, vagas: 4, area: 420, valMin: 1800000, valMax: 3500000 },
+  { tipo: 'apartamento', finalidade: 'venda', prefixo: 'Apartamento 2 Quartos Pronto para Morar', quartos: 2, suites: 1, banheiros: 2, vagas: 1, area: 68, valMin: 290000, valMax: 420000 },
+  { tipo: 'comercial', finalidade: 'locacao', prefixo: 'Conjunto Comercial Pronto para Consultório/Escritório', quartos: 0, suites: 0, banheiros: 2, vagas: 2, area: 85, locMin: 2500, locMax: 5200 },
+  { tipo: 'comercial', finalidade: 'venda', prefixo: 'Prédio Comercial em Ponto Nobre e Estratégico', quartos: 0, suites: 0, banheiros: 4, vagas: 6, area: 480, valMin: 1900000, valMax: 3800000 },
+  { tipo: 'terreno', finalidade: 'venda', prefixo: 'Lote Plano em Condomínio Fechado Exclusivo', quartos: 0, suites: 0, banheiros: 0, vagas: 0, area: 450, valMin: 240000, valMax: 490000 },
+  { tipo: 'comercial', finalidade: 'locacao', prefixo: 'Galpão Industrial com Docas e Escritórios', quartos: 0, suites: 0, banheiros: 4, vagas: 8, area: 650, locMin: 7500, locMax: 14500 },
 ];
 
 /**
- * Gera conjunto completo de dados sintéticos para Varginha/MG
+ * Gera conjunto completo de dados sintéticos para Varginha/MG com suporte a preferências estruturadas e galeria de fotos
  */
 export function generateTestSeedData(
   adminUserId: string = 'user-admin-master',
@@ -145,7 +156,7 @@ export function generateTestSeedData(
 ) {
   const activeTenant = (imobiliariaNome || 'Lagom Imóveis').trim();
 
-  // 1. Gera 30 Proprietários
+  // 1. Gera 30 Proprietários (focado em contato e tenant)
   const proprietarios: Proprietario[] = PROPRIETARIOS_VARGINHA.map((p, idx) => ({
     id: `prop-${String(idx + 1).padStart(3, '0')}`,
     nome: p.nome,
@@ -153,10 +164,10 @@ export function generateTestSeedData(
     email: p.email,
     imobiliaria: activeTenant,
     imobiliaria_id: imobiliariaId,
-    criado_em: new Date(Date.now() - (30 - idx) * 86400000).toISOString(),
+    criado_em: new Date(Date.now() - (35 - idx) * 86400000).toISOString(),
   }));
 
-  // 2. Gera 70 Imóveis em Varginha/MG com 5 fotos
+  // 2. Gera 70 Imóveis em Varginha/MG com galeria de 5 a 7 fotos
   const imoveis: Imovel[] = [];
   for (let i = 0; i < 70; i++) {
     const id = `imo-vg-${String(101 + i).padStart(3, '0')}`;
@@ -165,15 +176,24 @@ export function generateTestSeedData(
     const bairro = BAIRROS_VARGINHA[i % BAIRROS_VARGINHA.length];
     const proprietario = proprietarios[i % proprietarios.length];
 
-    const startFotoIdx = (i * 3) % (FOTOS_POOL.length - 5);
-    const fotos5 = FOTOS_POOL.slice(startFotoIdx, startFotoIdx + 5);
-    const imagemPrincipal = fotos5[0];
+    // Seleciona 5 a 6 fotos rotacionadas do pool
+    const poolSize = FOTOS_POOL.length;
+    const startFotoIdx = (i * 4) % (poolSize - 6);
+    const fotosGaleria = [
+      FOTOS_POOL[startFotoIdx],
+      FOTOS_POOL[(startFotoIdx + 1) % poolSize],
+      FOTOS_POOL[(startFotoIdx + 2) % poolSize],
+      FOTOS_POOL[(startFotoIdx + 3) % poolSize],
+      FOTOS_POOL[(startFotoIdx + 4) % poolSize],
+      FOTOS_POOL[(startFotoIdx + 5) % poolSize],
+    ].filter(Boolean);
 
+    const imagemPrincipal = fotosGaleria[0];
     const titulo = `${modelo.prefixo} no ${bairro}`;
     const endereco = `Rua ${['das Acácias', 'São José', 'Presidente Vargas', 'Rio de Janeiro', 'Belo Horizonte', 'Minas Gerais', 'Tiradentes', 'Sete de Setembro', 'dos Ipês', 'da Saudade'][i % 10]}, ${50 + (i * 15)}`;
 
-    let valorVenda = undefined;
-    let valorLocacao = undefined;
+    let valorVenda: number | null = null;
+    let valorLocacao: number | null = null;
 
     if (modelo.finalidade === 'venda' || modelo.finalidade === 'ambos') {
       const min = modelo.valMin || 350000;
@@ -187,8 +207,12 @@ export function generateTestSeedData(
       valorLocacao = Math.round((min + ((max - min) * (i % 10)) / 10) / 100) * 100;
     }
 
-    const valorCondominio = modelo.tipo === 'apartamento' || modelo.tipo === 'cobertura' ? 250 + (i % 8) * 80 : modelo.tipo === 'casa' && i % 3 === 0 ? 380 : undefined;
-    const valorIptu = Math.round(45 + (i % 12) * 25);
+    const valorCondominio = modelo.tipo === 'apartamento' || modelo.tipo === 'cobertura' 
+      ? 280 + (i % 8) * 75 
+      : modelo.tipo === 'casa' && i % 3 === 0 
+      ? 390 
+      : null;
+    const valorIptu = Math.round(55 + (i % 12) * 28);
 
     const descricao = `Excelente oportunidade no tradicional e valorizado bairro ${bairro} em Varginha/MG. Imóvel espaçoso com acabamento refinado, iluminação natural privilegiada, ambientes integrados, armários planejados e localização nobre com fácil acesso ao comércio, escolas e principais vias da cidade.`;
 
@@ -197,6 +221,10 @@ export function generateTestSeedData(
       'Portaria / Interfone', 'Esquadrias em Alumínio', 'Garagem Coberta',
       'Excelente Iluminação', 'Localização Privilegiada'
     ];
+
+    if (modelo.tipo === 'casa' || modelo.tipo === 'cobertura') {
+      caracteristicas.push('Piscina', 'Churrasqueira', 'Espaço Gourmet');
+    }
 
     imoveis.push({
       id,
@@ -215,17 +243,18 @@ export function generateTestSeedData(
       valor_iptu: valorIptu,
       quartos: modelo.quartos,
       suites: modelo.suites,
-      banheiros: Math.max(1, modelo.suites + 1),
+      banheiros: modelo.banheiros || Math.max(1, modelo.suites + 1),
       vagas: modelo.vagas,
       area_construida: modelo.area,
       area_util: modelo.area,
-      area_terreno: Math.round(modelo.area * 1.3),
+      area_terreno: Math.round(modelo.area * 1.35),
+      aceita_pet: true,
       descricao_comercial: descricao,
       caracteristicas,
       observacoes_chaves: `Chaves na portaria com o zelador ou no cofre eletrônico (Código: 4${String(i).padStart(2, '0')}8). Agendar com 30min de antecedência. [tenant:${activeTenant}]`,
-      status: 'disponivel' as StatusImovel,
+      status: (i % 15 === 0 ? 'reservado' : 'disponivel') as StatusImovel,
       imagem_url: imagemPrincipal,
-      fotos_urls: fotos5,
+      fotos_urls: fotosGaleria,
       proprietario_id: proprietario.id,
       proprietario_nome: proprietario.nome,
       proprietario_telefone: TELEFONE_PROPRIETARIOS_PADRAO,
@@ -236,39 +265,76 @@ export function generateTestSeedData(
     });
   }
 
-  // 3. Gera 50 Clientes / Leads com preferências de busca
+  // 3. Gera 50 Clientes / Leads com Preferências Estruturadas & Matching Perfeito
   const etapasCRM: EtapaCRM[] = [
     'novos_leads', 'qualificacao', 'agendamento_visita',
     'proposta_negociacao', 'documentacao_credito', 'fechamento_contrato', 'venda_concluida'
   ];
 
+  const origensLead: OrigemLead[] = ['site', 'instagram', 'whatsapp', 'portal', 'indicacao'];
+  const tempoParadaOpcoes = ['Hoje', 'Há 1 dia', 'Há 2 dias', 'Há 4 dias', 'Há 1 semana', 'Há 2 semanas'];
+
   const clientes: Cliente[] = CLIENTES_VARGINHA.map((nome, idx) => {
     const id = `cli-vg-${String(idx + 1).padStart(3, '0')}`;
     const email = `cliente${idx + 1}@teste.com`;
     const etapa = etapasCRM[idx % etapasCRM.length];
+    const origem = origensLead[idx % origensLead.length];
+    const prioridade: 'alta' | 'media' | 'baixa' = idx % 3 === 0 ? 'alta' : idx % 3 === 1 ? 'media' : 'baixa';
+    const tempoParada = tempoParadaOpcoes[idx % tempoParadaOpcoes.length];
 
-    const bairroInteresse1 = BAIRROS_VARGINHA[idx % BAIRROS_VARGINHA.length];
-    const bairroInteresse2 = BAIRROS_VARGINHA[(idx + 3) % BAIRROS_VARGINHA.length];
-    const tipoDesejado = idx % 3 === 0 ? 'Apartamento' : idx % 3 === 1 ? 'Casa' : 'Cobertura';
-    const faixaPreco = idx % 2 === 0 ? 'R$ 450k a 850k' : 'R$ 850k a 1.6M';
-
+    // Escolhe um imóvel alvo real em Varginha para servir como base de preferência e matching
     const imovelAlvo = imoveis[idx % imoveis.length];
+
+    // Define preferência de tipo e finalidade a partir do imóvel de interesse ou padrões diversificados
+    const prefTipo = imovelAlvo.tipo;
+    const prefFinalidade: 'venda' | 'locacao' | 'ambos' = imovelAlvo.finalidade;
+    const prefQuartos = imovelAlvo.quartos > 0 ? imovelAlvo.quartos : 0;
+
+    // Calcula faixa de orçamento estruturada ao redor do imóvel alvo
+    let orcMin = 0;
+    let orcMax = 0;
+    let faixaTexto = '';
+
+    if (prefFinalidade === 'locacao') {
+      const locVal = imovelAlvo.valor_locacao || 2500;
+      orcMin = Math.max(1000, Math.round((locVal * 0.8) / 100) * 100);
+      orcMax = Math.round((locVal * 1.3) / 100) * 100;
+      faixaTexto = `R$ ${orcMin.toLocaleString('pt-BR')} a R$ ${orcMax.toLocaleString('pt-BR')} /mês`;
+    } else {
+      const vendaVal = imovelAlvo.valor_venda || 600000;
+      orcMin = Math.max(150000, Math.round((vendaVal * 0.8) / 10000) * 10000);
+      orcMax = Math.round((vendaVal * 1.25) / 10000) * 10000;
+      faixaTexto = `R$ ${orcMin.toLocaleString('pt-BR')} a R$ ${orcMax.toLocaleString('pt-BR')}`;
+    }
+
+    const tipoNome = prefTipo.charAt(0).toUpperCase() + prefTipo.slice(1);
+    const quartosTexto = prefQuartos > 0 ? `com ${prefQuartos}+ quartos` : '';
+    const perfilInteresse = `${tipoNome} ${quartosTexto} em ${imovelAlvo.bairro} (${prefFinalidade === 'locacao' ? 'Locação' : 'Compra'})`.trim();
 
     return {
       id,
       nome,
       telefone: TELEFONE_CLIENTES_PADRAO,
       email,
+      tipo_cliente: 'comprador_inquilino',
+      orcamento_min: orcMin,
+      orcamento_max: orcMax,
+      preferencia_tipo: prefTipo,
+      preferencia_quartos: prefQuartos,
+      preferencia_finalidade: prefFinalidade,
+      perfil_interesse: perfilInteresse,
+      faixa_orcamento: faixaTexto,
       etapa_crm: etapa,
-      perfil_interesse: `${tipoDesejado} 3Q em ${bairroInteresse1} ou ${bairroInteresse2}`.slice(0, 90),
-      faixa_orcamento: faixaPreco,
       imovel_interesse_id: imovelAlvo.id,
       imovel_interesse_titulo: imovelAlvo.titulo,
       imovel_interesse_foto: imovelAlvo.imagem_url,
-      origem_lead: ['site', 'instagram', 'whatsapp', 'portal', 'indicacao'][idx % 5] as OrigemLead,
-      status: 'ativo' as StatusCliente,
-      prioridade: (idx % 2 === 0 ? 'alta' : 'media') as 'alta' | 'media' | 'baixa',
-      observacoes: `Cliente qualificado para compra em Varginha. Procura ${tipoDesejado} com 3 quartos nos bairros ${bairroInteresse1} ou ${bairroInteresse2}. Faixa: ${faixaPreco}. [tenant:${activeTenant}]`,
+      corretor_responsavel_nome: adminUserNome,
+      corretor_responsavel_id: adminUserId,
+      origem_lead: origem,
+      status: (etapa === 'venda_concluida' ? 'fechado' : etapa === 'proposta_negociacao' ? 'negociando' : 'ativo') as StatusCliente,
+      prioridade,
+      tempo_parada_texto: tempoParada,
+      observacoes: `Cliente qualificado em Varginha. Procura ${tipoNome.toLowerCase()} na região do ${imovelAlvo.bairro}. Orçamento: ${faixaTexto}. [tenant:${activeTenant}]`,
       imobiliaria: activeTenant,
       imobiliaria_id: imobiliariaId,
       criado_em: new Date(Date.now() - (45 - idx) * 86400000).toISOString(),
@@ -336,9 +402,6 @@ export function generateTestSeedData(
         notificar_pos_visita: true,
         notificar_pos_visita_cliente: true,
         notificar_comprovacao_proprietario: true,
-        gravar_logs: true,
-        gravar_logs_cliente: true,
-        gravar_logs_proprietario: true,
         whatsapp_confirmacao_cliente: status === 'concluida' ? 'visualizado' : diaOffset <= 0 ? 'entregue' : 'enviado',
         whatsapp_confirmacao_proprietario: status === 'concluida' ? 'visualizado' : diaOffset <= 0 ? 'entregue' : 'enviado',
         whatsapp_lembrete_cliente: diaOffset < 0 ? 'entregue' : (diaOffset === 0 ? 'enviado' : 'pendente'),
