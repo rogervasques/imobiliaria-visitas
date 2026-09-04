@@ -554,6 +554,8 @@ export function WhatsAppConfigForm() {
           confirmText: cleanConfirmText.trim().toUpperCase(),
           imobiliaria: activeTenantName,
           imobiliaria_id: activeTenantId,
+          usuario_email: user?.email,
+          usuario_nome: user?.name,
         }),
       });
 
