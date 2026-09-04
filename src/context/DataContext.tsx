@@ -12,6 +12,8 @@ import {
   StatusVisita,
   Visita,
   WhatsAppLog,
+  LogSistema,
+  ItemLixeira,
 } from '@/types';
 import {
   mockClientes,
@@ -63,6 +65,14 @@ interface DataContextType {
   atualizarVisita: (id: string, visita: Partial<Visita>) => Promise<void>;
   removerVisita: (id: string) => Promise<void>;
   
+  // Auditoria, Logs do Sistema & Lixeira
+  registrarLogSistema: (acao: string, tabela: 'imoveis' | 'clientes' | 'visitas' | 'proprietarios' | 'usuarios' | 'configuracoes' | 'sistema', registroId?: string, detalhes?: Record<string, any>) => Promise<void>;
+  restaurarRegistro: (tabela: 'imoveis' | 'clientes' | 'visitas' | 'proprietarios', id: string) => Promise<void>;
+  carregarLixeira: () => Promise<ItemLixeira[]>;
+  excluirDefinitivoLixeira: (tabela: 'imoveis' | 'clientes' | 'visitas' | 'proprietarios', id: string) => Promise<void>;
+  purgarLixeiraExpirados: () => Promise<{ sucesso: boolean; visitas_purgadas: number; imoveis_purgados: number; clientes_purgados: number }>;
+  carregarLogsSistema: (filtros?: { usuarioEmail?: string; acao?: string; tabela?: string; dataInicio?: string; dataFim?: string; limit?: number }) => Promise<LogSistema[]>;
+
   // WhatsApp
   atualizarConfigWhatsApp: (config: Partial<ConfiguracaoWhatsApp>) => Promise<void>;
   dispararWhatsAppManual: (visitaId: string, tipo: 'confirmacao' | 'lembrete' | 'pos_visita', destinatario: 'cliente' | 'proprietario' | 'ambos') => Promise<{ success: boolean; message: string }>;
@@ -75,6 +85,7 @@ interface DataContextType {
   toastMessage: { text: string; type: 'success' | 'error' | 'info' } | null;
   showToast: (text: string, type?: 'success' | 'error' | 'info') => void;
   clearToast: () => void;
+  carregarDados: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -267,11 +278,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const tenantMap = getItemTenantMap();
       const defaultTenantName = imobiliarias[0]?.nome || 'Lagom Imóveis';
 
-      // Tenta buscar no Supabase
-      const { data: dbImoveis, error: errImoveis } = await supabase.from('imoveis').select('*');
-      const { data: dbProprietarios, error: errProprietarios } = await supabase.from('proprietarios').select('*');
-      const { data: dbClientes, error: errClientes } = await supabase.from('clientes').select('*');
-      const { data: dbVisitas, error: errVisitas } = await supabase.from('visitas').select('*');
+      // Tenta buscar no Supabase (apenas registros ativos, ignorando os que estão na lixeira)
+      const { data: dbImoveis, error: errImoveis } = await supabase.from('imoveis').select('*').is('deletado_em', null);
+      const { data: dbProprietarios, error: errProprietarios } = await supabase.from('proprietarios').select('*').is('deletado_em', null);
+      const { data: dbClientes, error: errClientes } = await supabase.from('clientes').select('*').is('deletado_em', null);
+      const { data: dbVisitas, error: errVisitas } = await supabase.from('visitas').select('*').is('deletado_em', null);
       const { data: dbConfig, error: errConfig } = await supabase.from('configuracoes_whatsapp').select('*').single();
 
       let loadedImoveis: Imovel[] = [];
@@ -554,6 +565,64 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [allVisitas, matchesTenant, user]);
 
   // -------------------------------------------------------------
+  // AUDITORIA E LOGS DO SISTEMA (AUDIT TRAIL)
+  // -------------------------------------------------------------
+  const registrarLogSistema = useCallback(
+    async (
+      acao: string,
+      tabela: 'imoveis' | 'clientes' | 'visitas' | 'proprietarios' | 'usuarios' | 'configuracoes' | 'sistema',
+      registroId?: string,
+      detalhes: Record<string, any> = {}
+    ) => {
+      const activeTenantName = (currentTenant?.nome || imobiliarias[0]?.nome || 'Lagom Imóveis').trim();
+      const activeTenantId = currentTenant?.id || imobiliarias[0]?.id;
+
+      const newLog: LogSistema = {
+        id: crypto.randomUUID ? crypto.randomUUID() : `log_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        usuario_id: user?.id,
+        usuario_email: user?.email || 'sistema@easymob.com.br',
+        usuario_nome: user?.name || 'Sistema',
+        acao,
+        tabela,
+        registro_id: registroId ? String(registroId) : undefined,
+        detalhes,
+        imobiliaria_id: activeTenantId,
+        imobiliaria: activeTenantName,
+        criado_em: new Date().toISOString(),
+      };
+
+      // 1. Grava no Supabase
+      try {
+        await supabase.from('logs_sistema').insert({
+          usuario_id: newLog.usuario_id || null,
+          usuario_email: newLog.usuario_email,
+          usuario_nome: newLog.usuario_nome,
+          acao: newLog.acao,
+          tabela: newLog.tabela,
+          registro_id: newLog.registro_id || null,
+          detalhes: newLog.detalhes,
+          imobiliaria_id: newLog.imobiliaria_id || null,
+          imobiliaria: newLog.imobiliaria,
+          criado_em: newLog.criado_em,
+        });
+      } catch (err) {
+        console.warn('Erro ao persistir log_sistema no Supabase:', err);
+      }
+
+      // 2. Grava no LocalStorage para cache/offline
+      try {
+        const savedLogs = localStorage.getItem('easymob_logs_sistema');
+        const parsedLogs: LogSistema[] = savedLogs ? JSON.parse(savedLogs) : [];
+        const updatedLogs = [newLog, ...parsedLogs].slice(0, 500);
+        localStorage.setItem('easymob_logs_sistema', JSON.stringify(updatedLogs));
+      } catch {
+        // ignore
+      }
+    },
+    [user?.id, user?.email, user?.name, currentTenant?.nome, currentTenant?.id, imobiliarias]
+  );
+
+  // -------------------------------------------------------------
   // CRUD PROPRIETÁRIOS
   // -------------------------------------------------------------
   const adicionarProprietario = async (
@@ -583,6 +652,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const updated = sortProprietariosAlphabetically([novoProp, ...allProprietarios]);
     setAllProprietarios(updated);
     persistir('proprietarios', updated);
+
+    await registrarLogSistema('CRIAR_PROPRIETARIO', 'proprietarios', novoProp.id, {
+      nome: novoProp.nome,
+      telefone: novoProp.telefone,
+    });
+
     return novoProp;
   };
 
@@ -619,6 +694,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         )
       )
     );
+
+    await registrarLogSistema('ALTERAR_PROPRIETARIO', 'proprietarios', id, dados);
   };
 
   // -------------------------------------------------------------
@@ -672,11 +749,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const updated = sortImoveisAlphabetically([novoImovel, ...allImoveis]);
     setAllImoveis(updated);
     persistir('imoveis', updated);
+
+    await registrarLogSistema('CRIAR_IMOVEL', 'imoveis', novoImovel.id, {
+      titulo: novoImovel.titulo,
+      codigo: novoImovel.codigo,
+      valor_venda: novoImovel.valor_venda,
+      valor_locacao: novoImovel.valor_locacao,
+      endereco: `${novoImovel.bairro}, ${novoImovel.cidade}`,
+    });
+
     showToast(`Imóvel "${novoImovel.titulo}" cadastrado com sucesso!`, 'success');
     return novoImovel;
   };
 
   const atualizarImovel = async (id: string, dados: Partial<Imovel>) => {
+    const existing = allImoveis.find((i) => i.id === id);
+
     if (dados.imobiliaria) {
       setItemTenantInMap(id, dados.imobiliaria);
     }
@@ -698,17 +786,60 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setAllVisitas((prev) =>
       prev.map((v) => (v.imovel_id === id ? { ...v, imovel: { ...v.imovel, ...dados } as Imovel } : v))
     );
+
+    // Auditoria: Verificação de Mudança de Preço
+    const precoAlterado =
+      (dados.valor_venda !== undefined && dados.valor_venda !== existing?.valor_venda) ||
+      (dados.valor_locacao !== undefined && dados.valor_locacao !== existing?.valor_locacao);
+
+    if (precoAlterado) {
+      await registrarLogSistema('ALTERAR_VALOR_IMOVEL', 'imoveis', id, {
+        titulo: existing?.titulo,
+        codigo: existing?.codigo,
+        valor_venda_anterior: existing?.valor_venda,
+        valor_venda_novo: dados.valor_venda,
+        valor_locacao_anterior: existing?.valor_locacao,
+        valor_locacao_novo: dados.valor_locacao,
+      });
+    }
+
+    // Auditoria: Verificação de Mudança de Status
+    if (dados.status && dados.status !== existing?.status) {
+      await registrarLogSistema('ALTERAR_STATUS_IMOVEL', 'imoveis', id, {
+        titulo: existing?.titulo,
+        codigo: existing?.codigo,
+        status_anterior: existing?.status,
+        status_novo: dados.status,
+      });
+    }
+
     showToast('Imóvel atualizado com sucesso!', 'success');
   };
 
   const removerImovel = async (id: string) => {
     const imovelParaRemover = allImoveis.find((im) => im.id === id);
+    const deletedAt = new Date().toISOString();
 
-    const { error: deleteErr } = await supabase.from('imoveis').delete().eq('id', id);
+    // 1. Soft Delete no Supabase (coluna deletado_em)
+    const { error: deleteErr } = await supabase
+      .from('imoveis')
+      .update({ deletado_em: deletedAt, atualizado_em: deletedAt })
+      .eq('id', id);
+
     if (deleteErr) {
-      console.error('Erro no Supabase ao excluir imóvel:', deleteErr);
-      throw new Error(`Falha ao excluir imóvel no banco de dados: ${deleteErr.message}`);
+      console.error('Erro no Supabase ao mover imóvel para lixeira:', deleteErr);
+      throw new Error(`Falha ao remover imóvel no banco de dados: ${deleteErr.message}`);
     }
+
+    // 2. Grava log de auditoria
+    await registrarLogSistema('EXCLUIR_IMOVEL', 'imoveis', id, {
+      titulo: imovelParaRemover?.titulo,
+      codigo: imovelParaRemover?.codigo,
+      valor_venda: imovelParaRemover?.valor_venda,
+      valor_locacao: imovelParaRemover?.valor_locacao,
+      endereco: imovelParaRemover ? `${imovelParaRemover.bairro}, ${imovelParaRemover.cidade}` : '',
+      deletado_em: deletedAt,
+    });
 
     const updatedImoveis = allImoveis.filter((im) => im.id !== id);
     setAllImoveis(updatedImoveis);
@@ -721,16 +852,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       // Verifica se restou algum OUTRO imóvel desse mesmo proprietário
       const remainingCount = updatedImoveis.filter(
-        (im) => (propId && im.proprietario_id === propId) || (propPhone && im.proprietario_telefone?.trim().toLowerCase() === propPhone)
+        (im) => !im.deletado_em && ((propId && im.proprietario_id === propId) || (propPhone && im.proprietario_telefone?.trim().toLowerCase() === propPhone))
       ).length;
 
       if (remainingCount === 0) {
-        // Exclui o proprietário automaticamente do banco e do estado
+        // Move o proprietário para a lixeira também
         if (propId) {
           try {
-            await supabase.from('proprietarios').delete().eq('id', propId);
+            await supabase.from('proprietarios').update({ deletado_em: deletedAt, atualizado_em: deletedAt }).eq('id', propId);
           } catch (err) {
-            console.warn('Supabase delete proprietario orfao offline:', err);
+            console.warn('Supabase soft delete proprietario orfao offline:', err);
           }
         }
         const updatedProps = allProprietarios.filter(
@@ -738,12 +869,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         );
         setAllProprietarios(updatedProps);
         persistir('proprietarios', updatedProps);
-        showToast('Imóvel excluído. Como era o único imóvel do proprietário, o cadastro dele foi removido automaticamente.', 'info');
+        showToast('Imóvel movido para a Lixeira (retenção de 60 dias). Cadastro do proprietário órfão também foi movido.', 'info');
         return;
       }
     }
 
-    showToast('Imóvel excluído com sucesso.', 'info');
+    showToast('Imóvel movido para a Lixeira (armazenado por 60 dias).', 'info');
   };
 
   // -------------------------------------------------------------
@@ -774,11 +905,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const updated = sortClientesAlphabetically([novoCliente, ...allClientes]);
     setAllClientes(updated);
     persistir('clientes', updated);
+
+    await registrarLogSistema('CRIAR_CLIENTE', 'clientes', novoCliente.id, {
+      nome: novoCliente.nome,
+      telefone: novoCliente.telefone,
+      perfil_interesse: novoCliente.perfil_interesse,
+      etapa_crm: novoCliente.etapa_crm,
+    });
+
     showToast(`Cliente "${novoCliente.nome}" cadastrado!`, 'success');
     return novoCliente;
   };
 
   const atualizarCliente = async (id: string, dados: Partial<Cliente>) => {
+    const existing = allClientes.find((c) => c.id === id);
+
     if (dados.imobiliaria) {
       setItemTenantInMap(id, dados.imobiliaria);
     }
@@ -800,6 +941,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setAllVisitas((prev) =>
       prev.map((v) => (v.cliente_id === id ? { ...v, cliente: { ...v.cliente, ...dados } as Cliente } : v))
     );
+
+    await registrarLogSistema('ALTERAR_CLIENTE', 'clientes', id, {
+      nome: existing?.nome,
+      campos_alterados: Object.keys(dados),
+      dados_novos: dados,
+    });
+
     showToast('Cliente atualizado!', 'success');
   };
 
@@ -850,20 +998,45 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       prev.map((v) => (v.cliente_id === id ? { ...v, cliente: { ...v.cliente, etapa_crm: novaEtapa, status: novoStatus } as Cliente } : v))
     );
 
+    await registrarLogSistema('MOVER_ETAPA_CRM', 'clientes', id, {
+      nome: target.nome,
+      etapa_anterior: target.etapa_crm,
+      etapa_nova: novaEtapa,
+      etapa_nome: etapaNomes[novaEtapa],
+      status_anterior: target.status,
+      status_novo: novoStatus,
+    });
+
     showToast(`Lead movido para "${etapaNomes[novaEtapa]}".`, 'success');
   };
 
   const removerCliente = async (id: string) => {
-    const { error: deleteErr } = await supabase.from('clientes').delete().eq('id', id);
+    const clienteParaRemover = allClientes.find((cl) => cl.id === id);
+    const deletedAt = new Date().toISOString();
+
+    // Soft Delete no Supabase
+    const { error: deleteErr } = await supabase
+      .from('clientes')
+      .update({ deletado_em: deletedAt, atualizado_em: deletedAt })
+      .eq('id', id);
+
     if (deleteErr) {
       console.error('Erro no Supabase ao remover cliente:', deleteErr);
-      throw new Error(`Falha ao excluir cliente no banco de dados: ${deleteErr.message}`);
+      throw new Error(`Falha ao mover cliente para a lixeira: ${deleteErr.message}`);
     }
+
+    await registrarLogSistema('EXCLUIR_CLIENTE', 'clientes', id, {
+      nome: clienteParaRemover?.nome,
+      telefone: clienteParaRemover?.telefone,
+      etapa_crm: clienteParaRemover?.etapa_crm,
+      status: clienteParaRemover?.status,
+      deletado_em: deletedAt,
+    });
 
     const updated = allClientes.filter((cl) => cl.id !== id);
     setAllClientes(updated);
     persistir('clientes', updated);
-    showToast('Cliente removido.', 'info');
+    showToast('Cliente movido para a Lixeira (armazenado por 60 dias).', 'info');
   };
 
   // -------------------------------------------------------------
@@ -1014,6 +1187,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setAllVisitas(updated);
     persistir('visitas', updated);
 
+    await registrarLogSistema('CRIAR_VISITA', 'visitas', novaVisita.id, {
+      cliente_nome: novaVisita.cliente_nome || clienteRef?.nome,
+      cliente_id: novaVisita.cliente_id,
+      imovel_titulo: imovelRef?.titulo,
+      data_hora_visita: novaVisita.data_hora_visita,
+      status: novaVisita.status,
+      corretor_nome: novaVisita.corretor_nome,
+    });
+
     showToast(
       enviarWhatsApp && notificarConfirmacao
         ? `Visita agendada com roteiro de ${novaVisita.imoveis?.length || 1} imóvel(is) e confirmações via WhatsApp!`
@@ -1143,10 +1325,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const updated = allVisitas.map((v) => (v.id === id ? { ...v, ...updates } : v));
     setAllVisitas(updated);
     persistir('visitas', updated);
+
+    await registrarLogSistema('CONCLUIR_VISITA', 'visitas', id, {
+      cliente_nome: visita.cliente_nome || visita.cliente?.nome,
+      imovel_titulo: visita.imovel?.titulo,
+      data_hora_visita: visita.data_hora_visita,
+      concluido_em: agora.toISOString(),
+    });
+
     showToast('Visita concluída com sucesso! Histórico ativo por +48h.', 'success');
   };
 
   const atualizarStatusVisita = async (id: string, novoStatus: StatusVisita) => {
+    const visita = allVisitas.find((v) => v.id === id);
     const agora = new Date();
     const isEncerramento = novoStatus === 'concluida' || novoStatus === 'cancelada';
     const fimGravacaoLogs = isEncerramento
@@ -1171,10 +1362,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const updated = allVisitas.map((v) => (v.id === id ? { ...v, ...updates } : v));
     setAllVisitas(updated);
     persistir('visitas', updated);
+
+    await registrarLogSistema('ALTERAR_STATUS_VISITA', 'visitas', id, {
+      cliente_nome: visita?.cliente_nome || visita?.cliente?.nome,
+      imovel_titulo: visita?.imovel?.titulo,
+      status_anterior: visita?.status,
+      status_novo: novoStatus,
+    });
+
     showToast(`Status da visita alterado para "${novoStatus.toUpperCase()}"`, 'info');
   };
 
   const atualizarVisita = async (id: string, dados: Partial<Visita>) => {
+    const existing = allVisitas.find((v) => v.id === id);
     const dbPayload = sanitizeVisitaForDb({ ...dados, atualizado_em: new Date().toISOString() });
     const { error: updateErr } = await supabase.from('visitas').update(dbPayload).eq('id', id);
     if (updateErr) {
@@ -1206,20 +1406,167 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     setAllVisitas(updated);
     persistir('visitas', updated);
+
+    await registrarLogSistema('ALTERAR_VISITA', 'visitas', id, {
+      cliente_nome: existing?.cliente_nome || existing?.cliente?.nome,
+      campos_alterados: Object.keys(dados),
+    });
+
     showToast('Visita atualizada com sucesso!', 'success');
   };
 
   const removerVisita = async (id: string) => {
-    const { error: deleteErr } = await supabase.from('visitas').delete().eq('id', id);
+    const visitaParaRemover = allVisitas.find((v) => v.id === id);
+    const deletedAt = new Date().toISOString();
+
+    // Soft Delete no Supabase (coluna deletado_em)
+    const { error: deleteErr } = await supabase
+      .from('visitas')
+      .update({ deletado_em: deletedAt, atualizado_em: deletedAt })
+      .eq('id', id);
+
     if (deleteErr) {
-      console.error('Erro no Supabase ao excluir visita:', deleteErr);
-      throw new Error(`Falha ao excluir visita no banco de dados: ${deleteErr.message}`);
+      console.error('Erro no Supabase ao mover visita para lixeira:', deleteErr);
+      throw new Error(`Falha ao remover visita no banco de dados: ${deleteErr.message}`);
     }
+
+    await registrarLogSistema('EXCLUIR_VISITA', 'visitas', id, {
+      cliente_nome: visitaParaRemover?.cliente_nome || visitaParaRemover?.cliente?.nome,
+      data_hora_visita: visitaParaRemover?.data_hora_visita,
+      status: visitaParaRemover?.status,
+      imovel_titulo: visitaParaRemover?.imovel?.titulo,
+      deletado_em: deletedAt,
+    });
 
     const updated = allVisitas.filter((v) => v.id !== id);
     setAllVisitas(updated);
     persistir('visitas', updated);
-    showToast('Visita excluída.', 'info');
+    showToast('Visita movida para a Lixeira (armazenada por 60 dias).', 'info');
+  };
+
+  // -------------------------------------------------------------
+  // RESTAURAÇÃO, LIXEIRA & PURGA DEFINITIVA DE 60 DIAS
+  // -------------------------------------------------------------
+  const restaurarRegistro = async (tabela: 'imoveis' | 'clientes' | 'visitas' | 'proprietarios', id: string) => {
+    try {
+      const res = await fetch('/api/admin/trash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'restore',
+          tabela,
+          id,
+          usuario_email: user?.email,
+          usuario_nome: user?.name,
+          imobiliaria: currentTenant?.nome,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao restaurar registro');
+      }
+
+      await carregarDados();
+      showToast('Registro restaurado com sucesso para a lista ativa!', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Falha ao restaurar registro', 'error');
+      throw err;
+    }
+  };
+
+  const carregarLixeira = async (): Promise<ItemLixeira[]> => {
+    try {
+      const activeTenant = currentTenant?.nome || 'todas';
+      const res = await fetch(`/api/admin/trash?imobiliaria=${encodeURIComponent(activeTenant)}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && data.items) {
+        return data.items;
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar itens da lixeira:', err);
+    }
+    return [];
+  };
+
+  const excluirDefinitivoLixeira = async (tabela: 'imoveis' | 'clientes' | 'visitas' | 'proprietarios', id: string) => {
+    try {
+      const res = await fetch('/api/admin/trash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'hard_delete',
+          tabela,
+          id,
+          usuario_email: user?.email,
+          usuario_nome: user?.name,
+          imobiliaria: currentTenant?.nome,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao purgar registro');
+      }
+
+      showToast('Registro excluído permanentemente da lixeira.', 'info');
+    } catch (err: any) {
+      showToast(err.message || 'Falha ao excluir definitivamente', 'error');
+      throw err;
+    }
+  };
+
+  const purgarLixeiraExpirados = async () => {
+    try {
+      const res = await fetch('/api/admin/trash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'purge_now' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Purga de registros com mais de 60 dias executada!', 'success');
+        return data.summary;
+      } else {
+        throw new Error(data.error || 'Erro ao executar purga');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Falha ao purgar registros expirados', 'error');
+      throw err;
+    }
+  };
+
+  const carregarLogsSistema = async (filtros?: {
+    usuarioEmail?: string;
+    acao?: string;
+    tabela?: string;
+    dataInicio?: string;
+    dataFim?: string;
+    limit?: number;
+  }): Promise<LogSistema[]> => {
+    try {
+      const params = new URLSearchParams();
+      if (filtros?.usuarioEmail) params.append('usuarioEmail', filtros.usuarioEmail);
+      if (filtros?.acao) params.append('acao', filtros.acao);
+      if (filtros?.tabela) params.append('tabela', filtros.tabela);
+      if (filtros?.dataInicio) params.append('dataInicio', filtros.dataInicio);
+      if (filtros?.dataFim) params.append('dataFim', filtros.dataFim);
+      if (filtros?.limit) params.append('limit', String(filtros.limit));
+      if (currentTenant?.nome) params.append('imobiliaria', currentTenant.nome);
+
+      const res = await fetch(`/api/admin/logs?${params.toString()}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && data.logs) {
+        return data.logs;
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar logs via API, usando fallback local:', err);
+    }
+
+    try {
+      const saved = localStorage.getItem('easymob_logs_sistema');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   };
 
   // -------------------------------------------------------------
@@ -1562,6 +1909,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         toastMessage,
         showToast,
         clearToast,
+        registrarLogSistema,
+        restaurarRegistro,
+        carregarLixeira,
+        excluirDefinitivoLixeira,
+        purgarLixeiraExpirados,
+        carregarLogsSistema,
+        carregarDados,
       }}
     >
       {children}

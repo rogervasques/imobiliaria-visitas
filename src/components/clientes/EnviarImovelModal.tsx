@@ -19,6 +19,9 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { formatCurrency, getWhatsAppDirectLink } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
+import { compilePropertyTemplate } from '@/lib/whatsapp';
+import { mockConfigWhatsApp } from '@/lib/mockData';
 
 interface EnviarImovelModalProps {
   cliente: Cliente | null;
@@ -27,7 +30,8 @@ interface EnviarImovelModalProps {
 }
 
 export function EnviarImovelModal({ cliente, isOpen, onClose }: EnviarImovelModalProps) {
-  const { imoveis, showToast } = useData();
+  const { imoveis, configWhatsApp, showToast } = useData();
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [tipoFilter, setTipoFilter] = useState('todos');
 
@@ -52,8 +56,9 @@ export function EnviarImovelModal({ cliente, isOpen, onClose }: EnviarImovelModa
   if (!cliente) return null;
 
   const handleEnviarImovelWhatsApp = (imovel: Imovel) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://app.easymob.com.br';
-    const linkImovel = `${origin}/imovel/${imovel.id}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://easymob.com.br';
+    const imobQuery = imovel.imobiliaria ? `?imob=${encodeURIComponent(imovel.imobiliaria)}` : '';
+    const linkImovel = `${origin}/imovel/${imovel.id}${imobQuery}`;
 
     const valorFormatado = imovel.valor_venda
       ? formatCurrency(imovel.valor_venda)
@@ -61,14 +66,40 @@ export function EnviarImovelModal({ cliente, isOpen, onClose }: EnviarImovelModa
       ? `${formatCurrency(imovel.valor_locacao)}/mês`
       : 'Sob consulta';
 
-    const mensagem =
-      `Olá, ${cliente.nome}! Tudo bem? Selecionei esta opção exclusiva para você:\n\n` +
-      `🏡 *${imovel.titulo}*\n` +
-      `📍 ${imovel.endereco}, ${imovel.numero || 'S/N'} - ${imovel.bairro}, ${imovel.cidade}\n` +
-      `💰 *Valor:* ${valorFormatado}\n` +
-      (imovel.quartos ? `🛏️ *Quartos:* ${imovel.quartos}${imovel.suites ? ` (${imovel.suites} suítes)` : ''}\n` : '') +
-      `\n👉 *Veja a galeria de fotos e detalhes completos:* \n${linkImovel}\n\n` +
-      `Fico à sua disposição para agendarmos uma visita!`;
+    const areaConstruidaOuUtil = imovel.area_construida || imovel.area_util || 0;
+    const enderecoFormatado = `${imovel.endereco || ''}${imovel.numero ? `, ${imovel.numero}` : ''} - ${imovel.bairro}, ${imovel.cidade}`;
+
+    const templateBase =
+      configWhatsApp?.template_imovel_compativel ||
+      mockConfigWhatsApp.template_imovel_compativel;
+
+    const mensagem = compilePropertyTemplate(templateBase, {
+      cliente_nome: cliente.nome.split(' ')[0],
+      nome_cliente: cliente.nome,
+      cliente: cliente.nome.split(' ')[0],
+      nome: cliente.nome.split(' ')[0],
+      imovel_titulo: imovel.titulo,
+      titulo_imovel: imovel.titulo,
+      titulo: imovel.titulo,
+      imovel_codigo: imovel.codigo || 'SEM-COD',
+      codigo: imovel.codigo || 'SEM-COD',
+      endereco: enderecoFormatado,
+      bairro: imovel.bairro || '',
+      cidade: imovel.cidade || '',
+      valor: valorFormatado,
+      valor_venda: imovel.valor_venda ? formatCurrency(imovel.valor_venda) : '',
+      valor_locacao: imovel.valor_locacao ? `${formatCurrency(imovel.valor_locacao)}/mês` : '',
+      quartos: String(imovel.quartos || 0),
+      suites: String(imovel.suites || 0),
+      banheiros: String(imovel.banheiros || 0),
+      vagas: String(imovel.vagas || 0),
+      area: areaConstruidaOuUtil > 0 ? `${areaConstruidaOuUtil}m²` : '',
+      link_imovel: linkImovel,
+      link: linkImovel,
+      corretor_nome: user?.name || 'Corretor',
+      corretor_telefone: user?.telefone || '',
+      imobiliaria_nome: imovel.imobiliaria || 'EasyMob',
+    });
 
     const linkWhatsApp = getWhatsAppDirectLink(cliente.telefone, mensagem);
     window.open(linkWhatsApp, '_blank');

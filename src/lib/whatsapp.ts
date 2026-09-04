@@ -128,12 +128,87 @@ export async function buildTemplateContextAsync(visita: Visita): Promise<Templat
 /**
  * Substitui as tags do template com os valores do contexto
  */
-export function compileTemplate(template: string, ctx: TemplateContext): string {
+export function compileTemplate(template: string | undefined, ctx: TemplateContext | Record<string, unknown>): string {
+  if (!template) return '';
   let compiled = template;
   for (const [key, value] of Object.entries(ctx)) {
     const placeholder = new RegExp(`\\{${key}\\}`, 'g');
-    compiled = compiled.replace(placeholder, value || '');
+    compiled = compiled.replace(placeholder, value !== undefined && value !== null ? String(value) : '');
   }
+  return compiled;
+}
+
+export interface PropertyTemplateContext {
+  cliente_nome?: string;
+  nome_cliente?: string;
+  cliente?: string;
+  nome?: string;
+  imovel_titulo: string;
+  titulo_imovel?: string;
+  titulo?: string;
+  imovel_codigo: string;
+  codigo?: string;
+  endereco: string;
+  bairro?: string;
+  cidade?: string;
+  valor: string;
+  valor_venda?: string;
+  valor_locacao?: string;
+  quartos?: string;
+  suites?: string;
+  banheiros?: string;
+  vagas?: string;
+  area?: string;
+  link_imovel: string;
+  link?: string;
+  corretor_nome?: string;
+  corretor_telefone?: string;
+  imobiliaria_nome?: string;
+}
+
+/**
+ * Substitui as tags de templates de compartilhamento de imóvel e match de leads
+ */
+export function compilePropertyTemplate(template: string | undefined, ctx: PropertyTemplateContext): string {
+  if (!template) return '';
+  let compiled = template;
+
+  const fullCtx: Record<string, string> = {
+    nome: ctx.nome || ctx.cliente_nome || ctx.cliente || ctx.nome_cliente || '',
+    cliente: ctx.cliente || ctx.cliente_nome || ctx.nome_cliente || ctx.nome || '',
+    cliente_nome: ctx.cliente_nome || ctx.cliente || ctx.nome_cliente || ctx.nome || '',
+    nome_cliente: ctx.nome_cliente || ctx.cliente_nome || ctx.cliente || ctx.nome || '',
+    titulo: ctx.titulo || ctx.imovel_titulo || ctx.titulo_imovel || '',
+    titulo_imovel: ctx.titulo_imovel || ctx.imovel_titulo || ctx.titulo || '',
+    imovel_titulo: ctx.imovel_titulo || ctx.titulo_imovel || ctx.titulo || '',
+    codigo: ctx.codigo || ctx.imovel_codigo || '',
+    imovel_codigo: ctx.imovel_codigo || ctx.codigo || '',
+    link: ctx.link || ctx.link_imovel || '',
+    link_imovel: ctx.link_imovel || ctx.link || '',
+    endereco: ctx.endereco || '',
+    bairro: ctx.bairro || '',
+    cidade: ctx.cidade || '',
+    valor: ctx.valor || '',
+    valor_venda: ctx.valor_venda || '',
+    valor_locacao: ctx.valor_locacao || '',
+    quartos: ctx.quartos !== undefined && ctx.quartos !== null ? String(ctx.quartos) : '',
+    suites: ctx.suites !== undefined && ctx.suites !== null ? String(ctx.suites) : '',
+    banheiros: ctx.banheiros !== undefined && ctx.banheiros !== null ? String(ctx.banheiros) : '',
+    vagas: ctx.vagas !== undefined && ctx.vagas !== null ? String(ctx.vagas) : '',
+    area: ctx.area !== undefined && ctx.area !== null ? String(ctx.area) : '',
+    corretor_nome: ctx.corretor_nome || '',
+    corretor_telefone: ctx.corretor_telefone || '',
+    imobiliaria_nome: ctx.imobiliaria_nome || '',
+  };
+
+  for (const [key, value] of Object.entries(fullCtx)) {
+    const placeholder = new RegExp(`\\{${key}\\}`, 'g');
+    compiled = compiled.replace(placeholder, value !== undefined && value !== null ? String(value) : '');
+  }
+
+  // Limpeza de pontuação caso não haja cliente especificado (ex: "Olá, !" -> "Olá!")
+  compiled = compiled.replace(/Olá,\s*!/gi, 'Olá!').replace(/Olá\s*!/gi, 'Olá!');
+
   return compiled;
 }
 

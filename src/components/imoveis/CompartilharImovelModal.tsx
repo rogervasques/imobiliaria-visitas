@@ -20,6 +20,8 @@ import {
 import { formatCurrency, formatPhone, getWhatsAppDirectLink, cleanPhoneForWhatsApp } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
+import { compilePropertyTemplate } from '@/lib/whatsapp';
+import { mockConfigWhatsApp } from '@/lib/mockData';
 
 interface CompartilharImovelModalProps {
   imovel: Imovel | null;
@@ -32,7 +34,7 @@ export function CompartilharImovelModal({
   isOpen,
   onClose,
 }: CompartilharImovelModalProps) {
-  const { clientes, showToast } = useData();
+  const { clientes, configWhatsApp, showToast } = useData();
   const { user } = useAuth();
   const [clienteSelecionadoId, setClienteSelecionadoId] = useState<string>('');
   const [telefoneCliente, setTelefoneCliente] = useState('');
@@ -57,23 +59,40 @@ export function CompartilharImovelModal({
     ? `${formatCurrency(imovel.valor_locacao)}/mês`
     : 'Sob Consulta';
 
-  // Mensagem padronizada pronta para o WhatsApp (personalizada se houver cliente)
-  const saudacao = clienteSelecionado
-    ? `🏢 *Olá, ${clienteSelecionado.nome.split(' ')[0]}! Olha este imóvel que separei especialmente para você:*`
-    : `🏢 *Olha este imóvel que separei para você!*`;
+  const enderecoFormatado = `${imovel.bairro ? `${imovel.bairro}, ` : ''}${imovel.cidade}${imovel.estado ? ` - ${imovel.estado}` : ''}`;
 
-  const mensagemWhatsApp = `${saudacao}
+  const templateBase =
+    configWhatsApp?.template_compartilhar_imovel ||
+    mockConfigWhatsApp.template_compartilhar_imovel;
 
-*${imovel.titulo}*
-📌 Código: *${imovel.codigo || 'SEM-COD'}*
-📍 Localização: ${imovel.bairro}, ${imovel.cidade} - ${imovel.estado}
-💰 Valor: *${valorPrincipal}*
-🛏️ ${imovel.quartos} quartos ${imovel.suites ? `(${imovel.suites} suítes)` : ''} | 🚿 ${imovel.banheiros} banheiros | 🚗 ${imovel.vagas} vagas ${areaConstruidaOuUtil > 0 ? `| 📐 ${areaConstruidaOuUtil}m²` : ''}
-
-👉 *Veja as fotos completas e todos os detalhes no link:*
-${publicUrl}
-
-Se você quiser agendar uma visita presencial, me avise por aqui! 🤝`;
+  // Compila o template com suporte a tags dinâmicas
+  const mensagemWhatsApp = compilePropertyTemplate(templateBase, {
+    cliente_nome: clienteSelecionado ? clienteSelecionado.nome.split(' ')[0] : '',
+    nome_cliente: clienteSelecionado ? clienteSelecionado.nome : '',
+    cliente: clienteSelecionado ? clienteSelecionado.nome.split(' ')[0] : '',
+    nome: clienteSelecionado ? clienteSelecionado.nome.split(' ')[0] : '',
+    imovel_titulo: imovel.titulo,
+    titulo_imovel: imovel.titulo,
+    titulo: imovel.titulo,
+    imovel_codigo: imovel.codigo || 'SEM-COD',
+    codigo: imovel.codigo || 'SEM-COD',
+    endereco: enderecoFormatado,
+    bairro: imovel.bairro || '',
+    cidade: imovel.cidade || '',
+    valor: valorPrincipal,
+    valor_venda: imovel.valor_venda ? formatCurrency(imovel.valor_venda) : '',
+    valor_locacao: imovel.valor_locacao ? `${formatCurrency(imovel.valor_locacao)}/mês` : '',
+    quartos: String(imovel.quartos || 0),
+    suites: String(imovel.suites || 0),
+    banheiros: String(imovel.banheiros || 0),
+    vagas: String(imovel.vagas || 0),
+    area: areaConstruidaOuUtil > 0 ? `${areaConstruidaOuUtil}m²` : '',
+    link_imovel: publicUrl,
+    link: publicUrl,
+    corretor_nome: user?.name || 'Corretor',
+    corretor_telefone: user?.telefone || '',
+    imobiliaria_nome: imovel.imobiliaria || 'EasyMob',
+  });
 
   const handleCopiarLink = async () => {
     try {

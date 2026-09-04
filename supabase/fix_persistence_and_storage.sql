@@ -222,6 +222,11 @@ CREATE TABLE IF NOT EXISTS public.configuracoes_whatsapp (
 
 ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS imobiliaria TEXT DEFAULT 'Lagom Imóveis';
 ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS imobiliaria_id TEXT;
+ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS gravar_logs_cliente BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS gravar_logs_proprietario BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS template_comprovacao_proprietario TEXT;
+ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS template_compartilhar_imovel TEXT;
+ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS template_imovel_compativel TEXT;
 
 ALTER TABLE public.configuracoes_whatsapp ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total configuracoes_whatsapp" ON public.configuracoes_whatsapp;
@@ -306,5 +311,90 @@ CREATE POLICY "Exclusão pública de mídias"
 ON storage.objects FOR DELETE
 USING (bucket_id IN ('imoveis-fotos', 'imobiliarias-logos', 'logos', 'imoveis-media'));
 
--- 10. RECARREGAMENTO DO CACHE DO SCHEMA DO POSTGREST
+-- 10. TABELA: LOGS_SISTEMA (Audit Logs) E SOFT DELETE COM RETENÇÃO DE 60 DIAS
+CREATE TABLE IF NOT EXISTS public.logs_sistema (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID,
+  usuario_email TEXT,
+  usuario_nome TEXT,
+  acao VARCHAR(100) NOT NULL,
+  tabela VARCHAR(100) NOT NULL,
+  registro_id TEXT,
+  detalhes JSONB DEFAULT '{}'::jsonb,
+  imobiliaria_id TEXT,
+  imobiliaria TEXT DEFAULT 'Lagom Imóveis',
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_logs_sistema_criado_em ON public.logs_sistema(criado_em DESC);
+CREATE INDEX IF NOT EXISTS idx_logs_sistema_tabela ON public.logs_sistema(tabela);
+CREATE INDEX IF NOT EXISTS idx_logs_sistema_acao ON public.logs_sistema(acao);
+CREATE INDEX IF NOT EXISTS idx_logs_sistema_usuario_email ON public.logs_sistema(usuario_email);
+
+ALTER TABLE public.logs_sistema ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Acesso total logs_sistema" ON public.logs_sistema;
+CREATE POLICY "Acesso total logs_sistema" ON public.logs_sistema FOR ALL USING (true) WITH CHECK (true);
+
+-- Soft delete nas tabelas
+ALTER TABLE public.imoveis ADD COLUMN IF NOT EXISTS deletado_em TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS deletado_em TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE public.visitas ADD COLUMN IF NOT EXISTS deletado_em TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE public.proprietarios ADD COLUMN IF NOT EXISTS deletado_em TIMESTAMPTZ DEFAULT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_imoveis_deletado_em ON public.imoveis(deletado_em) WHERE deletado_em IS NULL;
+CREATE INDEX IF NOT EXISTS idx_clientes_deletado_em ON public.clientes(deletado_em) WHERE deletado_em IS NULL;
+CREATE INDEX IF NOT EXISTS idx_visitas_deletado_em ON public.visitas(deletado_em) WHERE deletado_em IS NULL;
+
+-- Função de purga automática de 60 dias
+CREATE OR REPLACE FUNCTION public.purgar_lixeira_60_dias()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  count_visitas INT := 0;
+  count_imoveis INT := 0;
+  count_clientes INT := 0;
+  count_proprietarios INT := 0;
+BEGIN
+  WITH del_visitas AS (
+    DELETE FROM public.visitas
+    WHERE deletado_em IS NOT NULL AND deletado_em < NOW() - INTERVAL '60 days'
+    RETURNING id
+  )
+  SELECT COUNT(*) INTO count_visitas FROM del_visitas;
+
+  WITH del_imoveis AS (
+    DELETE FROM public.imoveis
+    WHERE deletado_em IS NOT NULL AND deletado_em < NOW() - INTERVAL '60 days'
+    RETURNING id
+  )
+  SELECT COUNT(*) INTO count_imoveis FROM del_imoveis;
+
+  WITH del_clientes AS (
+    DELETE FROM public.clientes
+    WHERE deletado_em IS NOT NULL AND deletado_em < NOW() - INTERVAL '60 days'
+    RETURNING id
+  )
+  SELECT COUNT(*) INTO count_clientes FROM del_clientes;
+
+  WITH del_proprietarios AS (
+    DELETE FROM public.proprietarios
+    WHERE deletado_em IS NOT NULL AND deletado_em < NOW() - INTERVAL '60 days'
+    RETURNING id
+  )
+  SELECT COUNT(*) INTO count_proprietarios FROM del_proprietarios;
+
+  RETURN jsonb_build_object(
+    'sucesso', true,
+    'visitas_purgadas', count_visitas,
+    'imoveis_purgados', count_imoveis,
+    'clientes_purgados', count_clientes,
+    'proprietarios_purgados', count_proprietarios,
+    'executado_em', NOW()
+  );
+END;
+$$;
+
+-- 11. RECARREGAMENTO DO CACHE DO SCHEMA DO POSTGREST
 NOTIFY pgrst, 'reload schema';

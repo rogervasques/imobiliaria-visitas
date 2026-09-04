@@ -34,6 +34,7 @@ import {
   UserCheck,
   ShieldCheck,
   Trash2,
+  Building2,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { ProvedorWhatsApp } from '@/types';
@@ -137,6 +138,14 @@ export function WhatsAppConfigForm() {
     configWhatsApp.template_pos_visita_cliente ||
     '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*EasyMob - Gestão Imobiliária Inteligente*'
   );
+  const [templateCompartilharImovel, setTemplateCompartilharImovel] = useState(
+    configWhatsApp.template_compartilhar_imovel ||
+    '🏢 *Olha este imóvel que separei para você!*\n\n*{imovel_titulo}*\n📌 Código: *{imovel_codigo}*\n📍 Localização: {endereco}\n💰 Valor: *{valor}*\n🛏️ {quartos} quartos | 🚿 {banheiros} banheiros | 🚗 {vagas} vagas\n\n👉 *Veja as fotos completas e todos os detalhes no link:*\n{link_imovel}\n\nSe você quiser agendar uma visita presencial, me avise por aqui! 🤝'
+  );
+  const [templateImovelCompativel, setTemplateImovelCompativel] = useState(
+    configWhatsApp.template_imovel_compativel ||
+    'Olá, {cliente_nome}! Encontrei uma excelente opção que combina perfeitamente com seu perfil:\n\n🏡 *{imovel_titulo}*\n📌 Código: *{imovel_codigo}*\n📍 {endereco}\n💰 *Valor:* {valor}\n🛏️ {quartos} quartos\n\n👉 *Veja as fotos completas e detalhes:*\n{link_imovel}\n\nPodemos agendar uma visita? 🤝'
+  );
 
   // Preferências Globais de Notificações WhatsApp (Matriz)
   const [enviarConfirmacaoCliente, setEnviarConfirmacaoCliente] = useState(
@@ -166,7 +175,7 @@ export function WhatsAppConfigForm() {
 
   const [activeTab, setActiveTab] = useState<'api' | 'templates' | 'automacao'>('api');
   const [selectedTemplateTab, setSelectedTemplateTab] = useState<
-    'conf_cliente' | 'conf_prop' | 'lemb_cliente' | 'lemb_prop' | 'comprovacao_prop' | 'pos_visita'
+    'conf_cliente' | 'conf_prop' | 'lemb_cliente' | 'lemb_prop' | 'comprovacao_prop' | 'pos_visita' | 'compartilhar_imovel' | 'imovel_compativel'
   >('conf_cliente');
   const templateTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
@@ -198,6 +207,12 @@ export function WhatsAppConfigForm() {
     } else if (selectedTemplateTab === 'pos_visita') {
       currentText = templatePosVisita;
       setTextFn = setTemplatePosVisita;
+    } else if (selectedTemplateTab === 'compartilhar_imovel') {
+      currentText = templateCompartilharImovel;
+      setTextFn = setTemplateCompartilharImovel;
+    } else if (selectedTemplateTab === 'imovel_compativel') {
+      currentText = templateImovelCompativel;
+      setTextFn = setTemplateImovelCompativel;
     }
 
     if (textarea) {
@@ -440,6 +455,8 @@ export function WhatsAppConfigForm() {
         template_lembrete_proprietario: templateLembProp,
         template_comprovacao_proprietario: templateComprovacaoProp,
         template_pos_visita_cliente: templatePosVisita,
+        template_compartilhar_imovel: templateCompartilharImovel,
+        template_imovel_compativel: templateImovelCompativel,
       });
       await checkStatus();
       showToast('Configurações salvas com sucesso!', 'success');
@@ -578,19 +595,36 @@ export function WhatsAppConfigForm() {
   // Variáveis para Live Preview
   const sampleContext = {
     cliente_nome: 'Lucas Ferraz Souza',
+    nome_cliente: 'Lucas Ferraz Souza',
+    cliente: 'Lucas Ferraz Souza',
     cliente_telefone: '11998887766',
     proprietario_nome: 'Carlos Eduardo Mendonça',
+    nome_proprietario: 'Carlos Eduardo Mendonça',
     proprietario_telefone: '11987654321',
-    imovel_titulo: 'Apartamento em Moema, Casa em Pinheiros',
-    imovel_codigo: 'AP-1024, CA-2048',
-    endereco: 'Av. Paulista, 1500 - Bela Vista; R. dos Pinheiros, 400 - Pinheiros',
+    imovel_titulo: 'Apartamento em Moema',
+    titulo_imovel: 'Apartamento em Moema',
+    imovel_codigo: 'AP-1024',
+    codigo: 'AP-1024',
+    endereco: 'Av. Paulista, 1500 - Bela Vista, São Paulo - SP',
+    bairro: 'Bela Vista',
+    cidade: 'São Paulo',
+    valor: 'R$ 850.000,00',
+    valor_venda: 'R$ 850.000,00',
+    valor_locacao: 'R$ 4.500,00/mês',
+    quartos: '3',
+    suites: '1',
+    banheiros: '2',
+    vagas: '2',
+    area: '120m²',
+    link_imovel: 'https://app.easymob.com.br/imovel/imo-1024',
+    imobiliaria_nome: currentTenant?.nome || 'Lagom Imóveis',
     roteiro_imoveis: '1. [Apartamento em Moema] - [Av. Paulista, 1500 - Bela Vista] | 2. [Casa em Pinheiros] - [R. dos Pinheiros, 400 - Pinheiros]',
     total_imoveis: '2',
     data_hora: '20/08/2026 às 14:30',
     horario: '14:30',
     data: '20/08/2026',
-    corretor_nome: 'Rogério Silva',
-    corretor_telefone: '(11) 98999-0000',
+    corretor_nome: user?.name || 'Rogério Silva',
+    corretor_telefone: user?.telefone || '(11) 98999-0000',
     link_curto_mapa: 'https://tinyurl.com/maps-easymob',
     link_mapa: 'https://www.google.com/maps/search/?api=1&query=Av+Paulista+1500',
   };
@@ -598,18 +632,24 @@ export function WhatsAppConfigForm() {
   const tagsDisponiveis = [
     '{cliente_nome}',
     '{proprietario_nome}',
-    '{roteiro_imoveis}',
-    '{link_curto_mapa}',
-    '{link_mapa}',
-    '{total_imoveis}',
     '{imovel_titulo}',
     '{imovel_codigo}',
     '{endereco}',
+    '{valor}',
+    '{quartos}',
+    '{suites}',
+    '{banheiros}',
+    '{vagas}',
+    '{area}',
+    '{link_imovel}',
+    '{link_curto_mapa}',
+    '{roteiro_imoveis}',
     '{data_hora}',
     '{horario}',
     '{data}',
     '{corretor_nome}',
     '{corretor_telefone}',
+    '{imobiliaria_nome}',
   ];
 
   return (
@@ -1417,8 +1457,10 @@ export function WhatsAppConfigForm() {
               { id: 'conf_prop' as const, label: '2. Confirmação Proprietário', icon: Bell },
               { id: 'lemb_cliente' as const, label: '3. Lembrete Cliente', icon: Clock },
               { id: 'lemb_prop' as const, label: '4. Lembrete Proprietário', icon: Clock },
-              { id: 'comprovacao_prop' as const, label: '5. Comprovação de Visita (Proprietário)', icon: CheckCircle2 },
+              { id: 'comprovacao_prop' as const, label: '5. Comprovação Visita (Prop.)', icon: CheckCircle2 },
               { id: 'pos_visita' as const, label: '6. Pós-Visita Feedback (Cliente)', icon: Sparkles },
+              { id: 'compartilhar_imovel' as const, label: '7. Compartilhar Ficha de Imóvel', icon: Building2 },
+              { id: 'imovel_compativel' as const, label: '8. Imóvel Compatível (Match Lead)', icon: Sparkles },
             ].map((t) => {
               const Icon = t.icon;
               const isActive = selectedTemplateTab === t.id;
@@ -1485,6 +1527,18 @@ export function WhatsAppConfigForm() {
                             6. Pós-Visita / Feedback (Cliente - 2 Horas Após)
                           </>
                         )}
+                        {selectedTemplateTab === 'compartilhar_imovel' && (
+                          <>
+                            <Building2 className="w-4 h-4 text-emerald-500" />
+                            7. Compartilhar Ficha Pública do Imóvel (WhatsApp)
+                          </>
+                        )}
+                        {selectedTemplateTab === 'imovel_compativel' && (
+                          <>
+                            <Sparkles className="w-4 h-4 text-emerald-500" />
+                            8. Imóvel Compatível / Match Inteligente de Leads
+                          </>
+                        )}
                       </CardTitle>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
                         {selectedTemplateTab === 'conf_cliente' &&
@@ -1499,6 +1553,10 @@ export function WhatsAppConfigForm() {
                           'Disparado para o proprietário após a visita confirmando formalmente a realização do atendimento intermediado pelo corretor.'}
                         {selectedTemplateTab === 'pos_visita' &&
                           'Disparado para o cliente 2 horas após a visita para colher feedback e engajar nova proposta.'}
+                        {selectedTemplateTab === 'compartilhar_imovel' &&
+                          'Utilizado ao clicar em "Compartilhar Imóvel" nos cards e detalhes de imóveis para envio direto ou via WhatsApp Web com link da galeria de fotos.'}
+                        {selectedTemplateTab === 'imovel_compativel' &&
+                          'Utilizado ao enviar imóveis compatíveis nos botões de recomendação da ficha do cliente e do funil de vendas (CRM).'}
                       </p>
                     </div>
 
@@ -1527,7 +1585,11 @@ export function WhatsAppConfigForm() {
                           ? templateLembProp
                           : selectedTemplateTab === 'comprovacao_prop'
                           ? templateComprovacaoProp
-                          : templatePosVisita
+                          : selectedTemplateTab === 'pos_visita'
+                          ? templatePosVisita
+                          : selectedTemplateTab === 'compartilhar_imovel'
+                          ? templateCompartilharImovel
+                          : templateImovelCompativel
                       }
                       onChange={(e) => {
                         const val = e.target.value;
@@ -1537,6 +1599,8 @@ export function WhatsAppConfigForm() {
                         else if (selectedTemplateTab === 'lemb_prop') setTemplateLembProp(val);
                         else if (selectedTemplateTab === 'comprovacao_prop') setTemplateComprovacaoProp(val);
                         else if (selectedTemplateTab === 'pos_visita') setTemplatePosVisita(val);
+                        else if (selectedTemplateTab === 'compartilhar_imovel') setTemplateCompartilharImovel(val);
+                        else if (selectedTemplateTab === 'imovel_compativel') setTemplateImovelCompativel(val);
                       }}
                       className="w-full p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-sans leading-relaxed text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-y"
                       placeholder="Digite o texto da mensagem..."
@@ -1626,7 +1690,11 @@ export function WhatsAppConfigForm() {
                             ? templateLembProp
                             : selectedTemplateTab === 'comprovacao_prop'
                             ? templateComprovacaoProp
-                            : templatePosVisita,
+                            : selectedTemplateTab === 'pos_visita'
+                            ? templatePosVisita
+                            : selectedTemplateTab === 'compartilhar_imovel'
+                            ? templateCompartilharImovel
+                            : templateImovelCompativel,
                           sampleContext
                         )
                       )}

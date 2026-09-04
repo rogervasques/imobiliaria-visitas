@@ -42,6 +42,7 @@ export interface Proprietario {
   imobiliaria?: string;
   criado_em?: string;
   atualizado_em?: string;
+  deletado_em?: string | null;
 }
 
 export interface Imovel {
@@ -84,6 +85,7 @@ export interface Imovel {
   imobiliaria?: string;
   criado_em?: string;
   atualizado_em?: string;
+  deletado_em?: string | null;
 }
 
 export type StatusCliente = 'ativo' | 'negociando' | 'fechado' | 'inativo';
@@ -131,6 +133,7 @@ export interface Cliente {
   imobiliaria?: string;
   criado_em?: string;
   atualizado_em?: string;
+  deletado_em?: string | null;
 }
 
 export type StatusVisita = 'agendada' | 'cancelada' | 'reagendada' | 'concluida' | 'nao_compareceu';
@@ -196,6 +199,7 @@ export interface Visita {
   observacoes?: string;
   criado_em?: string;
   atualizado_em?: string;
+  deletado_em?: string | null;
   
   // Relacionamentos carregados
   imovel?: Imovel;
@@ -245,6 +249,8 @@ export interface ConfiguracaoWhatsApp {
   template_lembrete_proprietario: string;
   template_comprovacao_proprietario?: string;
   template_pos_visita_cliente: string;
+  template_compartilhar_imovel?: string;
+  template_imovel_compativel?: string;
   criado_em?: string;
   atualizado_em?: string;
 }
@@ -291,6 +297,7 @@ export interface Usuario {
   ativo?: boolean; // Status Ativo / Inativo (padrão: true)
   ultimo_acesso?: string; // Data do último acesso ao sistema
   created_at?: string;
+  deletado_em?: string | null;
 }
 
 export interface Convite {
@@ -304,5 +311,30 @@ export interface Convite {
   created_at?: string;
 }
 
+export interface LogSistema {
+  id: string;
+  usuario_id?: string;
+  usuario_email: string;
+  usuario_nome?: string;
+  acao: string;
+  tabela: 'imoveis' | 'clientes' | 'visitas' | 'proprietarios' | 'usuarios' | 'configuracoes' | 'sistema';
+  registro_id?: string;
+  detalhes: Record<string, any>;
+  imobiliaria_id?: string;
+  imobiliaria?: string;
+  criado_em: string;
+}
 
-
+export interface ItemLixeira {
+  id: string;
+  tabela: 'imoveis' | 'clientes' | 'visitas' | 'proprietarios';
+  tipo: 'imovel' | 'cliente' | 'visita' | 'proprietario';
+  titulo: string;
+  subtitulo?: string;
+  codigo?: string;
+  deletado_em: string;
+  data_expiracao?: string;
+  dias_restantes: number;
+  usuario_nome?: string;
+  dados_completos: Imovel | Cliente | Visita | Proprietario;
+}

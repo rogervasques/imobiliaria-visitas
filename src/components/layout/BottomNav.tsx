@@ -20,6 +20,7 @@ import {
   Store,
   Activity,
   Kanban,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
@@ -117,6 +118,12 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
             href: '/infraestrutura',
             icon: Activity,
             description: 'Monitoramento de servidores e APIs',
+          },
+          {
+            label: 'Auditoria & Logs',
+            href: '/logs',
+            icon: ShieldCheck,
+            description: 'Rastro de atividades e lixeira com 60 dias de retenção',
           },
         ]
       : []),

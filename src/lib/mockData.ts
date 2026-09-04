@@ -34,6 +34,10 @@ export const mockConfigWhatsApp: ConfiguracaoWhatsApp = {
     'Olá, {proprietario_nome}! Confirmamos que a visita ao seu imóvel *{imovel_titulo}* foi realizada com sucesso nesta data por intermédio do corretor *{corretor_nome}*, acompanhado do(a) cliente *{cliente_nome}*. Qualquer novidade sobre proposta, entraremos em contato!',
   template_pos_visita_cliente:
     '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*EasyMob - Gestão Imobiliária Inteligente*',
+  template_compartilhar_imovel:
+    '🏢 *Olha este imóvel que separei para você!*\n\n*{imovel_titulo}*\n📌 Código: *{imovel_codigo}*\n📍 Localização: {endereco}\n💰 Valor: *{valor}*\n🛏️ {quartos} quartos | 🚿 {banheiros} banheiros | 🚗 {vagas} vagas\n\n👉 *Veja as fotos completas e todos os detalhes no link:*\n{link_imovel}\n\nSe você quiser agendar uma visita presencial, me avise por aqui! 🤝',
+  template_imovel_compativel:
+    'Olá, {cliente_nome}! Encontrei uma excelente opção que combina perfeitamente com seu perfil:\n\n🏡 *{imovel_titulo}*\n📌 Código: *{imovel_codigo}*\n📍 {endereco}\n💰 *Valor:* {valor}\n🛏️ {quartos} quartos\n\n👉 *Veja as fotos completas e detalhes:*\n{link_imovel}\n\nPodemos agendar uma visita? 🤝',
 };
 
 export const mockLogs: WhatsAppLog[] = [

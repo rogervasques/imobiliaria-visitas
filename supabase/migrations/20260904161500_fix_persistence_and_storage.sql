@@ -228,6 +228,8 @@ CREATE TABLE IF NOT EXISTS public.configuracoes_whatsapp (
 ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS gravar_logs_cliente BOOLEAN DEFAULT TRUE;
 ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS gravar_logs_proprietario BOOLEAN DEFAULT TRUE;
 ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS template_comprovacao_proprietario TEXT;
+ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS template_compartilhar_imovel TEXT;
+ALTER TABLE public.configuracoes_whatsapp ADD COLUMN IF NOT EXISTS template_imovel_compativel TEXT;
 
 ALTER TABLE public.configuracoes_whatsapp ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total configuracoes_whatsapp" ON public.configuracoes_whatsapp;

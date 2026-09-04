@@ -107,6 +107,7 @@ export function Sidebar() {
       ? [
           { label: 'Imobiliárias', href: '/imobiliarias', icon: Store, badge: `${imobiliarias.length}` },
           { label: 'Infraestrutura', href: '/infraestrutura', icon: Activity },
+          { label: 'Auditoria & Logs', href: '/logs', icon: ShieldCheck },
         ]
       : []),
     { label: 'Relatórios', href: '/relatorios', icon: BarChart3 },
