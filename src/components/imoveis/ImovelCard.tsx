@@ -62,10 +62,11 @@ export function ImovelCard({ imovel, onClick, onEdit, onAgendarVisita }: ImovelC
       : null;
 
   return (
-    <Card
-      onClick={() => onClick?.(imovel)}
-      className="hover:border-emerald-500/40 hover:shadow-lg transition-all duration-300 flex flex-col justify-between cursor-pointer group"
-    >
+    <>
+      <Card
+        onClick={() => onClick?.(imovel)}
+        className="hover:border-emerald-500/40 hover:shadow-lg transition-all duration-300 flex flex-col justify-between cursor-pointer group"
+      >
       {/* Imagem de Capa com Carrossel */}
       <div className="relative h-44 w-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
         {currentCardPhoto ? (
@@ -287,12 +288,13 @@ export function ImovelCard({ imovel, onClick, onEdit, onAgendarVisita }: ImovelC
           </div>
         </div>
       </CardContent>
-
-      <CompartilharImovelModal
-        imovel={imovel}
-        isOpen={isCompartilharOpen}
-        onClose={() => setIsCompartilharOpen(false)}
-      />
     </Card>
-  );
+
+    <CompartilharImovelModal
+      imovel={imovel}
+      isOpen={isCompartilharOpen}
+      onClose={() => setIsCompartilharOpen(false)}
+    />
+  </>
+);
 }

@@ -56,22 +56,8 @@ export async function uploadImovelFoto(
       });
 
     if (uploadError) {
-      console.warn('Erro ao fazer upload no Supabase Storage, usando fallback:', uploadError);
-      // Se houver falha de rede/permissão, fallback para URL de objeto ou dataUrl
-      onProgress?.({
-        status: 'success',
-        progress: 100,
-        message: 'Foto processada com sucesso!',
-        originalSize: optimized.originalSize,
-        compressedSize: optimized.compressedSize,
-      });
-
-      return {
-        url: optimized.previewUrl,
-        originalSize: optimized.originalSize,
-        compressedSize: optimized.compressedSize,
-        optimizedFileName: cleanFileName,
-      };
+      console.error('Erro ao fazer upload no Supabase Storage (imoveis-fotos):', uploadError);
+      throw new Error(`Falha no upload para o Supabase Storage: ${uploadError.message}`);
     }
 
     // 3. Obter a URL pública permanente
@@ -79,7 +65,11 @@ export async function uploadImovelFoto(
       .from('imoveis-fotos')
       .getPublicUrl(filePath);
 
-    const finalUrl = publicUrlData.publicUrl;
+    const finalUrl = publicUrlData?.publicUrl;
+
+    if (!finalUrl) {
+      throw new Error('Não foi possível obter a URL pública permanente da imagem.');
+    }
 
     onProgress?.({
       status: 'success',

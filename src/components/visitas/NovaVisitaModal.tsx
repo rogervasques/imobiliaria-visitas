@@ -153,8 +153,9 @@ export function NovaVisitaModal({
         temConfirmacao
       );
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao criar visita:', err);
+      alert(err?.message || 'Houve um erro ao salvar a visita no banco de dados. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }

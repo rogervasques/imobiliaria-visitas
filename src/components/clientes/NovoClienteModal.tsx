@@ -51,8 +51,9 @@ export function NovoClienteModal({ isOpen, onClose }: NovoClienteModalProps) {
       setFaixaOrcamento('');
       setStatus('ativo');
       setObservacoes('');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao adicionar cliente:', err);
+      alert(err?.message || 'Houve um erro ao cadastrar o cliente no banco de dados. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }

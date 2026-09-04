@@ -166,7 +166,11 @@ Se você quiser agendar uma visita presencial, me avise por aqui! 🤝`;
       title="Compartilhar Ficha Pública do Imóvel"
       maxWidth="md"
     >
-      <div className="space-y-5">
+      <div
+        className="space-y-5"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         {/* Preview Compacto do Imóvel */}
         <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
           <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0 border border-slate-300 dark:border-slate-700">
@@ -209,7 +213,10 @@ Se você quiser agendar uma visita presencial, me avise por aqui! 🤝`;
             {clienteSelecionadoId && (
               <button
                 type="button"
-                onClick={handleLimparCliente}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLimparCliente();
+                }}
                 className="text-[11px] text-rose-500 hover:underline font-bold flex items-center gap-0.5 cursor-pointer"
               >
                 <X className="w-3 h-3" />
@@ -226,7 +233,12 @@ Se você quiser agendar uma visita presencial, me avise por aqui! 🤝`;
             </label>
             <select
               value={clienteSelecionadoId}
-              onChange={(e) => handleSelectCliente(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                e.stopPropagation();
+                handleSelectCliente(e.target.value);
+              }}
               className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs"
             >
               <option value="">-- Selecionar da lista de clientes ({clientes.length}) --</option>
@@ -251,7 +263,10 @@ Se você quiser agendar uma visita presencial, me avise por aqui! 🤝`;
               <Input
                 type="tel"
                 value={telefoneCliente}
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
                 onChange={(e) => {
+                  e.stopPropagation();
                   setTelefoneCliente(formatPhone(e.target.value));
                   if (clienteSelecionadoId) setClienteSelecionadoId('');
                 }}

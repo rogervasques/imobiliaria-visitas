@@ -330,6 +330,7 @@ function TimelineCard({
   const { atualizarStatusVisita, removerVisita, showToast } = useData();
   const [showMenu, setShowMenu] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editMode, setEditMode] = useState<'editar' | 'remarcar'>('editar');
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConcluirOpen, setIsConcluirOpen] = useState(false);
@@ -410,7 +411,7 @@ function TimelineCard({
                 <div className="absolute right-0 top-7 z-30 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
                   <button
                     type="button"
-                    onClick={() => { setShowMenu(false); setIsEditOpen(true); }}
+                    onClick={() => { setShowMenu(false); setEditMode('editar'); setIsEditOpen(true); }}
                     className="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5 text-slate-500" />
@@ -467,7 +468,7 @@ function TimelineCard({
                 {/* [ Remarcar ] */}
                 <button
                   type="button"
-                  onClick={() => setIsEditOpen(true)}
+                  onClick={() => { setEditMode('remarcar'); setIsEditOpen(true); }}
                   className="w-full py-2 px-2 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer animate-in fade-in truncate"
                   title="Remarcar data e horário da visita"
                 >
@@ -506,7 +507,7 @@ function TimelineCard({
             <div className="mt-3" onClick={e => e.stopPropagation()}>
               <button
                 type="button"
-                onClick={() => setIsEditOpen(true)}
+                onClick={() => { setEditMode('remarcar'); setIsEditOpen(true); }}
                 className="w-full py-2 px-3 rounded-xl border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 title="Remarcar esta visita"
               >
@@ -559,7 +560,7 @@ function TimelineCard({
       </div>
 
       {/* Modais do card */}
-      <EditarVisitaModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} visita={visita} />
+      <EditarVisitaModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} visita={visita} modo={editMode} />
 
       <Modal isOpen={isDeleteOpen} onClose={() => !isDeleting && setIsDeleteOpen(false)} title="Excluir Visita" subtitle="Confirmação de segurança" maxWidth="md">
         <div className="space-y-4 pt-1">
@@ -593,6 +594,7 @@ function TimelineCard({
         onClose={() => setIsConcluirOpen(false)}
         onRemarcar={() => {
           setIsConcluirOpen(false);
+          setEditMode('remarcar');
           setIsEditOpen(true);
         }}
       />

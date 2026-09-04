@@ -125,6 +125,40 @@ const setItemTenantInMap = (itemId: string, tenantName?: string | null) => {
   }
 };
 
+// ─── SANITIZADORES DE PAYLOAD PARA GARANTIR PERSISTÊNCIA 100% NO SUPABASE ───
+export const sanitizeImovelForDb = (im: Partial<Imovel>): Record<string, any> => {
+  const {
+    proprietario, // remove objeto React aninhado
+    imovel,       // previne colisão
+    ...rest
+  } = im as any;
+
+  const fotos = Array.isArray(rest.fotos_urls) && rest.fotos_urls.length > 0
+    ? rest.fotos_urls.filter(Boolean)
+    : rest.imagem_url ? [rest.imagem_url] : [];
+
+  return {
+    ...rest,
+    imagem_url: rest.imagem_url || fotos[0] || undefined,
+    fotos_urls: fotos,
+  };
+};
+
+export const sanitizeClienteForDb = (cl: Partial<Cliente>): Record<string, any> => {
+  const clean: Record<string, any> = { ...cl };
+  return clean;
+};
+
+export const sanitizeProprietarioForDb = (prop: Partial<Proprietario>): Record<string, any> => {
+  const { imoveis_count, ...rest } = prop as any;
+  return rest;
+};
+
+export const sanitizeVisitaForDb = (visita: Partial<Visita>): Record<string, any> => {
+  const { imovel, imoveis, cliente, ...rest } = visita as any;
+  return rest;
+};
+
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { currentTenant, imobiliarias } = useTenant();
@@ -191,15 +225,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       let loadedImoveis: Imovel[] = [];
       if (!errImoveis && dbImoveis) {
-        loadedImoveis = dbImoveis.map((im, idx) => {
-          const mainImg = im.imagem_url || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&auto=format&fit=crop&q=80';
-          const pool5 = [
-            mainImg,
-            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&auto=format&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=1200&auto=format&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=1200&auto=format&fit=crop&q=80',
-          ];
+        loadedImoveis = dbImoveis.map((im) => {
+          const mainImg = im.imagem_url || (im.fotos_urls && im.fotos_urls[0]) || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&auto=format&fit=crop&q=80';
+          const fotos = (im.fotos_urls && Array.isArray(im.fotos_urls) && im.fotos_urls.length > 0)
+            ? im.fotos_urls
+            : [mainImg];
 
           const imoTenant =
             im.imobiliaria ||
@@ -213,7 +243,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             observacoes_chaves: cleanTenantTag(im.observacoes_chaves),
             descricao_comercial: cleanTenantTag(im.descricao_comercial),
             imagem_url: mainImg,
-            fotos_urls: (im.fotos_urls && im.fotos_urls.length > 0) ? im.fotos_urls : pool5,
+            fotos_urls: fotos,
             imobiliaria: imoTenant,
           };
         });
@@ -268,41 +298,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         loadedClientes = local ? JSON.parse(local) : [];
       }
 
-      // Enriquecimento de Leads para as 7 etapas do CRM com miniaturas e tags
-      const etapasCrmFallback: EtapaCRM[] = [
-        'novos_leads',
-        'qualificacao',
-        'agendamento_visita',
-        'proposta_negociacao',
-        'documentacao_credito',
-        'fechamento_contrato',
-        'venda_concluida',
-      ];
-
-      const tagsFallback: Record<EtapaCRM, string[]> = {
-        novos_leads: ['Sem contato há 2 dias', 'Novo lead (Hoje)', 'Aguardando 1º contato (1 dia)'],
-        qualificacao: ['Em atendimento (Hoje)', 'Sem retorno há 3 dias', 'Perfil enviado ontem'],
-        agendamento_visita: ['Visita marcada amanhã 14h', 'Visita marcada sábado 10h', 'Visita confirmada hoje'],
-        proposta_negociacao: ['Proposta enviada há 2 dias', 'Contraproposta em análise', 'Valores em negociação'],
-        documentacao_credito: ['Docs enviados para Caixa', 'Crédito pré-aprovado', 'Aguardando certidões'],
-        fechamento_contrato: ['Minuta em revisão', 'Assinatura agendada p/ sexta', 'Aguardando sinal'],
-        venda_concluida: ['Contrato assinado & Sinal pago', 'Chaves entregues com sucesso', 'Comissão liberada'],
-      };
-
-      const enrichedClientes = loadedClientes.map((c, idx) => {
-        let etapa = c.etapa_crm;
-        if (!etapa || (etapa as any) === 'novo') {
-          etapa = etapasCrmFallback[idx % etapasCrmFallback.length];
-        } else if ((etapa as any) === 'em_atendimento') etapa = 'qualificacao';
+      // Normalização de Leads para o CRM
+      const enrichedClientes = loadedClientes.map((c) => {
+        let etapa: EtapaCRM = c.etapa_crm || 'novos_leads';
+        if ((etapa as any) === 'novo') etapa = 'novos_leads';
+        else if ((etapa as any) === 'em_atendimento') etapa = 'qualificacao';
         else if ((etapa as any) === 'visita_agendada') etapa = 'agendamento_visita';
         else if ((etapa as any) === 'proposta') etapa = 'proposta_negociacao';
         else if ((etapa as any) === 'fechado') etapa = 'venda_concluida';
 
         const imovelRef = c.imovel_interesse_id
           ? sortedImoveis.find((im) => im.id === c.imovel_interesse_id)
-          : sortedImoveis[idx % (sortedImoveis.length || 1)];
-
-        const tempoParada = c.tempo_parada_texto || (tagsFallback[etapa] ? tagsFallback[etapa][idx % 3] : '');
+          : undefined;
 
         return {
           ...c,
@@ -310,8 +317,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           imovel_interesse_id: c.imovel_interesse_id || imovelRef?.id,
           imovel_interesse_titulo: c.imovel_interesse_titulo || imovelRef?.titulo,
           imovel_interesse_foto: c.imovel_interesse_foto || imovelRef?.imagem_url,
-          tempo_parada_texto: tempoParada,
-          prioridade: c.prioridade || (idx % 2 === 0 ? 'alta' : 'media'),
+          prioridade: c.prioridade || 'media',
         };
       });
 
@@ -499,10 +505,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     setItemTenantInMap(novoProp.id, novoProp.imobiliaria);
 
-    try {
-      await supabase.from('proprietarios').insert(novoProp);
-    } catch (err) {
-      console.warn('Supabase insert proprietario offline:', err);
+    const dbPayload = sanitizeProprietarioForDb(novoProp);
+    const { error: insertErr } = await supabase.from('proprietarios').insert(dbPayload);
+    if (insertErr) {
+      console.error('Erro no Supabase ao cadastrar proprietário:', insertErr);
+      throw new Error(`Falha ao salvar proprietário no banco: ${insertErr.message}`);
     }
 
     const updated = sortProprietariosAlphabetically([novoProp, ...allProprietarios]);
@@ -516,10 +523,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setItemTenantInMap(id, dados.imobiliaria);
     }
 
-    try {
-      await supabase.from('proprietarios').update(dados).eq('id', id);
-    } catch (err) {
-      console.warn('Supabase update proprietario offline:', err);
+    const dbPayload = sanitizeProprietarioForDb({ ...dados, atualizado_em: new Date().toISOString() });
+    const { error: updateErr } = await supabase.from('proprietarios').update(dbPayload).eq('id', id);
+    if (updateErr) {
+      console.error('Erro no Supabase ao atualizar proprietário:', updateErr);
+      throw new Error(`Falha ao atualizar proprietário no banco: ${updateErr.message}`);
     }
 
     const updated = sortProprietariosAlphabetically(
@@ -581,14 +589,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       proprietario_id: finalPropId,
       id: crypto.randomUUID ? crypto.randomUUID() : `imovel_${Date.now()}`,
       criado_em: new Date().toISOString(),
+      atualizado_em: new Date().toISOString(),
     };
 
     setItemTenantInMap(novoImovel.id, novoImovel.imobiliaria);
 
-    try {
-      await supabase.from('imoveis').insert(novoImovel);
-    } catch (err) {
-      console.warn('Supabase insert imovel offline:', err);
+    const dbPayload = sanitizeImovelForDb(novoImovel);
+    const { error: insertErr } = await supabase.from('imoveis').insert(dbPayload);
+    if (insertErr) {
+      console.error('Erro no Supabase ao cadastrar imóvel:', insertErr);
+      throw new Error(`Falha ao salvar imóvel no banco de dados: ${insertErr.message}`);
     }
 
     const updated = sortImoveisAlphabetically([novoImovel, ...allImoveis]);
@@ -603,10 +613,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setItemTenantInMap(id, dados.imobiliaria);
     }
 
-    try {
-      await supabase.from('imoveis').update(dados).eq('id', id);
-    } catch (err) {
-      console.warn('Supabase update imovel offline:', err);
+    const dbPayload = sanitizeImovelForDb({ ...dados, atualizado_em: new Date().toISOString() });
+    const { error: updateErr } = await supabase.from('imoveis').update(dbPayload).eq('id', id);
+    if (updateErr) {
+      console.error('Erro no Supabase ao atualizar imóvel:', updateErr);
+      throw new Error(`Falha ao atualizar imóvel no banco de dados: ${updateErr.message}`);
     }
 
     const updated = sortImoveisAlphabetically(
@@ -625,10 +636,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const removerImovel = async (id: string) => {
     const imovelParaRemover = allImoveis.find((im) => im.id === id);
 
-    try {
-      await supabase.from('imoveis').delete().eq('id', id);
-    } catch (err) {
-      console.warn('Supabase delete imovel offline:', err);
+    const { error: deleteErr } = await supabase.from('imoveis').delete().eq('id', id);
+    if (deleteErr) {
+      console.error('Erro no Supabase ao excluir imóvel:', deleteErr);
+      throw new Error(`Falha ao excluir imóvel no banco de dados: ${deleteErr.message}`);
     }
 
     const updatedImoveis = allImoveis.filter((im) => im.id !== id);
@@ -680,14 +691,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       imobiliaria_id: dados.imobiliaria_id || activeTenantId,
       id: crypto.randomUUID ? crypto.randomUUID() : `cliente_${Date.now()}`,
       criado_em: new Date().toISOString(),
+      atualizado_em: new Date().toISOString(),
     };
 
     setItemTenantInMap(novoCliente.id, novoCliente.imobiliaria);
 
-    try {
-      await supabase.from('clientes').insert(novoCliente);
-    } catch (err) {
-      console.warn('Supabase insert cliente offline:', err);
+    const dbPayload = sanitizeClienteForDb(novoCliente);
+    const { error: insertErr } = await supabase.from('clientes').insert(dbPayload);
+    if (insertErr) {
+      console.error('Erro no Supabase ao cadastrar cliente:', insertErr);
+      throw new Error(`Falha ao salvar cliente no banco de dados: ${insertErr.message}`);
     }
 
     const updated = sortClientesAlphabetically([novoCliente, ...allClientes]);
@@ -702,10 +715,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setItemTenantInMap(id, dados.imobiliaria);
     }
 
-    try {
-      await supabase.from('clientes').update(dados).eq('id', id);
-    } catch (err) {
-      console.warn('Supabase update cliente offline:', err);
+    const dbPayload = sanitizeClienteForDb({ ...dados, atualizado_em: new Date().toISOString() });
+    const { error: updateErr } = await supabase.from('clientes').update(dbPayload).eq('id', id);
+    if (updateErr) {
+      console.error('Erro no Supabase ao atualizar cliente:', updateErr);
+      throw new Error(`Falha ao atualizar cliente no banco: ${updateErr.message}`);
     }
 
     const updated = sortClientesAlphabetically(
@@ -748,10 +762,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       venda_concluida: 'Venda Concluída',
     };
 
-    try {
-      await supabase.from('clientes').update({ etapa_crm: novaEtapa, status: novoStatus }).eq('id', id);
-    } catch (err) {
-      console.warn('Supabase update etapa_crm offline:', err);
+    const { error: updateErr } = await supabase
+      .from('clientes')
+      .update({ etapa_crm: novaEtapa, status: novoStatus, atualizado_em: new Date().toISOString() })
+      .eq('id', id);
+    if (updateErr) {
+      console.error('Erro no Supabase ao mover etapa CRM:', updateErr);
+      throw new Error(`Falha ao atualizar etapa no banco: ${updateErr.message}`);
     }
 
     const updated = sortClientesAlphabetically(
@@ -769,10 +786,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removerCliente = async (id: string) => {
-    try {
-      await supabase.from('clientes').delete().eq('id', id);
-    } catch (err) {
-      console.warn('Supabase delete cliente offline:', err);
+    const { error: deleteErr } = await supabase.from('clientes').delete().eq('id', id);
+    if (deleteErr) {
+      console.error('Erro no Supabase ao remover cliente:', deleteErr);
+      throw new Error(`Falha ao excluir cliente no banco de dados: ${deleteErr.message}`);
     }
 
     const updated = allClientes.filter((cl) => cl.id !== id);
@@ -913,16 +930,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    try {
-      const { imovel: _im, imoveis: _ims, cliente: _cl, ...visitaDataOnly } = novaVisita;
-      void _im; void _ims; void _cl;
-      const { error: insertErr } = await supabase.from('visitas').insert(visitaDataOnly);
-      if (insertErr) {
-        console.error('Erro ao inserir visita no Supabase:', insertErr);
-        showToast(`Aviso: Visita salva localmente (${insertErr.message})`, 'error');
-      }
-    } catch (err) {
-      console.warn('Supabase insert visita offline:', err);
+    const dbPayload = sanitizeVisitaForDb(novaVisita);
+    const { error: insertErr } = await supabase.from('visitas').insert(dbPayload);
+    if (insertErr) {
+      console.error('Erro no Supabase ao cadastrar visita:', insertErr);
+      throw new Error(`Falha ao salvar visita no banco de dados: ${insertErr.message}`);
     }
 
     const updated = [novaVisita, ...allVisitas];
@@ -1043,10 +1055,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       atualizado_em: agora.toISOString(),
     };
 
-    try {
-      await supabase.from('visitas').update(updates).eq('id', id);
-    } catch (err) {
-      console.warn('Supabase update concluir visita offline:', err);
+    const dbPayload = sanitizeVisitaForDb(updates);
+    const { error: updateErr } = await supabase.from('visitas').update(dbPayload).eq('id', id);
+    if (updateErr) {
+      console.error('Erro no Supabase ao concluir visita:', updateErr);
+      throw new Error(`Falha ao concluir visita no banco: ${updateErr.message}`);
     }
 
     const updated = allVisitas.map((v) => (v.id === id ? { ...v, ...updates } : v));
@@ -1070,10 +1083,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       updates.fim_gravacao_logs_em = fimGravacaoLogs;
     }
 
-    try {
-      await supabase.from('visitas').update(updates).eq('id', id);
-    } catch (err) {
-      console.warn('Supabase update status visita offline:', err);
+    const { error: updateErr } = await supabase.from('visitas').update(updates).eq('id', id);
+    if (updateErr) {
+      console.error('Erro no Supabase ao atualizar status da visita:', updateErr);
+      throw new Error(`Falha ao atualizar status no banco: ${updateErr.message}`);
     }
 
     const updated = allVisitas.map((v) => (v.id === id ? { ...v, ...updates } : v));
@@ -1083,12 +1096,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const atualizarVisita = async (id: string, dados: Partial<Visita>) => {
-    try {
-      const { imovel: _i, imoveis: _ims, cliente: _c, ...dbData } = dados;
-      void _i; void _ims; void _c;
-      await supabase.from('visitas').update(dbData).eq('id', id);
-    } catch (err) {
-      console.warn('Supabase update visita offline:', err);
+    const dbPayload = sanitizeVisitaForDb({ ...dados, atualizado_em: new Date().toISOString() });
+    const { error: updateErr } = await supabase.from('visitas').update(dbPayload).eq('id', id);
+    if (updateErr) {
+      console.error('Erro no Supabase ao atualizar visita:', updateErr);
+      throw new Error(`Falha ao atualizar visita no banco de dados: ${updateErr.message}`);
     }
 
     const updated = allVisitas.map((v) => {
@@ -1119,10 +1131,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removerVisita = async (id: string) => {
-    try {
-      await supabase.from('visitas').delete().eq('id', id);
-    } catch (err) {
-      console.warn('Supabase delete visita offline:', err);
+    const { error: deleteErr } = await supabase.from('visitas').delete().eq('id', id);
+    if (deleteErr) {
+      console.error('Erro no Supabase ao excluir visita:', deleteErr);
+      throw new Error(`Falha ao excluir visita no banco de dados: ${deleteErr.message}`);
     }
 
     const updated = allVisitas.filter((v) => v.id !== id);

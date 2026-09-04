@@ -152,8 +152,9 @@ export function ClienteDetalhesModal({
         observacoes: observacoes || undefined,
       });
       setIsEditing(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao atualizar cliente:', err);
+      alert(err?.message || 'Houve um erro ao atualizar o cliente no banco de dados. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -164,8 +165,9 @@ export function ClienteDetalhesModal({
     try {
       await removerCliente(cliente.id);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao excluir cliente:', err);
+      alert(err?.message || 'Houve um erro ao excluir o cliente no banco de dados. Tente novamente.');
     } finally {
       setIsSubmitting(false);
       setIsConfirmingDelete(false);

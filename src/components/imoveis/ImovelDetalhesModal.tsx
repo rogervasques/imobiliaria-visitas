@@ -322,8 +322,9 @@ export function ImovelDetalhesModal({
         fotos_urls: fotosUrls.length > 0 ? fotosUrls : (imagemUrl ? [imagemUrl] : []),
       });
       setIsEditing(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao editar imóvel:', err);
+      alert(err?.message || 'Houve um erro ao atualizar o imóvel no banco de dados. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -334,8 +335,9 @@ export function ImovelDetalhesModal({
     try {
       await removerImovel(imovel.id);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao excluir imóvel:', err);
+      alert(err?.message || 'Houve um erro ao excluir o imóvel no banco de dados. Tente novamente.');
     } finally {
       setIsSubmitting(false);
       setIsConfirmingDelete(false);

@@ -48,52 +48,37 @@ export function LogoUpload({
     setIsUploading(true);
 
     try {
-      // 1. Tenta upload no Supabase Storage se disponível
       const fileExt = file.name.split('.').pop() || (isSvg ? 'svg' : 'png');
       const cleanFileName = `logo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       const filePath = `logos/${cleanFileName}`;
+      const mimeType = isSvg ? 'image/svg+xml' : file.type || (isPng ? 'image/png' : 'image/jpeg');
 
-      try {
-        const { error: uploadError } = await supabase.storage
-          .from('imobiliarias-logos')
-          .upload(filePath, file, {
-            cacheControl: '31536000',
-            upsert: true,
-            contentType: file.type || (isSvg ? 'image/svg+xml' : 'image/png'),
-          });
+      const { error: uploadError } = await supabase.storage
+        .from('imoveis-fotos')
+        .upload(filePath, file, {
+          cacheControl: '31536000',
+          upsert: true,
+          contentType: mimeType,
+        });
 
-        if (!uploadError) {
-          const { data: publicUrlData } = supabase.storage
-            .from('imobiliarias-logos')
-            .getPublicUrl(filePath);
-
-          if (publicUrlData?.publicUrl) {
-            onChange(publicUrlData.publicUrl);
-            setIsUploading(false);
-            return;
-          }
-        }
-      } catch {
-        // Fallback para Data URL
+      if (uploadError) {
+        console.error('Erro no Supabase Storage ao enviar logo:', uploadError);
+        throw new Error(`Falha no upload da logo para o Supabase Storage: ${uploadError.message}`);
       }
 
-      // 2. Fallback robusto: Leitura como Data URL Base64
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (result) {
-          onChange(result);
-        }
-        setIsUploading(false);
-      };
-      reader.onerror = () => {
-        alert('Erro ao ler arquivo da logo.');
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      console.error('Erro ao carregar logo:', err);
-      alert('Houve um erro ao processar a logo. Tente novamente.');
+      const { data: publicUrlData } = supabase.storage
+        .from('imoveis-fotos')
+        .getPublicUrl(filePath);
+
+      if (!publicUrlData?.publicUrl) {
+        throw new Error('Não foi possível gerar a URL pública da logo.');
+      }
+
+      onChange(publicUrlData.publicUrl);
+    } catch (err: any) {
+      console.error('Erro ao processar logo:', err);
+      alert(err?.message || 'Houve um erro ao enviar a logo para o Supabase Storage. Verifique a conexão e tente novamente.');
+    } finally {
       setIsUploading(false);
     }
   };

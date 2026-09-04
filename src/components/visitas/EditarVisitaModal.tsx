@@ -24,10 +24,13 @@ interface EditarVisitaModalProps {
   isOpen: boolean;
   onClose: () => void;
   visita: Visita;
+  modo?: 'editar' | 'remarcar';
 }
 
-export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModalProps) {
+export function EditarVisitaModal({ isOpen, onClose, visita, modo = 'editar' }: EditarVisitaModalProps) {
   const { imoveis, clientes, atualizarVisita } = useData();
+
+  const dataHoraInputRef = React.useRef<HTMLInputElement>(null);
 
   const [selectedImoveisIds, setSelectedImoveisIds] = useState<string[]>([]);
   const [imovelToAddId, setImovelToAddId] = useState<string>('');
@@ -66,14 +69,13 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (visita) {
+    if (visita && isOpen) {
       const initialIds = (visita.imoveis_ids && visita.imoveis_ids.length > 0)
         ? visita.imoveis_ids
         : [visita.imovel_id];
 
       setSelectedImoveisIds(initialIds);
       setClienteId(visita.cliente_id);
-      setStatus(visita.status || 'agendada');
       setObservacoes(visita.observacoes || '');
       setNotificarConfirmacaoCliente(visita.notificar_confirmacao_cliente !== undefined ? visita.notificar_confirmacao_cliente : visita.notificar_confirmacao !== false);
       setNotificarConfirmacaoProprietario(visita.notificar_confirmacao_proprietario !== undefined ? visita.notificar_confirmacao_proprietario : visita.notificar_confirmacao !== false);
@@ -84,17 +86,37 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
       setGravarLogsCliente(visita.gravar_logs_cliente !== undefined ? visita.gravar_logs_cliente : visita.gravar_logs !== false);
       setGravarLogsProprietario(visita.gravar_logs_proprietario !== undefined ? visita.gravar_logs_proprietario : visita.gravar_logs !== false);
 
-      if (visita.data_hora_visita) {
-        const d = new Date(visita.data_hora_visita);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        setDataHora(`${year}-${month}-${day}T${hours}:${minutes}`);
+      if (modo === 'remarcar') {
+        // Ao remarcar: força status para 'agendada' e limpa data/horário para nova escolha
+        setStatus('agendada');
+        setDataHora('');
+      } else {
+        // Ao editar: mantém status original da visita e carrega data/horário existente
+        setStatus(visita.status || 'agendada');
+        if (visita.data_hora_visita) {
+          const d = new Date(visita.data_hora_visita);
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          const hours = String(d.getHours()).padStart(2, '0');
+          const minutes = String(d.getMinutes()).padStart(2, '0');
+          setDataHora(`${year}-${month}-${day}T${hours}:${minutes}`);
+        } else {
+          setDataHora('');
+        }
       }
     }
-  }, [visita, isOpen]);
+  }, [visita, isOpen, modo]);
+
+  // Foco no campo de Data/Horário quando for aberto no modo Remarcar
+  useEffect(() => {
+    if (isOpen && modo === 'remarcar') {
+      const timer = setTimeout(() => {
+        dataHoraInputRef.current?.focus();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, modo]);
 
   // Lista dos objetos de imóveis atualmente selecionados
   const imoveisSelecionados = selectedImoveisIds
@@ -149,19 +171,26 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
         gravar_logs_proprietario: gravarLogsProprietario,
       });
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao atualizar visita:', err);
+      alert(err?.message || 'Houve um erro ao atualizar a visita no banco de dados. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const isRemarcar = modo === 'remarcar';
+  const modalTitle = isRemarcar ? 'Remarcar Visita' : 'Editar Visita';
+  const modalSubtitle = isRemarcar
+    ? 'Defina a nova data e horário para a visita retornar ao fluxo de agendadas'
+    : 'Atualize os imóveis do roteiro, cliente, data ou opções de notificação';
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Editar Visita"
-      subtitle="Atualize os imóveis do roteiro, cliente, data ou opções de notificação"
+      title={modalTitle}
+      subtitle={modalSubtitle}
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -302,7 +331,8 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
         {/* ─── 3. Data, Horário e Status ─── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
-            label="Data e Horário *"
+            ref={dataHoraInputRef}
+            label={isRemarcar ? 'Nova Data e Horário *' : 'Data e Horário *'}
             type="datetime-local"
             value={dataHora}
             onChange={(e) => setDataHora(e.target.value)}
@@ -486,7 +516,7 @@ export function EditarVisitaModal({ isOpen, onClose, visita }: EditarVisitaModal
           </Button>
           <Button type="submit" variant="primary" isLoading={isSubmitting}>
             <Save className="w-4 h-4 mr-1.5" />
-            Salvar Alterações
+            {isRemarcar ? 'Confirmar Remarcação' : 'Salvar Alterações'}
           </Button>
         </div>
       </form>

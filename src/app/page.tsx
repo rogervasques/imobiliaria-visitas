@@ -45,7 +45,6 @@ import { EasyMobLogo } from '@/components/ui/EasyMobLogo';
 export default function LandingPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const [billingCycle, setBillingCycle] = useState<'mensal' | 'anual'>('mensal');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   // Redirecionamento de Usuário Autenticado: se já houver sessão ativa, vai direto para a rota principal (/dashboard - Hoje)
@@ -139,7 +138,7 @@ export default function LandingPage() {
               Ficha Pública
             </a>
             <a href="#planos" className="hover:text-emerald-600 transition-colors">
-              Planos &amp; Preços
+              Planos
             </a>
             <a href="#faq" className="hover:text-emerald-600 transition-colors">
               Dúvidas
@@ -159,7 +158,7 @@ export default function LandingPage() {
               className="hidden sm:inline-flex items-center gap-2 px-5 py-2 text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl transition-all shadow-md shadow-emerald-600/20 hover:shadow-emerald-600/30 hover:scale-[1.02] active:scale-[0.98]"
             >
               <Sparkles className="w-4 h-4" />
-              <span>Testar Grátis</span>
+              <span>Conhecer Planos</span>
             </a>
           </div>
         </div>
@@ -193,7 +192,7 @@ export default function LandingPage() {
             href="#planos"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-extrabold text-white bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-2xl shadow-xl shadow-emerald-600/25 hover:shadow-emerald-600/35 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            <span>Ver Planos &amp; Testar Grátis</span>
+            <span>Conhecer os Planos</span>
             <ArrowRight className="w-5 h-5" />
           </a>
           <Link
@@ -823,57 +822,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── 7. SEÇÃO DE PLANOS E PREÇOS (TABELA DE PRECIFICAÇÃO ATUALIZADA) ─── */}
+      {/* ─── 7. SEÇÃO DE PLANOS E SOLUÇÕES ─── */}
       <section id="planos" className="relative z-10 py-24 bg-white border-t border-slate-200/80 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Cabeçalho */}
           <div className="text-center max-w-3xl mx-auto mb-14 space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-extrabold uppercase tracking-wider shadow-xs">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Planos Transparentes</span>
+              <span>Planos Sob Medida</span>
             </div>
             <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
-              Invista no crescimento e segurança da sua imobiliária
+              Soluções ideais para o tamanho da sua operação
             </h2>
             <p className="text-slate-600 text-base sm:text-lg">
-              Escolha o plano ideal para o momento da sua carreira ou imobiliária. Cancele quando quiser, sem fidelidade.
+              Escolha a estrutura ideal para corretores autônomos ou imobiliárias completas. Fale com nossa equipe para condições e demonstração personalizada.
             </p>
-
-            {/* Toggle Mensal / Anual */}
-            <div className="pt-4 flex items-center justify-center gap-3">
-              <div className="p-1 rounded-2xl bg-slate-100 border border-slate-200 inline-flex items-center shadow-xs">
-                <button
-                  type="button"
-                  onClick={() => setBillingCycle('mensal')}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
-                    billingCycle === 'mensal'
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Mensal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBillingCycle('anual')}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    billingCycle === 'anual'
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <span>Anual</span>
-                  <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase">
-                    2 meses grátis
-                  </span>
-                </button>
-              </div>
-            </div>
           </div>
 
-          {/* Cards de Preços Atualizados */}
+          {/* Cards de Planos */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-            {/* 1. Plano Essencial: R$ 78,00 /mês */}
+            {/* 1. Plano Essencial */}
             <div className="rounded-3xl p-8 bg-slate-50 border border-slate-200/90 flex flex-col justify-between hover:border-slate-300 transition-all space-y-6 shadow-sm hover:shadow-md">
               <div className="space-y-4">
                 <div>
@@ -882,16 +850,10 @@ export default function LandingPage() {
                 </div>
 
                 <div className="py-2">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-sm font-bold text-slate-500">R$</span>
-                    <span className="text-4xl font-black text-slate-900">
-                      {billingCycle === 'mensal' ? '78' : '65'}
-                    </span>
-                    <span className="text-slate-500 text-xs font-medium">/ mês</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-slate-900">Sob consulta</span>
                   </div>
-                  {billingCycle === 'anual' && (
-                    <p className="text-[11px] text-emerald-700 font-semibold mt-1">Cobrado anualmente (R$ 780/ano)</p>
-                  )}
+                  <p className="text-xs text-slate-500 font-medium mt-1">Condições especiais para corretor autônomo</p>
                 </div>
 
                 <div className="space-y-3 pt-4 border-t border-slate-200/70 text-sm text-slate-600">
@@ -918,20 +880,22 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <Link
-                href="/login"
+              <a
+                href={WHATSAPP_SUPPORT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full py-3.5 px-4 text-center rounded-2xl text-sm font-extrabold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 hover:text-slate-900 transition-all block shadow-xs"
               >
-                Começar com Essencial
-              </Link>
+                Consultar Condições
+              </a>
             </div>
 
-            {/* 2. Plano Pro (Campeão): R$ 168,00 /mês (até 3 corretores) */}
+            {/* 2. Plano Pro (Mais Escolhido) */}
             <div className="rounded-3xl p-8 bg-gradient-to-b from-emerald-50/70 via-white to-white border-2 border-emerald-500 shadow-xl shadow-emerald-500/10 flex flex-col justify-between relative transform lg:-translate-y-2 transition-all space-y-6">
-              {/* Badge de Campeão */}
+              {/* Badge de Destaque */}
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-black uppercase tracking-wider shadow-md flex items-center gap-1.5">
                 <Flame className="w-3.5 h-3.5 fill-white text-white" />
-                <span>Mais Escolhido (Campeão)</span>
+                <span>Mais Escolhido</span>
               </div>
 
               <div className="space-y-4">
@@ -946,16 +910,10 @@ export default function LandingPage() {
                 </div>
 
                 <div className="py-2">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-sm font-bold text-slate-500">R$</span>
-                    <span className="text-5xl font-black text-slate-900">
-                      {billingCycle === 'mensal' ? '168' : '140'}
-                    </span>
-                    <span className="text-slate-500 text-xs font-medium">/ mês</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-black text-emerald-800">Sob consulta</span>
                   </div>
-                  {billingCycle === 'anual' && (
-                    <p className="text-[11px] text-emerald-700 font-semibold mt-1">Cobrado anualmente (R$ 1.680/ano)</p>
-                  )}
+                  <p className="text-xs text-emerald-700 font-medium mt-1">Solução completa com automação de WhatsApp</p>
                 </div>
 
                 <div className="space-y-3 pt-4 border-t border-slate-200/80 text-sm text-slate-700">
@@ -990,15 +948,17 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <Link
-                href="/login"
+              <a
+                href={WHATSAPP_SUPPORT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full py-4 px-4 text-center rounded-2xl text-sm font-black text-white bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/25 hover:shadow-emerald-600/35 hover:scale-[1.02] active:scale-[0.98] transition-all block"
               >
-                Assinar Plano Pro Agora
-              </Link>
+                Falar com Especialista
+              </a>
             </div>
 
-            {/* 3. Plano Imobiliária: R$ 284,00 /mês (até 10 corretores) */}
+            {/* 3. Plano Imobiliária */}
             <div className="rounded-3xl p-8 bg-slate-50 border border-slate-200/90 flex flex-col justify-between hover:border-slate-300 transition-all space-y-6 shadow-sm hover:shadow-md">
               <div className="space-y-4">
                 <div>
@@ -1012,16 +972,10 @@ export default function LandingPage() {
                 </div>
 
                 <div className="py-2">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-sm font-bold text-slate-500">R$</span>
-                    <span className="text-4xl font-black text-slate-900">
-                      {billingCycle === 'mensal' ? '284' : '236'}
-                    </span>
-                    <span className="text-slate-500 text-xs font-medium">/ mês</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-slate-900">Sob consulta</span>
                   </div>
-                  {billingCycle === 'anual' && (
-                    <p className="text-[11px] text-emerald-700 font-semibold mt-1">Cobrado anualmente (R$ 2.840/ano)</p>
-                  )}
+                  <p className="text-xs text-slate-500 font-medium mt-1">Projetos customizados para imobiliárias em escala</p>
                 </div>
 
                 <div className="space-y-3 pt-4 border-t border-slate-200/70 text-sm text-slate-600">

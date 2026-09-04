@@ -142,8 +142,9 @@ export function NovoImovelModal({ isOpen, onClose }: NovoImovelModalProps) {
         fotos_urls: fotosFinais,
       });
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao adicionar imóvel:', err);
+      alert(err?.message || 'Houve um erro ao cadastrar o imóvel no banco de dados. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }

@@ -48,6 +48,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editModalMode, setEditModalMode] = useState<'editar' | 'remarcar'>('editar');
   const [isDeleting, setIsDeleting] = useState(false);
 
   const statusBadges: Record<
@@ -75,8 +76,9 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
     await atualizarStatusVisita(visita.id, novoStatus);
   };
 
-  const handleOpenEdit = () => {
+  const handleOpenEdit = (modo: 'editar' | 'remarcar' = 'editar') => {
     setShowStatusMenu(false);
+    setEditModalMode(modo);
     if (onEdit) {
       onEdit(visita);
     } else {
@@ -151,7 +153,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                 <div className="absolute right-0 top-7 z-30 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150">
                   <button
                     type="button"
-                    onClick={handleOpenEdit}
+                    onClick={() => handleOpenEdit('editar')}
                     className="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5 text-slate-500" />
@@ -342,7 +344,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsEditModalOpen(true);
+                    handleOpenEdit('remarcar');
                   }}
                   className="w-full text-xs font-bold border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 flex items-center justify-center gap-1.5 py-2 rounded-xl cursor-pointer truncate"
                   title="Remarcar data e horário da visita"
@@ -396,7 +398,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsEditModalOpen(true);
+                  handleOpenEdit('remarcar');
                 }}
                 className="w-full text-xs font-bold border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40 flex items-center justify-center gap-1.5 py-2 rounded-xl cursor-pointer"
                 title="Remarcar esta visita"
@@ -474,6 +476,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         visita={visita}
+        modo={editModalMode}
       />
 
       {/* Modal de Confirmação de Segurança para Excluir Visita */}
@@ -539,7 +542,7 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
         onClose={() => setIsConcluirModalOpen(false)}
         onRemarcar={() => {
           setIsConcluirModalOpen(false);
-          handleOpenEdit();
+          handleOpenEdit('remarcar');
         }}
       />
     </>
