@@ -869,12 +869,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         );
         setAllProprietarios(updatedProps);
         persistir('proprietarios', updatedProps);
-        showToast('Imóvel movido para a Lixeira (retenção de 60 dias). Cadastro do proprietário órfão também foi movido.', 'info');
+        showToast('Imóvel excluído com sucesso!', 'success');
         return;
       }
     }
 
-    showToast('Imóvel movido para a Lixeira (armazenado por 60 dias).', 'info');
+    showToast('Imóvel excluído com sucesso!', 'success');
   };
 
   // -------------------------------------------------------------
@@ -1036,7 +1036,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const updated = allClientes.filter((cl) => cl.id !== id);
     setAllClientes(updated);
     persistir('clientes', updated);
-    showToast('Cliente movido para a Lixeira (armazenado por 60 dias).', 'info');
+    showToast('Cliente excluído com sucesso!', 'success');
   };
 
   // -------------------------------------------------------------
@@ -1441,7 +1441,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const updated = allVisitas.filter((v) => v.id !== id);
     setAllVisitas(updated);
     persistir('visitas', updated);
-    showToast('Visita movida para a Lixeira (armazenada por 60 dias).', 'info');
+    showToast('Visita excluída com sucesso!', 'success');
   };
 
   // -------------------------------------------------------------
