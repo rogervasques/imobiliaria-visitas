@@ -474,9 +474,20 @@ export default function ImobiliariasPage() {
 
         <Card className="border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/20">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-500/20">
-              {getInitials(currentTenant?.nome || 'EM')}
-            </div>
+            {currentTenant?.logo_url ? (
+              <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700 p-1 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={currentTenant.logo_url}
+                  alt={currentTenant.nome}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-500/20">
+                {getInitials(currentTenant?.nome || 'EM')}
+              </div>
+            )}
             <div className="min-w-0">
               <div className="text-xs font-black text-emerald-800 dark:text-emerald-300 truncate">
                 {currentTenant?.nome || 'EasyMob Imóveis'}
@@ -572,9 +583,20 @@ export default function ImobiliariasPage() {
                 <div className="flex items-start justify-between gap-3">
                   {/* Logo + Título */}
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-black text-base shadow-md shadow-emerald-500/20 shrink-0">
-                      {getInitials(imo.nome)}
-                    </div>
+                    {imo.logo_url ? (
+                      <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={imo.logo_url}
+                          alt={imo.nome}
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-black text-base shadow-md shadow-emerald-500/20 shrink-0">
+                        {getInitials(imo.nome)}
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base truncate">

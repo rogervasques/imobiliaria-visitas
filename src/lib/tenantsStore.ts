@@ -11,40 +11,16 @@ export const INITIAL_DEFAULT_IMOBILIARIAS: Imobiliaria[] = [
     limite_usuarios: 10,
     criado_em: new Date().toISOString(),
   },
-  {
-    id: 'tenant-prime',
-    nome: 'Imobiliária Prime',
-    slug: 'prime',
-    telefone: '11988887777',
-    email: 'contato@primeimoveis.com.br',
-    modulo_crm_ativo: true,
-    limite_usuarios: 10,
-    criado_em: new Date().toISOString(),
-  },
-  {
-    id: 'tenant-nova-era',
-    nome: 'Nova Era Imóveis',
-    slug: 'nova-era',
-    telefone: '11977776666',
-    email: 'atendimento@novaera.com.br',
-    modulo_crm_ativo: true,
-    limite_usuarios: 10,
-    criado_em: new Date().toISOString(),
-  },
-  {
-    id: 'tenant-imobiliaria-teste',
-    nome: 'Imobiliaria Teste',
-    slug: 'imobiliaria-teste',
-    telefone: '11999998888',
-    email: 'contato@imobiliariateste.com.br',
-    modulo_crm_ativo: true,
-    limite_usuarios: 10,
-    criado_em: new Date().toISOString(),
-  },
 ];
 
-// Store global de tenants compartilhado em memória no servidor
+// Store global de tenants compartilhado em memória no servidor (cache sincronizado com Supabase)
 let globalTenantsStore: Imobiliaria[] = [...INITIAL_DEFAULT_IMOBILIARIAS];
+
+export function setGlobalTenants(tenants: Imobiliaria[]): void {
+  if (Array.isArray(tenants) && tenants.length > 0) {
+    globalTenantsStore = tenants;
+  }
+}
 
 export function getGlobalTenants(): Imobiliaria[] {
   return globalTenantsStore;

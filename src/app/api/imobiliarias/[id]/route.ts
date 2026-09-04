@@ -44,19 +44,74 @@ export async function PUT(
     if (modulo_crm_ativo !== undefined) updateData.modulo_crm_ativo = Boolean(modulo_crm_ativo);
     if (limite_usuarios !== undefined) updateData.limite_usuarios = Number(limite_usuarios);
 
-    // Atualiza no store global do servidor
-    const updatedStoreTenant = updateGlobalTenant(id, updateData);
+    // Atualiza no Supabase (com suporte a ID UUID ou Nome da Imobiliária)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    let updatedDbTenant: any = null;
 
     try {
-      await supabase
-        .from('imobiliarias')
-        .update(updateData)
-        .eq('id', id);
-    } catch {
-      // ignore
+      if (isUuid) {
+        const { data, error } = await supabase
+          .from('imobiliarias')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .maybeSingle();
+
+        if (!error && data) {
+          updatedDbTenant = data;
+        }
+      }
+
+      if (!updatedDbTenant) {
+        const searchName = updateData.nome || id.replace(/^tenant-/, '').replace(/-/g, ' ');
+        const { data, error } = await supabase
+          .from('imobiliarias')
+          .update(updateData)
+          .ilike('nome', searchName)
+          .select()
+          .maybeSingle();
+
+        if (!error && data) {
+          updatedDbTenant = data;
+        }
+      }
+
+      // Se ainda não existia no banco, faz um upsert pelo nome
+      if (!updatedDbTenant && updateData.nome) {
+        const { data, error } = await supabase
+          .from('imobiliarias')
+          .upsert(
+            {
+              nome: updateData.nome,
+              slug: updateData.slug,
+              telefone: updateData.telefone,
+              email: updateData.email,
+              endereco: updateData.endereco,
+              logo_url: updateData.logo_url,
+              modulo_crm_ativo: updateData.modulo_crm_ativo,
+              limite_usuarios: updateData.limite_usuarios,
+              atualizado_em: updateData.atualizado_em,
+            },
+            { onConflict: 'nome' }
+          )
+          .select()
+          .maybeSingle();
+
+        if (!error && data) {
+          updatedDbTenant = data;
+        }
+      }
+    } catch (errDb) {
+      console.warn('Erro ao atualizar imobiliária no Supabase:', errDb);
     }
 
-    return NextResponse.json({ success: true, imobiliaria: updatedStoreTenant || { id, ...updateData } });
+    // Atualiza no store global do servidor
+    const updatedStoreTenant = updateGlobalTenant(id, updatedDbTenant || updateData);
+
+    return NextResponse.json({
+      success: true,
+      imobiliaria: updatedDbTenant || updatedStoreTenant || { id, ...updateData },
+    });
   } catch (err) {
     console.error('Erro no PUT /api/imobiliarias/[id]:', err);
     return NextResponse.json(
@@ -251,13 +306,12 @@ export async function DELETE(
       }
 
       // 3.10 Excluir a própria Imobiliária
-      const { error: errImob } = await supabase
-        .from('imobiliarias')
-        .delete()
-        .eq('id', id);
-
-      if (errImob) {
-        console.warn('[Cascade] Aviso ao excluir registro da imobiliária no Supabase:', errImob);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      if (isUuid) {
+        await supabase.from('imobiliarias').delete().eq('id', id);
+      }
+      if (imoNome) {
+        await supabase.from('imobiliarias').delete().ilike('nome', imoNome);
       }
 
       // Remove do store global do servidor

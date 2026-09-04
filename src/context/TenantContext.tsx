@@ -29,26 +29,6 @@ export const DEFAULT_IMOBILIARIAS: Imobiliaria[] = [
     limite_usuarios: 10,
     criado_em: new Date().toISOString(),
   },
-  {
-    id: 'tenant-prime',
-    nome: 'Imobiliária Prime',
-    slug: 'prime',
-    telefone: '11988887777',
-    email: 'contato@primeimoveis.com.br',
-    modulo_crm_ativo: true,
-    limite_usuarios: 10,
-    criado_em: new Date().toISOString(),
-  },
-  {
-    id: 'tenant-nova-era',
-    nome: 'Nova Era Imóveis',
-    slug: 'nova-era',
-    telefone: '11977776666',
-    email: 'atendimento@novaera.com.br',
-    modulo_crm_ativo: true,
-    limite_usuarios: 10,
-    criado_em: new Date().toISOString(),
-  },
 ];
 
 const TENANT_STORAGE_KEY = 'easymob_active_tenant_nome';
@@ -62,10 +42,25 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [currentTenant, setCurrentTenantState] = useState<Imobiliaria>(DEFAULT_IMOBILIARIAS[0]);
   const [isLoadingTenants, setIsLoadingTenants] = useState<boolean>(true);
 
-  // Busca lista de imobiliárias no Supabase / API
+  // Busca lista de imobiliárias no Supabase / API (Fonte da Verdade)
   const refreshTenants = useCallback(async () => {
+    setIsLoadingTenants(true);
     try {
-      // 1. Tenta carregar da API oficial do servidor
+      // 1. Tenta carregar do Supabase como Fonte da Verdade
+      const { data: dbTenants, error } = await supabase
+        .from('imobiliarias')
+        .select('*')
+        .order('nome', { ascending: true });
+
+      if (!error && dbTenants && dbTenants.length > 0) {
+        setImobiliarias(dbTenants);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(TENANT_LIST_STORAGE_KEY, JSON.stringify(dbTenants));
+        }
+        return;
+      }
+
+      // 2. Tenta carregar da API oficial do servidor
       try {
         const res = await fetch('/api/imobiliarias');
         if (res.ok) {
@@ -82,75 +77,22 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         console.warn('API /api/imobiliarias offline:', errApi);
       }
 
-      // 2. Tenta carregar do localStorage se houver lista customizada salva
+      // 3. Fallback apenas se banco e API estiverem inacessíveis
       const savedListStr = typeof window !== 'undefined' ? localStorage.getItem(TENANT_LIST_STORAGE_KEY) : null;
-      let localList: Imobiliaria[] | null = null;
       if (savedListStr) {
         try {
-          localList = JSON.parse(savedListStr);
-        } catch {
-          // ignore
-        }
-      }
-
-      if (localList && localList.length > 0) {
-        setImobiliarias(localList);
-        return;
-      }
-
-      // 3. Tenta carregar da tabela 'imobiliarias'
-      const { data: dbTenants, error } = await supabase
-        .from('imobiliarias')
-        .select('*')
-        .order('nome', { ascending: true });
-
-      if (!error && dbTenants && dbTenants.length > 0) {
-        setImobiliarias(dbTenants);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(TENANT_LIST_STORAGE_KEY, JSON.stringify(dbTenants));
-        }
-        return;
-      }
-
-      // 3. Se a tabela não tiver dados, busca imobiliárias distintas de users
-      const { data: usersData } = await supabase.from('users').select('imobiliaria');
-      const uniqueNames = new Set<string>();
-      
-      if (usersData) {
-        usersData.forEach((u) => {
-          if (u.imobiliaria && typeof u.imobiliaria === 'string' && u.imobiliaria.trim().length > 0 && u.imobiliaria.trim() !== 'Administração') {
-            uniqueNames.add(u.imobiliaria.trim());
+          const localList = JSON.parse(savedListStr);
+          if (Array.isArray(localList) && localList.length > 0) {
+            setImobiliarias(localList);
+            return;
           }
-        });
-      }
-
-      DEFAULT_IMOBILIARIAS.forEach((i) => uniqueNames.add(i.nome));
-
-      const mergedList: Imobiliaria[] = Array.from(uniqueNames).map((nome, idx) => {
-        const found = DEFAULT_IMOBILIARIAS.find((i) => i.nome.toLowerCase() === nome.toLowerCase());
-        if (found) return found;
-        return {
-          id: `tenant-${idx + 1}-${nome.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-          nome: nome,
-          slug: nome.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-          criado_em: new Date().toISOString(),
-        };
-      });
-
-      setImobiliarias(mergedList);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(TENANT_LIST_STORAGE_KEY, JSON.stringify(mergedList));
-      }
-    } catch {
-      const savedListStr = typeof window !== 'undefined' ? localStorage.getItem(TENANT_LIST_STORAGE_KEY) : null;
-      if (savedListStr) {
-        try {
-          setImobiliarias(JSON.parse(savedListStr));
-          return;
         } catch {
           // ignore
         }
       }
+
+      setImobiliarias(DEFAULT_IMOBILIARIAS);
+    } catch {
       setImobiliarias(DEFAULT_IMOBILIARIAS);
     } finally {
       setIsLoadingTenants(false);
@@ -255,6 +197,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   );
 
   // Adiciona uma nova imobiliária dinamicamente
+  // Adiciona uma nova imobiliária dinamicamente
   const adicionarImobiliaria = useCallback(
     async (dados: Partial<Imobiliaria> | string, logoUrl?: string): Promise<Imobiliaria> => {
       const nome = typeof dados === 'string' ? dados : dados.nome || '';
@@ -264,6 +207,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       const telefone = typeof dados === 'object' ? dados.telefone : undefined;
       const endereco = typeof dados === 'object' ? dados.endereco : undefined;
       const modulo_crm_ativo = typeof dados === 'object' && dados.modulo_crm_ativo !== undefined ? dados.modulo_crm_ativo : true;
+      const limite_usuarios = typeof dados === 'object' && dados.limite_usuarios ? Number(dados.limite_usuarios) : 10;
 
       const newTenant: Imobiliaria = {
         id: `tenant-${Date.now()}`,
@@ -274,6 +218,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         telefone,
         endereco,
         modulo_crm_ativo,
+        limite_usuarios,
         criado_em: new Date().toISOString(),
       };
 
@@ -287,6 +232,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           const json = await res.json();
           if (json.success && json.imobiliaria) {
             newTenant.id = json.imobiliaria.id;
+            if (json.imobiliaria.modulo_crm_ativo !== undefined) {
+              newTenant.modulo_crm_ativo = json.imobiliaria.modulo_crm_ativo;
+            }
           }
         }
       } catch (errApi) {
@@ -296,14 +244,16 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data, error } = await supabase
           .from('imobiliarias')
-          .insert({
+          .upsert({
             nome: newTenant.nome,
             slug: newTenant.slug,
             logo_url: newTenant.logo_url,
             email: newTenant.email,
             telefone: newTenant.telefone,
             endereco: newTenant.endereco,
-          })
+            modulo_crm_ativo: newTenant.modulo_crm_ativo,
+            limite_usuarios: newTenant.limite_usuarios,
+          }, { onConflict: 'nome' })
           .select()
           .single();
 
@@ -348,20 +298,34 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       let oldName: string | undefined;
 
       try {
-        await fetch(`/api/imobiliarias/${id}`, {
+        const res = await fetch(`/api/imobiliarias/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedData),
         });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.imobiliaria) {
+            if (json.imobiliaria.id) id = json.imobiliaria.id;
+          }
+        }
       } catch (errApi) {
         console.warn('API /api/imobiliarias PUT offline:', errApi);
       }
 
       try {
-        await supabase
-          .from('imobiliarias')
-          .update(updatedData)
-          .eq('id', id);
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        if (isUuid) {
+          await supabase
+            .from('imobiliarias')
+            .update(updatedData)
+            .eq('id', id);
+        } else if (newName) {
+          await supabase
+            .from('imobiliarias')
+            .update(updatedData)
+            .ilike('nome', newName);
+        }
       } catch (err) {
         console.warn('Supabase update imobiliaria offline:', err);
       }
@@ -375,7 +339,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         }
 
         const nextList = prev.map((i) => {
-          if (i.id === id || (oldName && i.nome.toLowerCase() === oldName.toLowerCase())) {
+          if (i.id === id || (oldName && i.nome.toLowerCase() === oldName.toLowerCase()) || (newName && i.nome.toLowerCase() === newName.toLowerCase())) {
             updatedTenant = { ...i, ...updatedData };
             return updatedTenant;
           }
@@ -402,7 +366,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
       // Se a imobiliária atualizada for a ativa, sincroniza o estado
       setCurrentTenantState((current) => {
-        if ((current.id === id || (oldName && current.nome.toLowerCase() === oldName.toLowerCase())) && updatedTenant) {
+        if ((current.id === id || (oldName && current.nome.toLowerCase() === oldName.toLowerCase()) || (newName && current.nome.toLowerCase() === newName.toLowerCase())) && updatedTenant) {
           if (typeof window !== 'undefined' && updatedTenant.nome) {
             localStorage.setItem(TENANT_STORAGE_KEY, updatedTenant.nome);
           }
@@ -433,19 +397,25 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         console.warn('API delete imobiliaria cascade:', err);
         // Fallback direto no Supabase caso a rota falhe
         try {
-          await supabase.from('imobiliarias').delete().eq('id', id);
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+          if (isUuid) {
+            await supabase.from('imobiliarias').delete().eq('id', id);
+          }
+          if (nome) {
+            await supabase.from('imobiliarias').delete().ilike('nome', nome);
+          }
         } catch {
           // ignore
         }
       }
 
       setImobiliarias((prev) => {
-        const remaining = prev.filter((i) => i.id !== id);
+        const remaining = prev.filter((i) => i.id !== id && (!nome || i.nome.toLowerCase() !== nome.toLowerCase()));
         if (typeof window !== 'undefined') {
           localStorage.setItem(TENANT_LIST_STORAGE_KEY, JSON.stringify(remaining));
         }
         // Se a imobiliária excluída for a ativa, altera para a primeira disponível
-        if (currentTenant.id === id && remaining.length > 0) {
+        if ((currentTenant.id === id || (nome && currentTenant.nome.toLowerCase() === nome.toLowerCase())) && remaining.length > 0) {
           setCurrentTenantState(remaining[0]);
           if (typeof window !== 'undefined') {
             localStorage.setItem(TENANT_STORAGE_KEY, remaining[0].nome);
@@ -454,7 +424,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         return remaining;
       });
     },
-    [currentTenant.id]
+    [currentTenant.id, currentTenant.nome]
   );
 
   const moduloCrmAtivo = currentTenant?.modulo_crm_ativo !== false;
