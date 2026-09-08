@@ -19,6 +19,11 @@ export function WhatsAppStatusBadge({
   const { user } = useAuth();
   const currentInstance = user?.instance_name || (user?.id ? generateInstanceName(user.id) : configWhatsApp.instancia_nome || 'easymob');
 
+  const isAutomaticoAtivo = Boolean(
+    configWhatsApp?.ativo !== false &&
+    (configWhatsApp?.envio_automatico_ativo !== undefined ? configWhatsApp?.envio_automatico_ativo : configWhatsApp?.ativo)
+  );
+
   // Estado inicial padrão: 'checking' para eliminar falso alerta de desconexão
   const [connectionState, setConnectionState] = useState<'checking' | 'open' | 'close'>('checking');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,6 +37,7 @@ export function WhatsAppStatusBadge({
 
   // Consulta o estado da conexão na Evolution API para a instância individual do corretor
   const checkConnectionState = useCallback(async () => {
+    if (!isAutomaticoAtivo) return;
     try {
       const res = await fetch('/api/whatsapp/status', {
         method: 'POST',
@@ -59,10 +65,11 @@ export function WhatsAppStatusBadge({
     } catch {
       setConnectionState('close');
     }
-  }, [configWhatsApp, currentInstance, showToast]);
+  }, [configWhatsApp, currentInstance, isAutomaticoAtivo, showToast]);
 
   // Polling a cada 20 segundos em segundo plano (sem disparar toasts)
   useEffect(() => {
+    if (!isAutomaticoAtivo) return;
     checkConnectionState();
 
     const interval = setInterval(() => {
@@ -82,7 +89,7 @@ export function WhatsAppStatusBadge({
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [checkConnectionState]);
+  }, [checkConnectionState, isAutomaticoAtivo]);
 
   // Abre modal para reconexão ativa
   const handleOpenReconnectModal = async () => {
@@ -122,6 +129,10 @@ export function WhatsAppStatusBadge({
       setIsLoadingQr(false);
     }
   };
+
+  if (!isAutomaticoAtivo) {
+    return null;
+  }
 
   return (
     <>

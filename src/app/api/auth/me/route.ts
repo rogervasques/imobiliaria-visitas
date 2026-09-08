@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getSessionUser, SESSION_COOKIE_NAME } from '@/lib/auth';
+import { getSessionUser, createSessionToken, SESSION_COOKIE_NAME } from '@/lib/auth';
 
 export async function GET() {
   try {
-    // Valida no banco de dados se o usuário ainda existe e está ativo
+    // Valida no banco de dados se o usuário ainda existe e busca dados atualizados (cargo, nome, imobiliária, etc.)
     const user = await getSessionUser(true);
 
     if (!user) {
@@ -12,9 +12,21 @@ export async function GET() {
       return res;
     }
 
-    return NextResponse.json({ authenticated: true, user });
+    const { token, maxAge } = await createSessionToken(user, true);
+    const res = NextResponse.json({ authenticated: true, user });
+
+    res.cookies.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge,
+    });
+
+    return res;
   } catch (err) {
     console.error('Erro ao verificar sessão do usuário:', err);
     return NextResponse.json({ authenticated: false, user: null }, { status: 500 });
   }
 }
+

@@ -34,9 +34,9 @@ interface BottomNavProps {
 
 export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
   const pathname = usePathname();
-  const { metrics, proprietarios, clientes } = useData();
+  const { metrics, proprietarios, clientes, isLoading } = useData();
   const { user, logout } = useAuth();
-  const { moduloCrmAtivo, imobiliarias } = useTenant();
+  const { moduloCrmAtivo, imobiliarias, currentTenant, isLoadingTenants } = useTenant();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const totalLeadsAtivosCrm = clientes.filter((c) => {
@@ -46,6 +46,8 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
 
   const podeVerEquipe = user?.role === 'admin' || user?.role === 'gestor' || (user?.role as string) === 'gerente';
   const isAdmin = user?.role === 'admin';
+
+  const isCrmLiberado = !isLoading && !isLoadingTenants && moduloCrmAtivo === true && currentTenant?.modulo_crm_ativo === true;
 
   // ─── LISTA COMPLETA DE TODAS AS ABAS/MÓDULOS PERMITIDOS AO PERFIL ATUAL ───
   const allNavItems = [
@@ -62,7 +64,7 @@ export function BottomNav({ onOpenNovaVisita }: BottomNavProps) {
       icon: CalendarDays,
       description: 'Calendário completo e horários',
     },
-    ...(moduloCrmAtivo
+    ...(isCrmLiberado
       ? [
           {
             label: 'CRM (Kanban de Leads)',

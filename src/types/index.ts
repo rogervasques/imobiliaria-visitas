@@ -235,6 +235,7 @@ export interface ConfiguracaoWhatsApp {
   imobiliaria_id?: string;
   imobiliaria?: string;
   ativo: boolean;
+  envio_automatico_ativo?: boolean;
   enviar_confirmacao_cliente?: boolean;
   enviar_confirmacao_proprietario?: boolean;
   enviar_lembrete_cliente?: boolean;

@@ -309,7 +309,7 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-12">
       {/* ── Topo / Barra de Navegação Pública ── */}
-      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3">
+      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 pt-[env(safe-area-inset-top)] pt-[calc(env(safe-area-inset-top)+12px)] sm:pt-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           {/* Lado Esquerdo: Marca da Imobiliária dona do imóvel */}
           <div className="flex items-center min-w-0">

@@ -155,7 +155,7 @@ export async function findUserByEmailForAuth(email: string): Promise<Usuario | n
   try {
     const { data: dbUser, error } = await supabase
       .from('users')
-      .select('id, nome, email, telefone, senha_hash, role, imobiliaria, instance_name, avatar_url, created_at')
+      .select('id, nome, email, telefone, creci, senha_hash, role, imobiliaria, instance_name, avatar_url, ativo, created_at')
       .eq('email', normalized)
       .single();
 
@@ -165,11 +165,13 @@ export async function findUserByEmailForAuth(email: string): Promise<Usuario | n
         nome: dbUser.nome || 'Usuário',
         email: dbUser.email,
         telefone: dbUser.telefone,
+        creci: dbUser.creci,
         senha_hash: dbUser.senha_hash,
-        role: (dbUser.role as 'admin' | 'corretor') || 'corretor',
+        role: (dbUser.role as UserRole) || 'corretor',
         imobiliaria: dbUser.imobiliaria || 'EasyMob Imóveis',
         instance_name: dbUser.instance_name || generateInstanceName(dbUser.id),
         avatar_url: dbUser.avatar_url,
+        ativo: dbUser.ativo !== false,
         created_at: dbUser.created_at,
       };
     }
@@ -809,8 +811,42 @@ export async function getSessionUser(validateInDb: boolean = false): Promise<Use
     if (!session) return null;
 
     if (validateInDb) {
-      const exists = await verifyUserExists(session.id, session.email);
-      if (!exists) return null;
+      // 1. Caso especial: Administrador mestre inicial
+      if (session.email.toLowerCase().trim() === INITIAL_ADMIN_EMAIL.toLowerCase().trim()) {
+        const adminUser = (await getUserById(session.id)) || (await findUserByEmailForAuth(session.email));
+        if (adminUser) {
+          return {
+            id: adminUser.id,
+            name: adminUser.nome,
+            email: adminUser.email,
+            role: adminUser.role,
+            avatar: adminUser.avatar_url || session.avatar,
+            imobiliaria: adminUser.imobiliaria,
+            instance_name: adminUser.instance_name || session.instance_name,
+            telefone: adminUser.telefone,
+            creci: adminUser.creci,
+          };
+        }
+        return session;
+      }
+
+      // 2. Busca usuário atualizado no banco (Supabase ou store local)
+      const dbUser = (await getUserById(session.id)) || (session.email ? await findUserByEmailForAuth(session.email) : null);
+      if (!dbUser || dbUser.ativo === false) {
+        return null;
+      }
+
+      return {
+        id: dbUser.id,
+        name: dbUser.nome || session.name,
+        email: dbUser.email || session.email,
+        role: (dbUser.role as UserRole) || session.role,
+        avatar: dbUser.avatar_url || session.avatar,
+        imobiliaria: dbUser.imobiliaria || session.imobiliaria,
+        instance_name: dbUser.instance_name || session.instance_name,
+        telefone: dbUser.telefone || session.telefone,
+        creci: dbUser.creci || session.creci,
+      };
     }
 
     return session;

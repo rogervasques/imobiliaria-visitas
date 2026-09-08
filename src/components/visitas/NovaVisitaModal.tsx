@@ -33,8 +33,13 @@ export function NovaVisitaModal({
   imovelPreSelecionado,
   clientePreSelecionado,
 }: NovaVisitaModalProps) {
-  const { imoveis, clientes, adicionarVisita } = useData();
+  const { imoveis, clientes, adicionarVisita, configWhatsApp } = useData();
   const { user } = useAuth();
+
+  const isAutomaticoAtivo = Boolean(
+    configWhatsApp?.ativo !== false &&
+    (configWhatsApp?.envio_automatico_ativo !== undefined ? configWhatsApp?.envio_automatico_ativo : configWhatsApp?.ativo)
+  );
 
   // Estados do Roteiro de Imóveis (Multi-Select) - Totalmente limpos por padrão
   const [selectedImoveisIds, setSelectedImoveisIds] = useState<string[]>([]);
@@ -53,8 +58,6 @@ export function NovaVisitaModal({
   const [notificarLembreteProprietario, setNotificarLembreteProprietario] = useState(true);
   const [notificarPosVisitaCliente, setNotificarPosVisitaCliente] = useState(true);
   const [notificarComprovacaoProprietario, setNotificarComprovacaoProprietario] = useState(true);
-  const [gravarLogsCliente, setGravarLogsCliente] = useState(true);
-  const [gravarLogsProprietario, setGravarLogsProprietario] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -82,8 +85,6 @@ export function NovaVisitaModal({
       setNotificarLembreteProprietario(true);
       setNotificarPosVisitaCliente(true);
       setNotificarComprovacaoProprietario(true);
-      setGravarLogsCliente(true);
-      setGravarLogsProprietario(true);
       setImovelToAddId('');
     }
   }, [imovelPreSelecionado, clientePreSelecionado, isOpen]);
@@ -140,9 +141,6 @@ export function NovaVisitaModal({
           notificar_pos_visita: notificarPosVisitaCliente,
           notificar_pos_visita_cliente: notificarPosVisitaCliente,
           notificar_comprovacao_proprietario: notificarComprovacaoProprietario,
-          gravar_logs: gravarLogsCliente || gravarLogsProprietario,
-          gravar_logs_cliente: gravarLogsCliente,
-          gravar_logs_proprietario: gravarLogsProprietario,
           whatsapp_confirmacao_cliente: notificarConfirmacaoCliente ? 'pendente' : 'inativo',
           whatsapp_confirmacao_proprietario: notificarConfirmacaoProprietario ? 'pendente' : 'inativo',
           whatsapp_lembrete_cliente: notificarLembreteCliente ? 'pendente' : 'inativo',
@@ -320,152 +318,125 @@ export function NovaVisitaModal({
           rows={2}
         />
 
-        {/* ─── 5. Seção de Notificações via WhatsApp (Layout em Matriz) ─── */}
-        <div className="overflow-hidden rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 bg-white dark:bg-slate-900 shadow-xs">
-          {/* Header da Tabela */}
-          <div className="flex items-center justify-between p-3 bg-emerald-500/10 dark:bg-emerald-950/40 border-b border-emerald-200/80 dark:border-emerald-800/60">
-            <div className="flex items-center gap-2">
-              <Bell className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-xs font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-200">
-                Notificações via WhatsApp
+        {/* ─── 5. Seção de Notificações via WhatsApp (Layout em Matriz - Apenas se WhatsApp Automático Ativo) ─── */}
+        {isAutomaticoAtivo && (
+          <div className="overflow-hidden rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 bg-white dark:bg-slate-900 shadow-xs">
+            {/* Header da Tabela */}
+            <div className="flex items-center justify-between p-3 bg-emerald-500/10 dark:bg-emerald-950/40 border-b border-emerald-200/80 dark:border-emerald-800/60">
+              <div className="flex items-center gap-2">
+                <Bell className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-200">
+                  Notificações via WhatsApp
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/40">
+                Automações EasyMob
               </span>
             </div>
-            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/40">
-              Automações EasyMob
-            </span>
+
+            {/* Tabela / Matriz de Notificações */}
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <th className="py-2.5 px-3 sm:px-4">Evento de Disparo</th>
+                    <th className="py-2.5 px-3 sm:px-4 text-center w-24 sm:w-28 text-emerald-700 dark:text-emerald-400">
+                      Cliente
+                    </th>
+                    <th className="py-2.5 px-3 sm:px-4 text-center w-24 sm:w-28 text-emerald-700 dark:text-emerald-400">
+                      Proprietário
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
+                  {/* Linha 1: Confirmar agendamento */}
+                  <tr className="hover:bg-emerald-50/30 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="py-2.5 px-3 sm:px-4">
+                      <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                        Confirmar agendamento
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Disparo imediato ao agendar
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={notificarConfirmacaoCliente}
+                        onChange={(e) => setNotificarConfirmacaoCliente(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </td>
+                    <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={notificarConfirmacaoProprietario}
+                        onChange={(e) => setNotificarConfirmacaoProprietario(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </td>
+                  </tr>
+
+                  {/* Linha 2: Enviar lembrete */}
+                  <tr className="hover:bg-emerald-50/30 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="py-2.5 px-3 sm:px-4">
+                      <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                        Enviar lembrete
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        1h antes da visita
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={notificarLembreteCliente}
+                        onChange={(e) => setNotificarLembreteCliente(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </td>
+                    <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={notificarLembreteProprietario}
+                        onChange={(e) => setNotificarLembreteProprietario(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </td>
+                  </tr>
+
+                  {/* Linha 3: Solicitar/Notificar pós-visita */}
+                  <tr className="hover:bg-emerald-50/30 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="py-2.5 px-3 sm:px-4">
+                      <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                        Solicitar/Notificar pós-visita
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Após concluir visita
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={notificarPosVisitaCliente}
+                        onChange={(e) => setNotificarPosVisitaCliente(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </td>
+                    <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={notificarComprovacaoProprietario}
+                        onChange={(e) => setNotificarComprovacaoProprietario(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-
-          {/* Tabela / Matriz de Notificações */}
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <th className="py-2.5 px-3 sm:px-4">Evento de Disparo</th>
-                  <th className="py-2.5 px-3 sm:px-4 text-center w-24 sm:w-28 text-emerald-700 dark:text-emerald-400">
-                    Cliente
-                  </th>
-                  <th className="py-2.5 px-3 sm:px-4 text-center w-24 sm:w-28 text-emerald-700 dark:text-emerald-400">
-                    Proprietário
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
-                {/* Linha 1: Confirmar agendamento */}
-                <tr className="hover:bg-emerald-50/30 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="py-2.5 px-3 sm:px-4">
-                    <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
-                      Confirmar agendamento
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Disparo imediato ao agendar
-                    </div>
-                  </td>
-                  <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
-                    <input
-                      type="checkbox"
-                      checked={notificarConfirmacaoCliente}
-                      onChange={(e) => setNotificarConfirmacaoCliente(e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </td>
-                  <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
-                    <input
-                      type="checkbox"
-                      checked={notificarConfirmacaoProprietario}
-                      onChange={(e) => setNotificarConfirmacaoProprietario(e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </td>
-                </tr>
-
-                {/* Linha 2: Enviar lembrete */}
-                <tr className="hover:bg-emerald-50/30 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="py-2.5 px-3 sm:px-4">
-                    <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
-                      Enviar lembrete
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      1h antes da visita
-                    </div>
-                  </td>
-                  <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
-                    <input
-                      type="checkbox"
-                      checked={notificarLembreteCliente}
-                      onChange={(e) => setNotificarLembreteCliente(e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </td>
-                  <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
-                    <input
-                      type="checkbox"
-                      checked={notificarLembreteProprietario}
-                      onChange={(e) => setNotificarLembreteProprietario(e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </td>
-                </tr>
-
-                {/* Linha 3: Solicitar/Notificar pós-visita */}
-                <tr className="hover:bg-emerald-50/30 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="py-2.5 px-3 sm:px-4">
-                    <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
-                      Solicitar/Notificar pós-visita
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Após concluir visita
-                    </div>
-                  </td>
-                  <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
-                    <input
-                      type="checkbox"
-                      checked={notificarPosVisitaCliente}
-                      onChange={(e) => setNotificarPosVisitaCliente(e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </td>
-                  <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
-                    <input
-                      type="checkbox"
-                      checked={notificarComprovacaoProprietario}
-                      onChange={(e) => setNotificarComprovacaoProprietario(e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </td>
-                </tr>
-
-                {/* Linha 4: Gravar histórico de atendimento */}
-                <tr className="hover:bg-emerald-50/30 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="py-2.5 px-3 sm:px-4">
-                    <div className="font-bold text-slate-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      Gravar histórico de atendimento
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Registra conversas até 48h depois da visita
-                    </div>
-                  </td>
-                  <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
-                    <input
-                      type="checkbox"
-                      checked={gravarLogsCliente}
-                      onChange={(e) => setGravarLogsCliente(e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </td>
-                  <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
-                    <input
-                      type="checkbox"
-                      checked={gravarLogsProprietario}
-                      onChange={(e) => setGravarLogsProprietario(e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        )}
 
         {/* ─── Botões do Rodapé ─── */}
         <div className="flex items-center justify-end gap-3 pt-2">

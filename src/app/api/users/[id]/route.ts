@@ -40,7 +40,7 @@ export async function PUT(
     let targetRole: 'admin' | 'gestor' | 'corretor' | undefined = undefined;
     if (role === 'admin' && sessionUser.role === 'admin') {
       targetRole = 'admin';
-    } else if (role === 'gestor') {
+    } else if (role === 'gestor' || role === 'gerente') {
       targetRole = 'gestor';
     } else if (role === 'corretor') {
       targetRole = 'corretor';

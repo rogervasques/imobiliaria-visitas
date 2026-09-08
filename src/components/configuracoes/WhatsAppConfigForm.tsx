@@ -71,6 +71,11 @@ export function WhatsAppConfigForm() {
   const { currentTenant } = useTenant();
   const userDynamicInstance = user?.instance_name || (user?.id ? generateInstanceName(user.id) : 'easymob');
 
+  const isAutomaticoAtivo = Boolean(
+    configWhatsApp?.ativo !== false &&
+    (configWhatsApp?.envio_automatico_ativo !== undefined ? configWhatsApp?.envio_automatico_ativo : configWhatsApp?.ativo)
+  );
+
   const provedor: ProvedorWhatsApp = configWhatsApp.provedor || 'evolution_api';
   const [apiUrl, setApiUrl] = useState(
     configWhatsApp.api_url && !configWhatsApp.api_url.includes('exemplo-evolution')
@@ -83,7 +88,30 @@ export function WhatsAppConfigForm() {
       : 'easymob_secret_token_2026'
   );
   const [instanciaNome, setInstanciaNome] = useState(userDynamicInstance);
-  const [ativo, setAtivo] = useState(configWhatsApp.ativo);
+  const [ativo, setAtivo] = useState(isAutomaticoAtivo);
+
+  const handleToggleAtivo = async (novoAtivo: boolean) => {
+    setAtivo(novoAtivo);
+    await atualizarConfigWhatsApp({
+      ativo: novoAtivo,
+      envio_automatico_ativo: novoAtivo,
+    });
+  };
+
+  // Sincroniza estado com a configuração carregada da imobiliária ativa
+  useEffect(() => {
+    const isAtivo = Boolean(
+      configWhatsApp?.ativo !== false &&
+      (configWhatsApp?.envio_automatico_ativo !== undefined ? configWhatsApp?.envio_automatico_ativo : configWhatsApp?.ativo)
+    );
+    setAtivo(isAtivo);
+    if (configWhatsApp?.api_url && !configWhatsApp.api_url.includes('exemplo-evolution')) {
+      setApiUrl(configWhatsApp.api_url);
+    }
+    if (configWhatsApp?.api_key && !configWhatsApp.api_key.includes('MINHA_CHAVE')) {
+      setApiKey(configWhatsApp.api_key);
+    }
+  }, [configWhatsApp]);
 
   // Estados de Limpeza e Dupla Verificação
   const [isCleanModalOpen, setIsCleanModalOpen] = useState(false);
@@ -165,12 +193,6 @@ export function WhatsAppConfigForm() {
   );
   const [enviarComprovacaoProprietario, setEnviarComprovacaoProprietario] = useState(
     configWhatsApp.enviar_comprovacao_proprietario !== false
-  );
-  const [gravarLogsCliente, setGravarLogsCliente] = useState(
-    configWhatsApp.gravar_logs_cliente !== false
-  );
-  const [gravarLogsProprietario, setGravarLogsProprietario] = useState(
-    configWhatsApp.gravar_logs_proprietario !== false
   );
 
   const [activeTab, setActiveTab] = useState<'api' | 'templates' | 'automacao'>('api');
@@ -275,12 +297,15 @@ export function WhatsAppConfigForm() {
     }
   }, [apiUrl, apiKey, instanciaNome, provedor]);
 
-  // Checa status ao carregar ou trocar de credencial
+  // Checa status ao carregar ou trocar de credencial apenas quando a automação estiver ativa
   useEffect(() => {
-    if (apiUrl && apiKey) {
+    if (isAutomaticoAtivo && apiUrl && apiKey) {
       checkStatus();
+    } else {
+      setConnectionState('idle');
+      setStatusFeedback(null);
     }
-  }, [apiUrl, apiKey, checkStatus]);
+  }, [isAutomaticoAtivo, apiUrl, apiKey, checkStatus]);
 
   const handleConnectQr = async () => {
     setIsLoadingQr(true);
@@ -441,14 +466,13 @@ export function WhatsAppConfigForm() {
         api_key: apiKey,
         instancia_nome: instanciaNome,
         ativo,
+        envio_automatico_ativo: ativo,
         enviar_confirmacao_cliente: enviarConfirmacaoCliente,
         enviar_confirmacao_proprietario: enviarConfirmacaoProprietario,
         enviar_lembrete_cliente: enviarLembreteCliente,
         enviar_lembrete_proprietario: enviarLembreteProprietario,
         enviar_pos_visita_cliente: enviarPosVisitaCliente,
         enviar_comprovacao_proprietario: enviarComprovacaoProprietario,
-        gravar_logs_cliente: gravarLogsCliente,
-        gravar_logs_proprietario: gravarLogsProprietario,
         template_confirmacao_cliente: templateConfCliente,
         template_confirmacao_proprietario: templateConfProp,
         template_lembrete_cliente: templateLembCliente,
@@ -458,7 +482,12 @@ export function WhatsAppConfigForm() {
         template_compartilhar_imovel: templateCompartilharImovel,
         template_imovel_compativel: templateImovelCompativel,
       });
-      await checkStatus();
+      if (ativo) {
+        await checkStatus();
+      } else {
+        setConnectionState('idle');
+        setStatusFeedback(null);
+      }
       showToast('Configurações salvas com sucesso!', 'success');
     } catch {
       showToast('Erro ao salvar configurações do WhatsApp.', 'error');
@@ -699,202 +728,220 @@ export function WhatsAppConfigForm() {
       {activeTab === 'api' && (
         <div className="space-y-6">
           {!isAdmin ? (
-            /* VISÃO EXCLUSIVA DO CORRETOR (Apenas Status & Pareamento e Teste de Envio) */
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Coluna 1: Pareamento por QR Code & Status */}
-              <div className="lg:col-span-6 space-y-6">
-                <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <QrCode className="w-5 h-5 text-emerald-500" />
-                        Status &amp; Pareamento
-                      </span>
-                      {/* Badge de Status */}
-                      {connectionState === 'open' ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-xs font-black border border-emerald-300 dark:border-emerald-800">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          🟢 Conectado
+            /* VISÃO EXCLUSIVA DO CORRETOR (Apenas se WhatsApp Ativo na Imobiliária) */
+            !isAutomaticoAtivo ? (
+              <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+                <CardContent className="p-8 text-center space-y-3">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto shadow-xs">
+                    <MessageSquare className="w-7 h-7" />
+                  </div>
+                  <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base">
+                    Modo Manual Assistido Ativo
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                    O envio automático via WhatsApp está desativado para a sua imobiliária (<strong>{currentTenant?.nome || 'EasyMob'}</strong>).
+                    <br />
+                    Você pode enviar fichas de imóveis e roteiros de visitas com 1 clique diretamente pelo WhatsApp Web ou celular nos cards do sistema.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Coluna 1: Pareamento por QR Code & Status */}
+                <div className="lg:col-span-6 space-y-6">
+                  <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <QrCode className="w-5 h-5 text-emerald-500" />
+                          Status &amp; Pareamento
                         </span>
-                      ) : connectionState === 'connecting' ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs font-black border border-amber-300 dark:border-amber-800">
-                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                          🟡 Conectando
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 text-xs font-black border border-rose-300 dark:border-rose-800">
-                          <span className="w-2 h-2 rounded-full bg-rose-500" />
-                          🔴 Desconectado
-                        </span>
-                      )}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Container Dinâmico do QR Code */}
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center min-h-[260px] text-center space-y-3">
-                      {connectionState === 'open' ? (
-                        <div className="space-y-3 py-4">
-                          <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto">
-                            <CheckCircle2 className="w-8 h-8" />
-                          </div>
-                          <div>
-                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
-                              WhatsApp Conectado com Sucesso!
-                            </h4>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
-                              Sua conta de WhatsApp está conectada à sua instância exclusiva.
-                            </p>
-                          </div>
-                        </div>
-                      ) : qrCodeBase64 ? (
-                        <div className="space-y-2">
-                          <div className="p-2 rounded-2xl bg-white shadow-md border border-slate-200 inline-block">
-                            <img
-                              src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
-                              alt="QR Code WhatsApp"
-                              className="w-52 h-52 object-contain rounded-xl"
-                            />
-                          </div>
-                          {/* Passo a Passo de Instruções */}
-                          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left w-full max-w-sm mx-auto space-y-2.5 shadow-2xs">
-                            <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
-                              <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                              <span>Abra o WhatsApp no celular e siga o caminho:</span>
+                        {/* Badge de Status */}
+                        {connectionState === 'open' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-xs font-black border border-emerald-300 dark:border-emerald-800">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            🟢 Conectado
+                          </span>
+                        ) : connectionState === 'connecting' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs font-black border border-amber-300 dark:border-amber-800">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                            🟡 Conectando
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 text-xs font-black border border-rose-300 dark:border-rose-800">
+                            <span className="w-2 h-2 rounded-full bg-rose-500" />
+                            🔴 Desconectado
+                          </span>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Container Dinâmico do QR Code */}
+                      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center min-h-[260px] text-center space-y-3">
+                        {connectionState === 'open' ? (
+                          <div className="space-y-3 py-4">
+                            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto">
+                              <CheckCircle2 className="w-8 h-8" />
                             </div>
-                            <ol className="space-y-2 text-[11px] text-slate-600 dark:text-slate-400 pl-4 list-decimal font-medium leading-relaxed">
-                              <li>
-                                Vá em <strong className="text-slate-900 dark:text-slate-100">Configurações &gt; Aparelhos Conectados &gt; Conectar Aparelho</strong>.
-                              </li>
-                              <li>
-                                Aponte a câmera e escaneie o <strong className="text-slate-900 dark:text-slate-100">QR Code acima</strong>.
-                              </li>
-                              <li>
-                                Assim que o celular exibir a mensagem <span className="text-emerald-700 dark:text-emerald-400 font-bold">&quot;Conectando...&quot;</span>, o sistema validará automaticamente o status da conexão.
-                              </li>
-                            </ol>
+                            <div>
+                              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                                WhatsApp Conectado com Sucesso!
+                              </h4>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
+                                Sua conta de WhatsApp está conectada à sua instância exclusiva.
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ) : pairingCode ? (
-                        <div className="space-y-2 py-4">
-                          <Smartphone className="w-10 h-10 text-emerald-500 mx-auto" />
-                          <span className="text-xs text-slate-500">Código de Pareamento:</span>
-                          <div className="font-mono text-2xl font-black text-emerald-600 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-xl">
-                            {pairingCode}
+                        ) : qrCodeBase64 ? (
+                          <div className="space-y-2">
+                            <div className="p-2 rounded-2xl bg-white shadow-md border border-slate-200 inline-block">
+                              <img
+                                src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
+                                alt="QR Code WhatsApp"
+                                className="w-52 h-52 object-contain rounded-xl"
+                              />
+                            </div>
+                            {/* Passo a Passo de Instruções */}
+                            <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left w-full max-w-sm mx-auto space-y-2.5 shadow-2xs">
+                              <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                                <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <span>Abra o WhatsApp no celular e siga o caminho:</span>
+                              </div>
+                              <ol className="space-y-2 text-[11px] text-slate-600 dark:text-slate-400 pl-4 list-decimal font-medium leading-relaxed">
+                                <li>
+                                  Vá em <strong className="text-slate-900 dark:text-slate-100">Configurações &gt; Aparelhos Conectados &gt; Conectar Aparelho</strong>.
+                                </li>
+                                <li>
+                                  Aponte a câmera e escaneie o <strong className="text-slate-900 dark:text-slate-100">QR Code acima</strong>.
+                                </li>
+                                <li>
+                                  Assim que o celular exibir a mensagem <span className="text-emerald-700 dark:text-emerald-400 font-bold">&quot;Conectando...&quot;</span>, o sistema validará automaticamente o status da conexão.
+                                </li>
+                              </ol>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-3 py-6 text-slate-400 dark:text-slate-500">
-                          <QrCode className="w-16 h-16 mx-auto opacity-40" />
-                          <div>
-                            <p className="text-xs font-medium">
-                              Nenhum QR Code ativo no momento.
-                            </p>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
-                              Clique no botão abaixo para gerar o código de conexão do seu WhatsApp.
-                            </p>
+                        ) : pairingCode ? (
+                          <div className="space-y-2 py-4">
+                            <Smartphone className="w-10 h-10 text-emerald-500 mx-auto" />
+                            <span className="text-xs text-slate-500">Código de Pareamento:</span>
+                            <div className="font-mono text-2xl font-black text-emerald-600 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-xl">
+                              {pairingCode}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <div className="space-y-3 py-6 text-slate-400 dark:text-slate-500">
+                            <QrCode className="w-16 h-16 mx-auto opacity-40" />
+                            <div>
+                              <p className="text-xs font-medium">
+                                Nenhum QR Code ativo no momento.
+                              </p>
+                              <p className="text-[11px] text-slate-400 mt-0.5">
+                                Clique no botão abaixo para gerar o código de conexão do seu WhatsApp.
+                              </p>
+                            </div>
+                          </div>
+                        )}
 
-                      {statusFeedback && !qrCodeBase64 && (
-                        <p className="text-xs text-slate-600 dark:text-slate-300 font-medium max-w-xs">
-                          {statusFeedback}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Botões de Ação do Pareamento */}
-                    <div className="flex flex-col sm:flex-row items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="primary"
-                        onClick={handleConnectQr}
-                        isLoading={isLoadingQr}
-                        className="w-full text-xs font-bold"
-                      >
-                        <QrCode className="w-4 h-4 mr-1.5" />
-                        Conectar / Gerar QR Code
-                      </Button>
-
-                      {connectionState === 'open' && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleLogout}
-                          isLoading={isLoggingOut}
-                          className="w-full text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200"
-                        >
-                          <LogOut className="w-4 h-4 mr-1.5" />
-                          Desconectar
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Coluna 2: Testar Disparo de Mensagem */}
-              <div className="lg:col-span-6 space-y-6">
-                <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Send className="w-4 h-4 text-emerald-500" />
-                      Testar Disparo de Mensagem
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleSendTest} className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Input
-                          label="Telefone com DDD *"
-                          value={testPhone}
-                          onChange={(e) => setTestPhone(e.target.value)}
-                          placeholder="11999998888"
-                          helperText="Apenas números ou formato padrão"
-                          required
-                        />
-                        <div className="flex flex-col justify-end pb-1">
-                          <Button
-                            type="submit"
-                            variant="primary"
-                            size="md"
-                            isLoading={isSendingTest}
-                            className="w-full text-xs font-bold"
-                          >
-                            <Send className="w-3.5 h-3.5 mr-1.5" />
-                            Disparar Teste
-                          </Button>
-                        </div>
+                        {statusFeedback && !qrCodeBase64 && (
+                          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium max-w-xs">
+                            {statusFeedback}
+                          </p>
+                        )}
                       </div>
 
-                      <Textarea
-                        label="Mensagem de Teste"
-                        value={testMessage}
-                        onChange={(e) => setTestMessage(e.target.value)}
-                        rows={3}
-                      />
-
-                      {testResult && (
-                        <div
-                          className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
-                            testResult.success
-                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800'
-                              : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800'
-                          }`}
+                      {/* Botões de Ação do Pareamento */}
+                      <div className="flex flex-col sm:flex-row items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="primary"
+                          onClick={handleConnectQr}
+                          isLoading={isLoadingQr}
+                          className="w-full text-xs font-bold"
                         >
-                          {testResult.success ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                          ) : (
-                            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                          )}
-                          <span>{testResult.message}</span>
+                          <QrCode className="w-4 h-4 mr-1.5" />
+                          Conectar / Gerar QR Code
+                        </Button>
+
+                        {connectionState === 'open' && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleLogout}
+                            isLoading={isLoggingOut}
+                            className="w-full text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200"
+                          >
+                            <LogOut className="w-4 h-4 mr-1.5" />
+                            Desconectar
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Coluna 2: Testar Disparo de Mensagem */}
+                <div className="lg:col-span-6 space-y-6">
+                  <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Send className="w-4 h-4 text-emerald-500" />
+                        Testar Disparo de Mensagem
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <form onSubmit={handleSendTest} className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <Input
+                            label="Telefone com DDD *"
+                            value={testPhone}
+                            onChange={(e) => setTestPhone(e.target.value)}
+                            placeholder="11999998888"
+                            helperText="Apenas números ou formato padrão"
+                            required
+                          />
+                          <div className="flex flex-col justify-end pb-1">
+                            <Button
+                              type="submit"
+                              variant="primary"
+                              size="md"
+                              isLoading={isSendingTest}
+                              className="w-full text-xs font-bold"
+                            >
+                              <Send className="w-3.5 h-3.5 mr-1.5" />
+                              Disparar Teste
+                            </Button>
+                          </div>
                         </div>
-                      )}
-                    </form>
-                  </CardContent>
-                </Card>
+
+                        <Textarea
+                          label="Mensagem de Teste"
+                          value={testMessage}
+                          onChange={(e) => setTestMessage(e.target.value)}
+                          rows={3}
+                        />
+
+                        {testResult && (
+                          <div
+                            className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                              testResult.success
+                                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800'
+                                : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800'
+                            }`}
+                          >
+                            {testResult.success ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            ) : (
+                              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                            )}
+                            <span>{testResult.message}</span>
+                          </div>
+                        )}
+                      </form>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            </div>
+            )
           ) : (
             /* VISÃO COMPLETA DO ADMIN: 12 Colunas com Credenciais e Webhook */
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -913,26 +960,37 @@ export function WhatsAppConfigForm() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Switch Ativar Automação */}
-                    <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                      <div>
-                        <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                          Disparo Automático de Mensagens
+                    {/* Switch Ativar Automação (Exclusivo para Administrador) */}
+                    {isAdmin && (
+                      <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                        <div>
+                          <div className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                            <span>Disparo Automático de Mensagens</span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                              ativo
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                            }`}>
+                              {ativo ? 'Modo Automático' : 'Modo Manual Assistido'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {ativo
+                              ? 'Disparos automatizados via Evolution API ativos (régua de confirmação, lembretes e pós-visita).'
+                              : 'Modo Manual Assistido ativo: desativa disparos em background e habilita botões de envio via link wa.me.'}
+                          </p>
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Habilita a régua de confirmação, lembrete e pós-visita
-                        </p>
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
+                          <input
+                            type="checkbox"
+                            checked={ativo}
+                            onChange={(e) => handleToggleAtivo(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600" />
+                        </label>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={ativo}
-                          onChange={(e) => setAtivo(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600" />
-                      </label>
-                    </div>
+                    )}
 
                     {/* URL da API */}
                     <Input
@@ -1108,35 +1166,6 @@ export function WhatsAppConfigForm() {
                               />
                             </td>
                           </tr>
-
-                          {/* Linha 4: Gravar histórico de atendimento */}
-                          <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3 px-4">
-                              <div className="font-bold text-slate-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
-                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                Gravar histórico de atendimento
-                              </div>
-                              <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                                Registra conversas até 48h depois da visita
-                              </div>
-                            </td>
-                            <td className="py-3 px-4 text-center align-middle">
-                              <input
-                                type="checkbox"
-                                checked={gravarLogsCliente}
-                                onChange={(e) => setGravarLogsCliente(e.target.checked)}
-                                className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                              />
-                            </td>
-                            <td className="py-3 px-4 text-center align-middle">
-                              <input
-                                type="checkbox"
-                                checked={gravarLogsProprietario}
-                                onChange={(e) => setGravarLogsProprietario(e.target.checked)}
-                                className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
-                              />
-                            </td>
-                          </tr>
                         </tbody>
                       </table>
                     </div>
@@ -1220,200 +1249,231 @@ export function WhatsAppConfigForm() {
 
               {/* Coluna 2: Pareamento por QR Code & Status */}
               <div className="lg:col-span-5 space-y-6">
-                <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <QrCode className="w-5 h-5 text-emerald-500" />
-                        Status &amp; Pareamento
-                      </span>
-                      {/* Badge de Status */}
-                      {connectionState === 'open' ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-xs font-black border border-emerald-300 dark:border-emerald-800">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          🟢 Conectado
+                {!ativo ? (
+                  <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <QrCode className="w-5 h-5 text-slate-400" />
+                          Status &amp; Pareamento
                         </span>
-                      ) : connectionState === 'connecting' ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs font-black border border-amber-300 dark:border-amber-800">
-                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                          🟡 Conectando
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 text-xs font-bold border border-slate-200 dark:border-slate-700">
+                          ⚪ Desativado
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 text-xs font-black border border-rose-300 dark:border-rose-800">
-                          <span className="w-2 h-2 rounded-full bg-rose-500" />
-                          🔴 Desconectado
-                        </span>
-                      )}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Container Dinâmico do QR Code */}
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center min-h-[260px] text-center space-y-3">
-                      {connectionState === 'open' ? (
-                        <div className="space-y-3 py-4">
-                          <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto">
-                            <CheckCircle2 className="w-8 h-8" />
-                          </div>
-                          <div>
-                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
-                              WhatsApp Pareado com Sucesso!
-                            </h4>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
-                              A instância <strong>{instanciaNome}</strong> está ativa e conectada ao servidor da Evolution API.
-                            </p>
-                          </div>
-                        </div>
-                      ) : qrCodeBase64 ? (
-                        <div className="space-y-2">
-                          <div className="p-2 rounded-2xl bg-white shadow-md border border-slate-200 inline-block">
-                            <img
-                              src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
-                              alt="QR Code WhatsApp"
-                              className="w-52 h-52 object-contain rounded-xl"
-                            />
-                          </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                            Abra o WhatsApp &gt; Aparelhos Conectados &gt; Conectar Aparelho
-                          </p>
-                        </div>
-                      ) : pairingCode ? (
-                        <div className="space-y-2 py-4">
-                          <Smartphone className="w-10 h-10 text-emerald-500 mx-auto" />
-                          <span className="text-xs text-slate-500">Código de Pareamento:</span>
-                          <div className="font-mono text-2xl font-black text-emerald-600 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-xl">
-                            {pairingCode}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-3 py-6 text-slate-400 dark:text-slate-500">
-                          <QrCode className="w-16 h-16 mx-auto opacity-40" />
-                          <div>
-                            <p className="text-xs font-medium">
-                              Nenhum QR Code ativo no momento.
-                            </p>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
-                              Clique no botão abaixo para gerar o código de conexão.
-                            </p>
-                          </div>
-                        </div>
-                      )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 text-center space-y-3">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mx-auto shadow-2xs">
+                        <QrCode className="w-7 h-7 opacity-50" />
+                      </div>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                        Disparo Automático Desativado
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
+                        O envio automático via WhatsApp está desativado para esta imobiliária (<strong>{currentTenant?.nome || 'EasyMob'}</strong>).
+                        <br /><br />
+                        Para parear uma conta e gerar o QR Code, ative a opção <strong>&quot;Disparo Automático de Mensagens&quot;</strong> na coluna ao lado e clique em Salvar.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <>
+                    <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <QrCode className="w-5 h-5 text-emerald-500" />
+                            Status &amp; Pareamento
+                          </span>
+                          {/* Badge de Status */}
+                          {connectionState === 'open' ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-xs font-black border border-emerald-300 dark:border-emerald-800">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                              🟢 Conectado
+                            </span>
+                          ) : connectionState === 'connecting' ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs font-black border border-amber-300 dark:border-amber-800">
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                              🟡 Conectando
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 text-xs font-black border border-rose-300 dark:border-rose-800">
+                              <span className="w-2 h-2 rounded-full bg-rose-500" />
+                              🔴 Desconectado
+                            </span>
+                          )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Container Dinâmico do QR Code */}
+                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center min-h-[260px] text-center space-y-3">
+                          {connectionState === 'open' ? (
+                            <div className="space-y-3 py-4">
+                              <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto">
+                                <CheckCircle2 className="w-8 h-8" />
+                              </div>
+                              <div>
+                                <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                                  WhatsApp Pareado com Sucesso!
+                                </h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
+                                  A instância <strong>{instanciaNome}</strong> está ativa e conectada ao servidor da Evolution API.
+                                </p>
+                              </div>
+                            </div>
+                          ) : qrCodeBase64 ? (
+                            <div className="space-y-2">
+                              <div className="p-2 rounded-2xl bg-white shadow-md border border-slate-200 inline-block">
+                                <img
+                                  src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
+                                  alt="QR Code WhatsApp"
+                                  className="w-52 h-52 object-contain rounded-xl"
+                                />
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                                Abra o WhatsApp &gt; Aparelhos Conectados &gt; Conectar Aparelho
+                              </p>
+                            </div>
+                          ) : pairingCode ? (
+                            <div className="space-y-2 py-4">
+                              <Smartphone className="w-10 h-10 text-emerald-500 mx-auto" />
+                              <span className="text-xs text-slate-500">Código de Pareamento:</span>
+                              <div className="font-mono text-2xl font-black text-emerald-600 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-xl">
+                                {pairingCode}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-3 py-6 text-slate-400 dark:text-slate-500">
+                              <QrCode className="w-16 h-16 mx-auto opacity-40" />
+                              <div>
+                                <p className="text-xs font-medium">
+                                  Nenhum QR Code ativo no momento.
+                                </p>
+                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                  Clique no botão abaixo para gerar o código de conexão.
+                                </p>
+                              </div>
+                            </div>
+                          )}
 
-                      {statusFeedback && (
-                        <p className="text-xs text-slate-600 dark:text-slate-300 font-medium max-w-xs">
-                          {statusFeedback}
+                          {statusFeedback && (
+                            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium max-w-xs">
+                              {statusFeedback}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Botões de Ação do Pareamento */}
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="primary"
+                            onClick={handleConnectQr}
+                            isLoading={isLoadingQr}
+                            className="w-full text-xs font-bold"
+                          >
+                            <QrCode className="w-4 h-4 mr-1.5" />
+                            Conectar / Gerar QR Code
+                          </Button>
+
+                          {connectionState === 'open' && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleLogout}
+                              isLoading={isLoggingOut}
+                              className="w-full text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200"
+                            >
+                              <LogOut className="w-4 h-4 mr-1.5" />
+                              Desconectar
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Card de Webhook e Rastreamento */}
+                    <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+                      <CardHeader>
+                        <CardTitle className="text-sm flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <Radio className="w-4 h-4 text-emerald-500" />
+                            Webhook de Rastreamento Automático
+                          </span>
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
+                            POST /webhook/set
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                        <p>
+                          Configura o Webhook da Evolution API v2 para enviar as notificações de conexão e status de entrega em tempo real para o EasyMob:
                         </p>
-                      )}
-                    </div>
 
-                    {/* Botões de Ação do Pareamento */}
-                    <div className="flex flex-col sm:flex-row items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="primary"
-                        onClick={handleConnectQr}
-                        isLoading={isLoadingQr}
-                        className="w-full text-xs font-bold"
-                      >
-                        <QrCode className="w-4 h-4 mr-1.5" />
-                        Conectar / Gerar QR Code
-                      </Button>
+                        <div className="space-y-1.5">
+                          <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                            URL Pública do EasyMob
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={publicAppUrl}
+                              onChange={(e) => setPublicAppUrl(e.target.value)}
+                              placeholder="https://app.easymob.com.br"
+                              className="flex-1 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleCopyWebhook}
+                              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 shrink-0"
+                              title="Copiar URL completa do Webhook"
+                            >
+                              {copiedWebhook ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          <span className="text-[10px] text-slate-400 font-mono block truncate">
+                            Webhook: {publicAppUrl.replace(/\/$/, '')}/api/whatsapp/webhook
+                          </span>
+                        </div>
 
-                      {connectionState === 'open' && (
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={handleLogout}
-                          isLoading={isLoggingOut}
-                          className="w-full text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200"
+                          size="sm"
+                          onClick={handleConfigureWebhook}
+                          isLoading={isSettingWebhook}
+                          className="w-full text-xs font-bold border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
                         >
-                          <LogOut className="w-4 h-4 mr-1.5" />
-                          Desconectar
+                          <Radio className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
+                          Configurar Webhook na Evolution API
                         </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
 
-                {/* Card de Webhook e Rastreamento */}
-                <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <Radio className="w-4 h-4 text-emerald-500" />
-                        Webhook de Rastreamento Automático
-                      </span>
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
-                        POST /webhook/set
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                    <p>
-                      Configura o Webhook da Evolution API v2 para enviar as notificações de conexão e status de entrega em tempo real para o EasyMob:
-                    </p>
-
-                    <div className="space-y-1.5">
-                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                        URL Pública do EasyMob
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={publicAppUrl}
-                          onChange={(e) => setPublicAppUrl(e.target.value)}
-                          placeholder="https://app.easymob.com.br"
-                          className="flex-1 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleCopyWebhook}
-                          className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 shrink-0"
-                          title="Copiar URL completa do Webhook"
-                        >
-                          {copiedWebhook ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      <span className="text-[10px] text-slate-400 font-mono block truncate">
-                        Webhook: {publicAppUrl.replace(/\/$/, '')}/api/whatsapp/webhook
-                      </span>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleConfigureWebhook}
-                      isLoading={isSettingWebhook}
-                      className="w-full text-xs font-bold border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
-                    >
-                      <Radio className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
-                      Configurar Webhook na Evolution API
-                    </Button>
-
-                    {webhookFeedback && (
-                      <div
-                        className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
-                          webhookFeedback.success
-                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800'
-                            : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800'
-                        }`}
-                      >
-                        {webhookFeedback.success ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        ) : (
-                          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                        {webhookFeedback && (
+                          <div
+                            className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                              webhookFeedback.success
+                                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800'
+                                : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800'
+                            }`}
+                          >
+                            {webhookFeedback.success ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            ) : (
+                              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                            )}
+                            <span>{webhookFeedback.message}</span>
+                          </div>
                         )}
-                        <span>{webhookFeedback.message}</span>
-                      </div>
-                    )}
 
-                    <div className="space-y-1 text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
-                      <div>• <code>CONNECTION_UPDATE</code>: Atualiza estado da conexão (open, close).</div>
-                      <div>• <code>MESSAGES_UPDATE</code>: Atualiza status de entrega e visualização.</div>
-                      <div>• <code>SEND_MESSAGE</code>: Notificações de confirmação de envio.</div>
-                    </div>
-                  </CardContent>
-                </Card>
+                        <div className="space-y-1 text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
+                          <div>• <code>CONNECTION_UPDATE</code>: Atualiza estado da conexão (open, close).</div>
+                          <div>• <code>MESSAGES_UPDATE</code>: Atualiza status de entrega e visualização.</div>
+                          <div>• <code>SEND_MESSAGE</code>: Notificações de confirmação de envio.</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
               </div>
             </div>
           )}

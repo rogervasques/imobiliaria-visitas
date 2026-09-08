@@ -51,7 +51,15 @@
   border: 1px solid rgba(31, 41, 55, 0.7);
 }
 
-/* Suporte para Safe Area no celular (Notch e barra de gestos) */
+/* Suporte para Safe Area no celular (Notch, Dynamic Island e barra de gestos) */
+.pt-safe-top {
+  padding-top: max(12px, calc(env(safe-area-inset-top, 0px) + 12px));
+}
+
+.top-safe {
+  top: env(safe-area-inset-top, 0px);
+}
+
 .pb-safe {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
 }

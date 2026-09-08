@@ -34,26 +34,20 @@ export async function POST(req: NextRequest) {
     // 3. Gera todos os dados operacionais sintéticos e verossímeis vinculados ao tenant
     const seedData = generateTestSeedData(adminUserId, adminUserNome, targetImobiliariaNome, targetImobiliariaId);
 
-    // 4. Limpeza de dados operacionais antigos no Supabase (Preservando users e invites)
+    // 4. Limpeza de dados operacionais antigos desta imobiliária no Supabase (Preservando users, invites e outros tenants)
     try {
-      // Limpa logs
-      await supabase.from('whatsapp_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      // Limpa tabela de junção se existir
-      try {
-        await supabase.from('visita_imoveis').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      } catch {
-        // Ignora se não existir
+      if (targetImobiliariaId) {
+        await supabase.from('visitas').delete().eq('imobiliaria_id', targetImobiliariaId);
+        await supabase.from('imoveis').delete().eq('imobiliaria_id', targetImobiliariaId);
+        await supabase.from('clientes').delete().eq('imobiliaria_id', targetImobiliariaId);
+        await supabase.from('proprietarios').delete().eq('imobiliaria_id', targetImobiliariaId);
       }
-      // Limpa visitas
-      await supabase.from('visitas').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      // Limpa imóveis
-      await supabase.from('imoveis').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      // Limpa clientes
-      await supabase.from('clientes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      // Limpa proprietários
-      await supabase.from('proprietarios').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('visitas').delete().eq('imobiliaria', targetImobiliariaNome);
+      await supabase.from('imoveis').delete().eq('imobiliaria', targetImobiliariaNome);
+      await supabase.from('clientes').delete().eq('imobiliaria', targetImobiliariaNome);
+      await supabase.from('proprietarios').delete().eq('imobiliaria', targetImobiliariaNome);
     } catch (cleanErr) {
-      console.warn('[Seed] Aviso durante a limpeza das tabelas:', cleanErr);
+      console.warn('[Seed] Aviso durante a limpeza das tabelas do tenant:', cleanErr);
     }
 
     // 5. Inserção em massa no Supabase (em lotes estruturados)

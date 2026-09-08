@@ -32,9 +32,9 @@ import { EasyMobLogo } from '../ui/EasyMobLogo';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { metrics, proprietarios, clientes } = useData();
+  const { metrics, proprietarios, clientes, isLoading } = useData();
   const { user, logout } = useAuth();
-  const { imobiliarias, currentTenant, setCurrentTenant, adicionarImobiliaria, moduloCrmAtivo } = useTenant();
+  const { imobiliarias, currentTenant, setCurrentTenant, adicionarImobiliaria, moduloCrmAtivo, isLoadingTenants } = useTenant();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNewTenantModalOpen, setIsNewTenantModalOpen] = useState(false);
@@ -91,10 +91,12 @@ export function Sidebar() {
 
   const podeVerEquipe = user?.role === 'admin' || user?.role === 'gestor' || (user?.role as string) === 'gerente';
 
+  const isCrmLiberado = !isLoading && !isLoadingTenants && moduloCrmAtivo === true && currentTenant?.modulo_crm_ativo === true;
+
   const navItems = [
     { label: 'Hoje', href: '/dashboard', icon: LayoutDashboard, badge: metrics.totalVisitasHoje ? `${metrics.totalVisitasHoje}` : undefined },
     { label: 'Agenda', href: '/agenda', icon: CalendarDays },
-    ...(moduloCrmAtivo
+    ...(isCrmLiberado
       ? [{ label: 'CRM', href: '/crm', icon: Kanban, badge: totalLeadsAtivosCrm > 0 ? `${totalLeadsAtivosCrm}` : undefined }]
       : []),
     { label: 'Imóveis', href: '/imoveis', icon: Building2, badge: `${metrics.totalImoveisAtivos}` },
@@ -336,7 +338,13 @@ export function Sidebar() {
                 </div>
                 <div className="text-[10px] text-slate-400 flex items-center gap-1 truncate">
                   <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
-                  <span className="capitalize">{user?.role || 'Administrador'}</span>
+                  <span>
+                    {user?.role === 'admin'
+                      ? 'Administrador'
+                      : user?.role === 'gestor' || (user?.role as string) === 'gerente'
+                      ? 'Gerente'
+                      : 'Corretor'}
+                  </span>
                 </div>
               </div>
             </div>

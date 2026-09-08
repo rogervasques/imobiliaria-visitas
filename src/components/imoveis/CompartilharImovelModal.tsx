@@ -34,13 +34,18 @@ export function CompartilharImovelModal({
   isOpen,
   onClose,
 }: CompartilharImovelModalProps) {
-  const { clientes, configWhatsApp, showToast } = useData();
+  const { clientes, configWhatsApp, showToast, registrarLogSistema } = useData();
   const { user } = useAuth();
   const [clienteSelecionadoId, setClienteSelecionadoId] = useState<string>('');
   const [telefoneCliente, setTelefoneCliente] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedMsg, setCopiedMsg] = useState(false);
   const [isSendingDirectly, setIsSendingDirectly] = useState(false);
+
+  const isAutomaticoAtivo = Boolean(
+    configWhatsApp?.ativo !== false &&
+    (configWhatsApp?.envio_automatico_ativo !== undefined ? configWhatsApp?.envio_automatico_ativo : configWhatsApp?.ativo)
+  );
 
   if (!imovel) return null;
 
@@ -160,7 +165,25 @@ export function CompartilharImovelModal({
   // Opção 2: Abertura manual no WhatsApp Web / App para revisão
   const handleAbrirNoWhatsApp = () => {
     const telefoneFinal = telefoneCliente || (clienteSelecionado ? clienteSelecionado.telefone : '');
+    if (!telefoneFinal) {
+      showToast('Informe ou selecione um número de WhatsApp', 'info');
+      return;
+    }
     const linkWa = getWhatsAppDirectLink(telefoneFinal, mensagemWhatsApp);
+
+    // Registra log de envio manual para auditoria
+    if (imovel?.id) {
+      registrarLogSistema('ENVIO_MANUAL_WHATSAPP', 'imoveis', imovel.id, {
+        tipo: 'compartilhar_imovel',
+        destinatario: telefoneFinal,
+        imovel_id: imovel.id,
+        imovel_titulo: imovel.titulo,
+        cliente_id: clienteSelecionadoId || undefined,
+        cliente_nome: clienteSelecionado?.nome || undefined,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     window.open(linkWa, '_blank');
     onClose();
   };
@@ -295,35 +318,51 @@ export function CompartilharImovelModal({
             </div>
           </div>
 
-          {/* Botões de Ação Duais (Conectado vs Manual) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              onClick={handleEnviarDiretoWhatsAppConectado}
-              isLoading={isSendingDirectly}
-              disabled={isSendingDirectly}
-              className="w-full font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-1.5 py-2.5 rounded-xl cursor-pointer"
-              title="Disparar a mensagem automaticamente pela instância de WhatsApp conectada do corretor"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Enviar via WhatsApp Conectado</span>
-            </Button>
+          {/* Botões de Ação: Modo Automático (Duais) vs Modo Manual (Único) */}
+          {isAutomaticoAtivo ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={handleEnviarDiretoWhatsAppConectado}
+                isLoading={isSendingDirectly}
+                disabled={isSendingDirectly}
+                className="w-full font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-1.5 py-2.5 rounded-xl cursor-pointer"
+                title="Disparar a mensagem automaticamente pela instância de WhatsApp conectada do corretor"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Enviar via WhatsApp Conectado</span>
+              </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={handleAbrirNoWhatsApp}
-              disabled={isSendingDirectly}
-              className="w-full font-bold text-xs border-emerald-600/70 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/60 dark:text-emerald-300 dark:hover:bg-emerald-950/40 flex items-center justify-center gap-1.5 py-2.5 rounded-xl cursor-pointer"
-              title="Abrir no WhatsApp Web / Mobile para revisar antes de enviar"
-            >
-              <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Abrir no WhatsApp</span>
-            </Button>
-          </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={handleAbrirNoWhatsApp}
+                disabled={isSendingDirectly}
+                className="w-full font-bold text-xs border-emerald-600/70 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/60 dark:text-emerald-300 dark:hover:bg-emerald-950/40 flex items-center justify-center gap-1.5 py-2.5 rounded-xl cursor-pointer"
+                title="Abrir no WhatsApp Web / Mobile para revisar antes de enviar"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Abrir no WhatsApp</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="pt-1">
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={handleAbrirNoWhatsApp}
+                className="w-full font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-1.5 py-2.5 rounded-xl cursor-pointer"
+                title="Abrir no WhatsApp com a mensagem pronta preenchida"
+              >
+                <MessageCircle className="w-4 h-4 text-white" />
+                <span>Enviar via WhatsApp</span>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* 2. Link Público do Imóvel */}

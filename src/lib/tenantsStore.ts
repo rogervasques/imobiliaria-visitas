@@ -7,7 +7,7 @@ export const INITIAL_DEFAULT_IMOBILIARIAS: Imobiliaria[] = [
     slug: 'lagom-imoveis',
     telefone: '11999999999',
     email: 'contato@lagomimoveis.com.br',
-    modulo_crm_ativo: true,
+    modulo_crm_ativo: false,
     limite_usuarios: 10,
     criado_em: new Date().toISOString(),
   },

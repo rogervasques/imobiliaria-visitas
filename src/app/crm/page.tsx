@@ -278,13 +278,13 @@ export default function CrmPage() {
     setDraggingLeadId(null);
   };
 
-  // Se o módulo estiver inativo para este tenant, exibe estado de redirecionamento
-  if (!isLoadingTenants && !moduloCrmAtivo) {
+  // Se o módulo estiver carregando ou inativo para este tenant, exibe estado neutro de carregamento/redirecionamento
+  if (isLoadingTenants || !moduloCrmAtivo) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3">
         <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
-          Módulo CRM desativado para esta imobiliária. Redirecionando...
+          {isLoadingTenants ? 'Carregando...' : 'Módulo CRM desativado para esta imobiliária. Redirecionando...'}
         </p>
       </div>
     );

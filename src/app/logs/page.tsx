@@ -36,6 +36,7 @@ import {
   AlertCircle,
   X,
   Lock,
+  MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
@@ -283,6 +284,13 @@ export default function LogsAdminPage() {
 
   // Formatador visual de ações
   const renderAcaoBadge = (acao: string) => {
+    if (acao.toUpperCase().includes('MANUAL_WHATSAPP') || acao.includes('ENVIO_MANUAL')) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+          <MessageCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Disparo Manual WhatsApp
+        </span>
+      );
+    }
     if (acao.includes('excluir_soft')) {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
@@ -542,6 +550,7 @@ export default function LogsAdminPage() {
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                   >
                     <option value="todos">Todas as Ações</option>
+                    <option value="ENVIO_MANUAL_WHATSAPP">Disparo Manual WhatsApp</option>
                     <option value="criar_imovel">Criar Imóvel</option>
                     <option value="atualizar_preco_imovel">Atualizar Preço</option>
                     <option value="excluir_soft_imovel">Excluir Imóvel (Soft)</option>

@@ -25,7 +25,7 @@ export const DEFAULT_IMOBILIARIAS: Imobiliaria[] = [
     slug: 'lagom-imoveis',
     telefone: '11999999999',
     email: 'contato@lagomimoveis.com.br',
-    modulo_crm_ativo: true,
+    modulo_crm_ativo: false,
     limite_usuarios: 10,
     criado_em: new Date().toISOString(),
   },
@@ -120,7 +120,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           const newTenantObj: Imobiliaria = {
             id: `tenant-${userTenantName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
             nome: userTenantName,
-            modulo_crm_ativo: true,
+            modulo_crm_ativo: false,
             limite_usuarios: 10,
             criado_em: new Date().toISOString(),
           };
@@ -427,7 +427,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     [currentTenant.id, currentTenant.nome]
   );
 
-  const moduloCrmAtivo = currentTenant?.modulo_crm_ativo !== false;
+  const moduloCrmAtivo = !isLoadingTenants && currentTenant?.modulo_crm_ativo === true;
 
   return (
     <TenantContext.Provider

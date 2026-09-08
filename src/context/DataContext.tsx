@@ -203,6 +203,30 @@ export const sanitizeVisitaForDb = (visita: Partial<Visita>): Record<string, any
   return rest;
 };
 
+export const sanitizeConfigWhatsAppForDb = (cfg: Partial<ConfiguracaoWhatsApp>): Record<string, any> => {
+  const isAtivo = cfg.ativo !== undefined
+    ? Boolean(cfg.ativo)
+    : cfg.envio_automatico_ativo !== undefined
+    ? Boolean(cfg.envio_automatico_ativo)
+    : true;
+
+  const {
+    envio_automatico_ativo,
+    enviar_confirmacao_cliente,
+    enviar_confirmacao_proprietario,
+    enviar_lembrete_cliente,
+    enviar_lembrete_proprietario,
+    enviar_pos_visita_cliente,
+    enviar_comprovacao_proprietario,
+    ...rest
+  } = cfg as any;
+
+  return {
+    ...rest,
+    ativo: isAtivo,
+  };
+};
+
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { currentTenant, imobiliarias } = useTenant();
@@ -283,7 +307,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const { data: dbProprietarios, error: errProprietarios } = await supabase.from('proprietarios').select('*').is('deletado_em', null);
       const { data: dbClientes, error: errClientes } = await supabase.from('clientes').select('*').is('deletado_em', null);
       const { data: dbVisitas, error: errVisitas } = await supabase.from('visitas').select('*').is('deletado_em', null);
-      const { data: dbConfig, error: errConfig } = await supabase.from('configuracoes_whatsapp').select('*').single();
+      const { data: dbConfigs } = await supabase.from('configuracoes_whatsapp').select('*');
 
       let loadedImoveis: Imovel[] = [];
       if (!errImoveis && dbImoveis) {
@@ -403,16 +427,52 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const sortedClientes = sortClientesAlphabetically(enrichedClientes);
       setAllClientes(sortedClientes);
 
-      if (!errConfig && dbConfig && dbConfig.api_url && !dbConfig.api_url.includes('exemplo-evolution')) {
-        setConfigWhatsApp(dbConfig);
+      const activeTenantName = (currentTenant?.nome || imobiliarias[0]?.nome || 'Lagom Imóveis').trim();
+      const activeTenantId = currentTenant?.id || imobiliarias[0]?.id;
+
+      const matchedConfig = dbConfigs?.find((c: any) =>
+        (c.imobiliaria && c.imobiliaria.trim().toLowerCase() === activeTenantName.toLowerCase()) ||
+        (c.imobiliaria_id && c.imobiliaria_id === activeTenantId)
+      );
+
+      const localKey = `config_wa_${activeTenantName.toLowerCase().replace(/\s+/g, '_')}`;
+      const local = getLocalItem(localKey) || getLocalItem('config_wa');
+      const parsedLocal = local ? JSON.parse(local) : null;
+
+      if (matchedConfig) {
+        const isAtivoVal = Boolean(
+          matchedConfig.ativo !== false &&
+          (matchedConfig.envio_automatico_ativo !== undefined ? matchedConfig.envio_automatico_ativo : matchedConfig.ativo)
+        );
+        setConfigWhatsApp({
+          ...mockConfigWhatsApp,
+          ...matchedConfig,
+          imobiliaria: activeTenantName,
+          imobiliaria_id: activeTenantId,
+          ativo: isAtivoVal,
+          envio_automatico_ativo: isAtivoVal,
+        });
+      } else if (parsedLocal && parsedLocal.imobiliaria && parsedLocal.imobiliaria.trim().toLowerCase() === activeTenantName.toLowerCase()) {
+        const isAtivoVal = Boolean(
+          parsedLocal.ativo !== false &&
+          (parsedLocal.envio_automatico_ativo !== undefined ? parsedLocal.envio_automatico_ativo : parsedLocal.ativo)
+        );
+        setConfigWhatsApp({
+          ...mockConfigWhatsApp,
+          ...parsedLocal,
+          imobiliaria: activeTenantName,
+          imobiliaria_id: activeTenantId,
+          ativo: isAtivoVal,
+          envio_automatico_ativo: isAtivoVal,
+        });
       } else {
-        const local = getLocalItem('config_wa');
-        const parsed = local ? JSON.parse(local) : null;
-        if (parsed && parsed.api_url && !parsed.api_url.includes('exemplo-evolution')) {
-          setConfigWhatsApp(parsed);
-        } else {
-          setConfigWhatsApp(mockConfigWhatsApp);
-        }
+        setConfigWhatsApp({
+          ...mockConfigWhatsApp,
+          imobiliaria: activeTenantName,
+          imobiliaria_id: activeTenantId,
+          ativo: true,
+          envio_automatico_ativo: true,
+        });
       }
 
       let loadedVisitas: Visita[] = [];
@@ -489,7 +549,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [imobiliarias]);
+  }, [imobiliarias, currentTenant?.nome, currentTenant?.id]);
 
   useEffect(() => {
     carregarDados();
@@ -514,6 +574,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'clientes' },
+        () => {
+          carregarDados();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'configuracoes_whatsapp' },
         () => {
           carregarDados();
         }
@@ -1110,7 +1177,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setItemTenantInMap(novaVisita.id, novaVisita.imobiliaria);
 
     // Disparo imediato de confirmação WhatsApp se habilitado e configurado
-    if (enviarWhatsApp && notificarConfirmacao && configWhatsApp.ativo) {
+    if (enviarWhatsApp && notificarConfirmacao && configWhatsApp.ativo && configWhatsApp.envio_automatico_ativo !== false) {
       const ctx = await buildTemplateContextAsync(novaVisita);
       const visitInstanceName = (novaVisita.created_by_user_id === user?.id ? user?.instance_name : null) || (novaVisita.created_by_user_id ? generateInstanceName(novaVisita.created_by_user_id) : configWhatsApp.instancia_nome || 'easymob');
 
@@ -1226,13 +1293,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const ctx = await buildTemplateContextAsync(visita);
 
+    const isAutomatico = configWhatsApp.ativo && configWhatsApp.envio_automatico_ativo !== false;
+
     // 1. Enviar mensagem pós-visita ao Cliente (Pedir feedback)
     const deveEnviarCliente =
       opcoes?.enviarPosVisitaCliente !== undefined
         ? opcoes.enviarPosVisitaCliente
         : configWhatsApp.enviar_pos_visita_cliente !== false;
 
-    if (deveEnviarCliente && visita.cliente?.telefone && configWhatsApp.ativo) {
+    if (deveEnviarCliente && visita.cliente?.telefone && isAutomatico) {
       const templatePos = configWhatsApp.template_pos_visita_cliente ||
         '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*{corretor_nome}*';
 
@@ -1260,7 +1329,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         ? opcoes.enviarComprovacaoProprietario
         : configWhatsApp.enviar_comprovacao_proprietario !== false;
 
-    if (deveEnviarProprietario && configWhatsApp.ativo) {
+    if (deveEnviarProprietario && isAutomatico) {
       const imoveisVisita = visita.imoveis && visita.imoveis.length > 0
         ? visita.imoveis
         : visita.imovel ? [visita.imovel] : [];
@@ -1573,12 +1642,36 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // CONFIGURAÇÃO WHATSAPP & DISPARO MANUAL / LEMBRETES / PÓS-VISITA
   // -------------------------------------------------------------
   const atualizarConfigWhatsApp = async (dados: Partial<ConfiguracaoWhatsApp>) => {
-    const updated = { ...configWhatsApp, ...dados, atualizado_em: new Date().toISOString() };
+    const activeTenantName = (currentTenant?.nome || imobiliarias[0]?.nome || 'Lagom Imóveis').trim();
+    const activeTenantId = currentTenant?.id || imobiliarias[0]?.id;
+
+    const isAtivo = dados.ativo !== undefined
+      ? Boolean(dados.ativo)
+      : dados.envio_automatico_ativo !== undefined
+      ? Boolean(dados.envio_automatico_ativo)
+      : Boolean(configWhatsApp.ativo);
+
+    const updated: ConfiguracaoWhatsApp = {
+      ...configWhatsApp,
+      ...dados,
+      imobiliaria: activeTenantName,
+      imobiliaria_id: activeTenantId,
+      ativo: isAtivo,
+      envio_automatico_ativo: isAtivo,
+      atualizado_em: new Date().toISOString(),
+    };
+
     setConfigWhatsApp(updated);
+    const localKey = `config_wa_${activeTenantName.toLowerCase().replace(/\s+/g, '_')}`;
+    persistir(localKey, updated);
     persistir('config_wa', updated);
 
     try {
-      await supabase.from('configuracoes_whatsapp').upsert(updated);
+      const dbPayload = sanitizeConfigWhatsAppForDb(updated);
+      const { error: upsertErr } = await supabase.from('configuracoes_whatsapp').upsert(dbPayload);
+      if (upsertErr) {
+        console.error('Erro no Supabase ao atualizar configuracoes_whatsapp:', upsertErr);
+      }
     } catch (err) {
       console.warn('Supabase upsert config WA offline:', err);
     }
@@ -1709,6 +1802,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // ROTINA DE AUTOMAÇÕES CRON (LEMBRETES 1H ANTES + PÓS-VISITA 2H DEPOIS)
   // -------------------------------------------------------------
   const executarRotinaLembretes30m = async (): Promise<{ processadas: number; enviadas: number; logs: string[] }> => {
+    if (!configWhatsApp.ativo || configWhatsApp.envio_automatico_ativo === false) {
+      return { processadas: 0, enviadas: 0, logs: ['Envio automático de WhatsApp desativado (Modo Manual).'] };
+    }
+
     const logsList: string[] = [];
     const agora = new Date();
     let enviadas = 0;
