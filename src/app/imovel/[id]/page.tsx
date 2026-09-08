@@ -42,22 +42,57 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  const carouselRef = React.useRef<HTMLDivElement>(null);
+  const isProgrammaticScroll = React.useRef(false);
+  const scrollTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
   const fotosList = getImovelFotosList(imovel);
-  const activePhoto = fotosList[activePhotoIndex] || fotosList[0] || imovel?.imagem_url || '';
+
+  // Sincronização de rolagem suave e touch swipe
+  const handleCarouselScroll = () => {
+    if (isProgrammaticScroll.current) return;
+    if (!carouselRef.current) return;
+    const container = carouselRef.current;
+    const width = container.clientWidth;
+    if (width > 0) {
+      const newIndex = Math.round(container.scrollLeft / width);
+      if (newIndex >= 0 && newIndex < fotosList.length && newIndex !== activePhotoIndex) {
+        setActivePhotoIndex(newIndex);
+      }
+    }
+  };
+
+  const scrollToPhoto = (index: number) => {
+    if (fotosList.length === 0) return;
+    const clampedIndex = (index + fotosList.length) % fotosList.length;
+    setActivePhotoIndex(clampedIndex);
+    if (carouselRef.current) {
+      isProgrammaticScroll.current = true;
+      const width = carouselRef.current.clientWidth;
+      carouselRef.current.scrollTo({
+        left: clampedIndex * width,
+        behavior: 'smooth',
+      });
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        isProgrammaticScroll.current = false;
+      }, 350);
+    }
+  };
 
   // Navegação por teclado (Setas Esquerda / Direita) no carrossel da página
   useEffect(() => {
     if (!imovel || lightboxIndex !== null || fotosList.length <= 1) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') {
-        setActivePhotoIndex((prev) => (prev + 1) % fotosList.length);
+        scrollToPhoto(activePhotoIndex + 1);
       } else if (e.key === 'ArrowLeft') {
-        setActivePhotoIndex((prev) => (prev - 1 + fotosList.length) % fotosList.length);
+        scrollToPhoto(activePhotoIndex - 1);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [imovel, fotosList.length, lightboxIndex]);
+  }, [imovel, fotosList.length, lightboxIndex, activePhotoIndex]);
 
   useEffect(() => {
     async function loadImovel() {
@@ -348,35 +383,50 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
 
       {/* ── Conteúdo Principal ── */}
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        {/* 1. Carrossel de Fotos Interativo & Lightbox */}
+        {/* 1. Carrossel de Fotos Interativo (Touch/Swipe Mobile & Desktop) & Lightbox */}
         <div className="space-y-2.5">
-          <div
-            onClick={() => fotosList.length > 0 && setLightboxIndex(activePhotoIndex)}
-            className="relative h-72 sm:h-[420px] w-full rounded-3xl bg-slate-900 overflow-hidden shadow-2xl border border-slate-800 group cursor-pointer"
-          >
-            {activePhoto ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={activePhoto}
-                alt={`${imovel.titulo} - Foto ${activePhotoIndex + 1}`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-600 bg-slate-900">
-                <Building2 className="w-16 h-16 stroke-[1.5]" />
-              </div>
-            )}
+          <div className="relative h-72 sm:h-[420px] w-full rounded-3xl bg-slate-900 overflow-hidden shadow-2xl border border-slate-800 group select-none">
+            {/* Trilho de Imagens com Suporte Nativo a Gesto Touch/Swipe e CSS Snap */}
+            <div
+              ref={carouselRef}
+              onScroll={handleCarouselScroll}
+              className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-none no-scrollbar scroll-smooth touch-pan-x"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              {fotosList.length > 0 ? (
+                fotosList.map((url, idx) => (
+                  <div
+                    key={url + idx}
+                    onClick={() => setLightboxIndex(idx)}
+                    className="snap-center flex-shrink-0 w-full h-full relative cursor-pointer"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={`${imovel.titulo} - Foto ${idx + 1}`}
+                      className="w-full h-full object-cover select-none pointer-events-none group-hover:scale-105 transition-transform duration-500"
+                      draggable={false}
+                      loading={idx === 0 ? 'eager' : 'lazy'}
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="snap-center flex-shrink-0 w-full h-full flex items-center justify-center text-slate-600 bg-slate-900">
+                  <Building2 className="w-16 h-16 stroke-[1.5]" />
+                </div>
+              )}
+            </div>
 
-            {/* Setas de Navegação */}
+            {/* Setas de Navegação (Desktop & Alternativa de Clique) */}
             {fotosList.length > 1 && (
               <>
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActivePhotoIndex((prev) => (prev - 1 + fotosList.length) % fotosList.length);
+                    scrollToPhoto(activePhotoIndex - 1);
                   }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/65 hover:bg-black/90 text-white backdrop-blur-md transition-all hover:scale-110 shadow-lg z-20 cursor-pointer"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/65 hover:bg-black/90 text-white backdrop-blur-md transition-all hover:scale-110 shadow-lg z-20 cursor-pointer hidden sm:flex items-center justify-center"
                   title="Foto anterior"
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -386,15 +436,15 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActivePhotoIndex((prev) => (prev + 1) % fotosList.length);
+                    scrollToPhoto(activePhotoIndex + 1);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/65 hover:bg-black/90 text-white backdrop-blur-md transition-all hover:scale-110 shadow-lg z-20 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/65 hover:bg-black/90 text-white backdrop-blur-md transition-all hover:scale-110 shadow-lg z-20 cursor-pointer hidden sm:flex items-center justify-center"
                   title="Próxima foto"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
 
-                {/* Bullets / Dots */}
+                {/* Bullets / Dots de Paginação */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md">
                   {fotosList.map((_, dotIdx) => (
                     <button
@@ -402,11 +452,11 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setActivePhotoIndex(dotIdx);
+                        scrollToPhoto(dotIdx);
                       }}
                       className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
                         dotIdx === activePhotoIndex
-                          ? 'bg-emerald-400 scale-125'
+                          ? 'bg-emerald-400 scale-125 ring-1 ring-emerald-300'
                           : 'bg-white/50 hover:bg-white/80'
                       }`}
                       title={`Ir para foto ${dotIdx + 1}`}
@@ -417,7 +467,7 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
             )}
 
             {/* Badges no Topo */}
-            <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
+            <div className="absolute top-3 left-3 flex items-center gap-2 z-10 pointer-events-none">
               <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-white font-mono text-xs font-bold">
                 REF: {imovel.codigo || 'SEM-COD'}
               </span>
@@ -426,9 +476,9 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
               </span>
             </div>
 
-            {/* Contador de Fotos */}
+            {/* Contador de Fotos (Ex: 1 / 5) */}
             {fotosList.length > 1 && (
-              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-white font-mono text-xs font-bold shadow-md z-10">
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-white font-mono text-xs font-bold shadow-md z-10 pointer-events-none">
                 <Images className="w-3.5 h-3.5 text-emerald-400" />
                 <span>{activePhotoIndex + 1} / {fotosList.length}</span>
               </div>
@@ -437,14 +487,14 @@ export default function PublicImovelPage({ params }: PublicImovelPageProps) {
 
           {/* Faixa de Miniaturas */}
           {fotosList.length > 1 && (
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-none no-scrollbar">
               {fotosList.map((url, idx) => {
                 const isSelected = idx === activePhotoIndex;
                 return (
                   <button
                     key={url + idx}
                     type="button"
-                    onClick={() => setActivePhotoIndex(idx)}
+                    onClick={() => scrollToPhoto(idx)}
                     className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer shadow-xs ${
                       isSelected
                         ? 'border-emerald-500 ring-2 ring-emerald-500/50 scale-105 shadow-md'

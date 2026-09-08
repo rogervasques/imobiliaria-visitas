@@ -70,6 +70,31 @@ export function ImovelGaleriaLightbox({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, handleNext, handlePrev, onClose]);
 
+  const touchStartX = React.useRef<number | null>(null);
+  const touchEndX = React.useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const diff = touchStartX.current - touchEndX.current;
+    const threshold = 45;
+    if (diff > threshold) {
+      handleNext();
+    } else if (diff < -threshold) {
+      handlePrev();
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   if (!isOpen || listaFotos.length === 0) return null;
 
   const currentFoto = listaFotos[currentIndex] || listaFotos[0];
@@ -113,14 +138,19 @@ export function ImovelGaleriaLightbox({
         </div>
       </div>
 
-      {/* ── Área Principal de Visualização ── */}
-      <div className="relative flex-1 flex items-center justify-center p-2 sm:p-6 overflow-hidden">
+      {/* ── Área Principal de Visualização com Suporte Touch/Swipe ── */}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="relative flex-1 flex items-center justify-center p-2 sm:p-6 overflow-hidden touch-pan-y"
+      >
         {/* Seta Anterior */}
         {listaFotos.length > 1 && (
           <button
             type="button"
             onClick={handlePrev}
-            className="absolute left-2 sm:left-4 z-20 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-xs transition-all hover:scale-110 cursor-pointer"
+            className="absolute left-2 sm:left-4 z-20 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-xs transition-all hover:scale-110 cursor-pointer hidden sm:flex items-center justify-center"
             title="Foto anterior (Seta esquerda)"
           >
             <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" />
@@ -153,7 +183,7 @@ export function ImovelGaleriaLightbox({
           <button
             type="button"
             onClick={handleNext}
-            className="absolute right-2 sm:right-4 z-20 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-xs transition-all hover:scale-110 cursor-pointer"
+            className="absolute right-2 sm:right-4 z-20 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-xs transition-all hover:scale-110 cursor-pointer hidden sm:flex items-center justify-center"
             title="Próxima foto (Seta direita)"
           >
             <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
