@@ -13,12 +13,19 @@ export async function GET() {
       );
     }
 
+    const normalizeTenantStr = (str?: string | null) =>
+      (str || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+
     const allUsers = await getAllUsers();
     const filteredUsers =
       sessionUser.role === 'admin'
         ? allUsers
         : allUsers.filter(
-            (u) => u.imobiliaria?.toLowerCase() === sessionUser.imobiliaria?.toLowerCase()
+            (u) => normalizeTenantStr(u.imobiliaria) === normalizeTenantStr(sessionUser.imobiliaria)
           );
 
     return NextResponse.json({ success: true, users: filteredUsers });
@@ -70,10 +77,17 @@ export async function POST(req: NextRequest) {
       // ignore
     }
 
+    const normalizeTenantStr = (str?: string | null) =>
+      (str || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+
     const allUsers = await getAllUsers();
     const usersInTenant = allUsers.filter(
       (u) =>
-        u.imobiliaria?.toLowerCase() === targetImobiliaria.toLowerCase() &&
+        normalizeTenantStr(u.imobiliaria) === normalizeTenantStr(targetImobiliaria) &&
         u.ativo !== false
     );
 

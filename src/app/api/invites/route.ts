@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createInvite, deleteInvite, getAllInvites, getAllUsers, getSessionUser } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
+const normalizeTenantStr = (str?: string | null) =>
+  (str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+
 export async function GET() {
   try {
     const sessionUser = await getSessionUser();
@@ -18,7 +25,7 @@ export async function GET() {
       sessionUser.role === 'admin'
         ? allInvites
         : allInvites.filter(
-            (inv) => inv.imobiliaria?.toLowerCase() === sessionUser.imobiliaria?.toLowerCase()
+            (inv) => normalizeTenantStr(inv.imobiliaria) === normalizeTenantStr(sessionUser.imobiliaria)
           );
 
     return NextResponse.json({ success: true, invites: filteredInvites });
@@ -67,7 +74,7 @@ export async function POST(req: NextRequest) {
     const allUsers = await getAllUsers();
     const usersInTenant = allUsers.filter(
       (u) =>
-        u.imobiliaria?.toLowerCase() === targetImobiliaria.toLowerCase() &&
+        normalizeTenantStr(u.imobiliaria) === normalizeTenantStr(targetImobiliaria) &&
         u.ativo !== false
     );
 
@@ -133,7 +140,7 @@ export async function DELETE(req: NextRequest) {
         const isExp = new Date(inv.expires_at).getTime() < now;
         const belongs =
           sessionUser.role === 'admin' ||
-          inv.imobiliaria?.toLowerCase() === sessionUser.imobiliaria?.toLowerCase();
+          normalizeTenantStr(inv.imobiliaria) === normalizeTenantStr(sessionUser.imobiliaria);
         return belongs && (isExp || inv.used);
       });
 

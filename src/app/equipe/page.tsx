@@ -107,13 +107,20 @@ export default function EquipePage() {
     fetchEquipeData();
   }, [fetchEquipeData]);
 
+  const normalizeTenantStr = (str?: string | null) =>
+    (str || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+
   // Limite de licenças da imobiliária ativa
   const limiteLicencas = useMemo(() => {
     if (currentTenant?.limite_usuarios && currentTenant.limite_usuarios > 0) {
       return currentTenant.limite_usuarios;
     }
     const found = imobiliarias.find(
-      (i) => i.nome.toLowerCase() === currentTenant?.nome?.toLowerCase()
+      (i) => normalizeTenantStr(i.nome) === normalizeTenantStr(currentTenant?.nome)
     );
     return found?.limite_usuarios || 10;
   }, [currentTenant, imobiliarias]);
@@ -123,7 +130,7 @@ export default function EquipePage() {
     if (!currentTenant?.nome) return users;
     return users.filter((u) => {
       if (isAdmin && currentTenant.nome === 'Administração') return true;
-      return u.imobiliaria?.toLowerCase() === currentTenant.nome.toLowerCase();
+      return normalizeTenantStr(u.imobiliaria) === normalizeTenantStr(currentTenant.nome);
     });
   }, [users, currentTenant, isAdmin]);
 
@@ -166,7 +173,7 @@ export default function EquipePage() {
     if (!currentTenant?.nome) return invites;
     return invites.filter((inv) => {
       if (isAdmin && currentTenant.nome === 'Administração') return true;
-      return inv.imobiliaria?.toLowerCase() === currentTenant.nome.toLowerCase();
+      return normalizeTenantStr(inv.imobiliaria) === normalizeTenantStr(currentTenant.nome);
     });
   }, [invites, currentTenant, isAdmin]);
 

@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteUser, updateUser, getSessionUser, getUserById } from '@/lib/auth';
 
+const normalizeTenantStr = (str?: string | null) =>
+  (str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+
 export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -24,7 +31,10 @@ export async function PUT(
     // Se for gerente, verifica se o usuário alvo pertence à mesma imobiliária
     if (sessionUser.role !== 'admin') {
       const targetUser = await getUserById(id);
-      if (targetUser && targetUser.imobiliaria?.toLowerCase() !== sessionUser.imobiliaria?.toLowerCase()) {
+      if (
+        targetUser &&
+        normalizeTenantStr(targetUser.imobiliaria) !== normalizeTenantStr(sessionUser.imobiliaria)
+      ) {
         return NextResponse.json(
           { success: false, error: 'Você só pode gerenciar membros da sua própria imobiliária.' },
           { status: 403 }
@@ -102,7 +112,10 @@ export async function DELETE(
 
     if (sessionUser.role !== 'admin') {
       const targetUser = await getUserById(id);
-      if (targetUser && targetUser.imobiliaria?.toLowerCase() !== sessionUser.imobiliaria?.toLowerCase()) {
+      if (
+        targetUser &&
+        normalizeTenantStr(targetUser.imobiliaria) !== normalizeTenantStr(sessionUser.imobiliaria)
+      ) {
         return NextResponse.json(
           { success: false, error: 'Você só pode excluir membros da sua própria imobiliária.' },
           { status: 403 }

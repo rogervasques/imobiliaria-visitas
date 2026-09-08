@@ -155,24 +155,24 @@ export async function findUserByEmailForAuth(email: string): Promise<Usuario | n
   try {
     const { data: dbUser, error } = await supabase
       .from('users')
-      .select('id, nome, email, telefone, creci, senha_hash, role, imobiliaria, instance_name, avatar_url, ativo, created_at')
+      .select('*')
       .eq('email', normalized)
-      .single();
+      .maybeSingle();
 
     if (!error && dbUser && dbUser.senha_hash) {
       return {
         id: dbUser.id,
         nome: dbUser.nome || 'Usuário',
         email: dbUser.email,
-        telefone: dbUser.telefone,
-        creci: dbUser.creci,
+        telefone: dbUser.telefone || undefined,
+        creci: (dbUser as any).creci || undefined,
         senha_hash: dbUser.senha_hash,
         role: (dbUser.role as UserRole) || 'corretor',
         imobiliaria: dbUser.imobiliaria || 'EasyMob Imóveis',
         instance_name: dbUser.instance_name || generateInstanceName(dbUser.id),
-        avatar_url: dbUser.avatar_url,
-        ativo: dbUser.ativo !== false,
-        created_at: dbUser.created_at,
+        avatar_url: dbUser.avatar_url || undefined,
+        ativo: (dbUser as any).ativo !== false,
+        created_at: dbUser.created_at || new Date().toISOString(),
       };
     }
   } catch (err) {
@@ -216,18 +216,27 @@ export async function getAllUsers(): Promise<Usuario[]> {
   try {
     const { data: dbUsers, error } = await supabase
       .from('users')
-      .select('id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, ativo, ultimo_acesso, created_at')
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && dbUsers) {
-      return dbUsers.map((u) => ({
-        ...u,
-        ativo: u.ativo !== false,
+    if (!error && dbUsers && Array.isArray(dbUsers)) {
+      return dbUsers.map((u: any) => ({
+        id: u.id,
+        nome: u.nome || 'Usuário',
+        email: u.email,
+        telefone: u.telefone || undefined,
+        creci: u.creci || undefined,
+        role: (u.role as UserRole) || 'corretor',
+        imobiliaria: u.imobiliaria || 'EasyMob Imóveis',
         instance_name: u.instance_name || generateInstanceName(u.id),
+        avatar_url: u.avatar_url || undefined,
+        ativo: u.ativo !== false,
+        ultimo_acesso: u.ultimo_acesso || undefined,
+        created_at: u.created_at || new Date().toISOString(),
       }));
     }
-  } catch {
-    // Fallback
+  } catch (err) {
+    console.warn('[Auth] Erro ao listar usuários no Supabase:', err);
   }
 
   return globalUsersStore.map(({ id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, ativo, ultimo_acesso, created_at }) => ({
@@ -253,19 +262,28 @@ export async function getUserById(id: string): Promise<Usuario | null> {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, ativo, ultimo_acesso, created_at')
+      .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (!error && data) {
       return {
-        ...data,
-        ativo: data.ativo !== false,
+        id: data.id,
+        nome: data.nome || 'Usuário',
+        email: data.email,
+        telefone: data.telefone || undefined,
+        creci: (data as any).creci || undefined,
+        role: (data.role as UserRole) || 'corretor',
+        imobiliaria: data.imobiliaria || 'EasyMob Imóveis',
         instance_name: data.instance_name || generateInstanceName(data.id),
+        avatar_url: data.avatar_url || undefined,
+        ativo: (data as any).ativo !== false,
+        ultimo_acesso: (data as any).ultimo_acesso || undefined,
+        created_at: data.created_at || new Date().toISOString(),
       };
     }
-  } catch {
-    // Fallback
+  } catch (err) {
+    console.warn('[Auth] Erro ao buscar usuário por ID no Supabase:', err);
   }
 
   const local = globalUsersStore.find((u) => u.id === id);
@@ -302,18 +320,23 @@ export async function createUser(user: Omit<Usuario, 'id' | 'created_at'>): Prom
   };
 
   try {
+    const dbInsert: Record<string, any> = {
+      nome: newUser.nome,
+      email: newUser.email,
+      telefone: newUser.telefone || null,
+      senha_hash: newUser.senha_hash,
+      role: newUser.role,
+      imobiliaria: newUser.imobiliaria,
+      instance_name: newUser.instance_name,
+    };
+    if (newUser.avatar_url) {
+      dbInsert.avatar_url = newUser.avatar_url;
+    }
+
     const { data, error } = await supabase
       .from('users')
-      .insert({
-        nome: newUser.nome,
-        email: newUser.email,
-        telefone: newUser.telefone,
-        senha_hash: newUser.senha_hash,
-        role: newUser.role,
-        imobiliaria: newUser.imobiliaria,
-        instance_name: newUser.instance_name,
-      })
-      .select()
+      .insert(dbInsert)
+      .select('*')
       .single();
 
     if (!error && data) {
@@ -321,9 +344,11 @@ export async function createUser(user: Omit<Usuario, 'id' | 'created_at'>): Prom
       if (data.instance_name) {
         newUser.instance_name = data.instance_name;
       }
+    } else if (error) {
+      console.warn('[Auth] Aviso ao inserir usuário no Supabase:', error);
     }
-  } catch {
-    // Fallback
+  } catch (err) {
+    console.warn('[Auth] Erro ao cadastrar usuário no Supabase:', err);
   }
 
   // Atualiza store local
@@ -360,6 +385,7 @@ export async function updateUser(
     password?: string;
     ativo?: boolean;
     ultimo_acesso?: string;
+    avatar_url?: string;
   }
 ): Promise<Usuario | null> {
   let senhaHash: string | undefined;
@@ -373,35 +399,33 @@ export async function updateUser(
   if (updates.nome) dbUpdate.nome = updates.nome;
   if (normalizedEmail) dbUpdate.email = normalizedEmail;
   if (updates.telefone !== undefined) dbUpdate.telefone = updates.telefone;
-  if (updates.creci !== undefined) dbUpdate.creci = updates.creci;
   if (updates.role) dbUpdate.role = updates.role;
   if (updates.imobiliaria) dbUpdate.imobiliaria = updates.imobiliaria;
-  if (updates.ativo !== undefined) dbUpdate.ativo = updates.ativo;
-  if (updates.ultimo_acesso !== undefined) dbUpdate.ultimo_acesso = updates.ultimo_acesso;
   if (senhaHash) dbUpdate.senha_hash = senhaHash;
+  if (updates.avatar_url !== undefined) dbUpdate.avatar_url = updates.avatar_url;
 
   try {
     const { data, error } = await supabase
       .from('users')
       .update(dbUpdate)
       .eq('id', id)
-      .select('id, nome, email, telefone, creci, role, imobiliaria, instance_name, avatar_url, ativo, ultimo_acesso, created_at')
+      .select('*')
       .single();
 
     if (!error && data) {
       const updatedUser: Usuario = {
         id: data.id,
-        nome: data.nome,
-        email: data.email,
-        telefone: data.telefone,
-        creci: data.creci,
-        role: data.role as UserRole,
-        imobiliaria: data.imobiliaria,
+        nome: data.nome || updates.nome || 'Usuário',
+        email: data.email || normalizedEmail || '',
+        telefone: data.telefone ?? updates.telefone,
+        creci: (data as any).creci || updates.creci,
+        role: (data.role as UserRole) || updates.role || 'corretor',
+        imobiliaria: data.imobiliaria || updates.imobiliaria || 'EasyMob Imóveis',
         instance_name: data.instance_name || generateInstanceName(data.id),
-        avatar_url: data.avatar_url,
-        ativo: data.ativo !== false,
-        ultimo_acesso: data.ultimo_acesso,
-        created_at: data.created_at,
+        avatar_url: data.avatar_url ?? updates.avatar_url,
+        ativo: (data as any).ativo !== undefined ? (data as any).ativo !== false : updates.ativo !== false,
+        ultimo_acesso: (data as any).ultimo_acesso || updates.ultimo_acesso,
+        created_at: data.created_at || new Date().toISOString(),
       };
 
       const idx = globalUsersStore.findIndex((u) => u.id === id);
@@ -414,6 +438,8 @@ export async function updateUser(
       }
 
       return updatedUser;
+    } else if (error) {
+      console.warn('[Auth] Erro ao atualizar usuário no Supabase:', error);
     }
   } catch (err) {
     console.warn('[Auth] Erro ao atualizar usuário no Supabase:', err);
@@ -432,6 +458,7 @@ export async function updateUser(
       ...(updates.imobiliaria ? { imobiliaria: updates.imobiliaria } : {}),
       ...(updates.ativo !== undefined ? { ativo: updates.ativo } : {}),
       ...(updates.ultimo_acesso !== undefined ? { ultimo_acesso: updates.ultimo_acesso } : {}),
+      ...(updates.avatar_url !== undefined ? { avatar_url: updates.avatar_url } : {}),
       ...(senhaHash ? { senha_hash: senhaHash } : {}),
     };
     return globalUsersStore[idx];
@@ -765,23 +792,23 @@ export async function verifyUserExists(id: string, email?: string): Promise<bool
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, email, role, imobiliaria, ativo')
+      .select('*')
       .eq('id', id)
       .maybeSingle();
 
     if (!error && data) {
-      return data.ativo !== false;
+      return (data as any).ativo !== false;
     }
 
     if (email) {
       const { data: dataEmail, error: errEmail } = await supabase
         .from('users')
-        .select('id, email, role, imobiliaria, ativo')
+        .select('*')
         .eq('email', email.toLowerCase().trim())
         .maybeSingle();
 
       if (!errEmail && dataEmail) {
-        return dataEmail.ativo !== false;
+        return (dataEmail as any).ativo !== false;
       }
     }
   } catch {
