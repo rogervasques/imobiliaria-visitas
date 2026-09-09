@@ -243,10 +243,11 @@ export default function LandingPage() {
             {/* Imagem Real do Dashboard da Plataforma */}
             <div className="relative aspect-[1024/527] w-full bg-slate-100 overflow-hidden group">
               <Image
-                src="/mockups/mockup-dashboard.png"
+                src="/mockups/mockup-dashboard-2026.png"
                 alt="Dashboard EasyMob - Gestão do Dia e Agenda de Visitas"
                 fill
                 priority
+                unoptimized
                 className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.01]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/10 via-transparent to-transparent pointer-events-none" />
@@ -465,9 +466,10 @@ export default function LandingPage() {
               </div>
               <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 shadow-2xs group">
                 <Image
-                  src="/mockups/mockup-match-imoveis.png"
+                  src="/mockups/mockup-match-imoveis-2026.png"
                   alt="Match de Imóveis Compatíveis - EasyMob"
                   fill
+                  unoptimized
                   className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
                 />
               </div>
@@ -572,9 +574,10 @@ export default function LandingPage() {
             <div className="lg:col-span-5 flex flex-col items-center justify-center">
               <div className="relative aspect-[4/3] w-full max-w-sm rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 shadow-sm group">
                 <Image
-                  src="/mockups/mockup-whatsapp-qrcode.png"
+                  src="/mockups/mockup-whatsapp-qrcode-2026.png"
                   alt="Conexão Instantânea de WhatsApp via QR Code - EasyMob"
                   fill
+                  unoptimized
                   className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
                 />
               </div>
@@ -720,9 +723,10 @@ export default function LandingPage() {
               {/* Print Real do Documento em PDF */}
               <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 shadow-md group">
                 <Image
-                  src="/mockups/mockup-relatorio-pdf.png"
+                  src="/mockups/mockup-relatorio-pdf-2026.png"
                   alt="Preview do Relatório de Atendimento em PDF Art 727 CC"
                   fill
+                  unoptimized
                   className="object-contain p-2 bg-slate-100/50 transition-transform duration-500 group-hover:scale-[1.02]"
                 />
               </div>
@@ -754,9 +758,10 @@ export default function LandingPage() {
               {/* Tela do Celular com a Imagem Real */}
               <div className="relative aspect-[9/18.5] w-full rounded-[34px] overflow-hidden bg-white border border-slate-800">
                 <Image
-                  src="/mockups/mockup-ficha-publica.png"
+                  src="/mockups/mockup-ficha-publica-2026.png"
                   alt="Ficha Pública do Imóvel no Smartphone com Logo e Carrossel"
                   fill
+                  unoptimized
                   className="object-cover object-top"
                 />
               </div>

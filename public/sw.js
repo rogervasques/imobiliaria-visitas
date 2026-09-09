@@ -1,4 +1,4 @@
-const CACHE_NAME = 'easymob-pwa-v1';
+const CACHE_NAME = 'easymob-pwa-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
