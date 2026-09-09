@@ -58,6 +58,12 @@ export function NovaVisitaModal({
   const [notificarLembreteProprietario, setNotificarLembreteProprietario] = useState(true);
   const [notificarPosVisitaCliente, setNotificarPosVisitaCliente] = useState(true);
   const [notificarComprovacaoProprietario, setNotificarComprovacaoProprietario] = useState(true);
+  const [gravarLogsCliente, setGravarLogsCliente] = useState(
+    configWhatsApp.gravar_logs_cliente !== false
+  );
+  const [gravarLogsProprietario, setGravarLogsProprietario] = useState(
+    configWhatsApp.gravar_logs_proprietario !== false
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -85,9 +91,11 @@ export function NovaVisitaModal({
       setNotificarLembreteProprietario(true);
       setNotificarPosVisitaCliente(true);
       setNotificarComprovacaoProprietario(true);
+      setGravarLogsCliente(configWhatsApp.gravar_logs_cliente !== false);
+      setGravarLogsProprietario(configWhatsApp.gravar_logs_proprietario !== false);
       setImovelToAddId('');
     }
-  }, [imovelPreSelecionado, clientePreSelecionado, isOpen]);
+  }, [imovelPreSelecionado, clientePreSelecionado, isOpen, configWhatsApp]);
 
   // Lista dos objetos de imóveis atualmente selecionados no roteiro
   const imoveisSelecionados = selectedImoveisIds
@@ -141,6 +149,9 @@ export function NovaVisitaModal({
           notificar_pos_visita: notificarPosVisitaCliente,
           notificar_pos_visita_cliente: notificarPosVisitaCliente,
           notificar_comprovacao_proprietario: notificarComprovacaoProprietario,
+          gravar_logs: isAutomaticoAtivo ? (gravarLogsCliente || gravarLogsProprietario) : false,
+          gravar_logs_cliente: isAutomaticoAtivo ? gravarLogsCliente : false,
+          gravar_logs_proprietario: isAutomaticoAtivo ? gravarLogsProprietario : false,
           whatsapp_confirmacao_cliente: notificarConfirmacaoCliente ? 'pendente' : 'inativo',
           whatsapp_confirmacao_proprietario: notificarConfirmacaoProprietario ? 'pendente' : 'inativo',
           whatsapp_lembrete_cliente: notificarLembreteCliente ? 'pendente' : 'inativo',
@@ -428,6 +439,34 @@ export function NovaVisitaModal({
                         type="checkbox"
                         checked={notificarComprovacaoProprietario}
                         onChange={(e) => setNotificarComprovacaoProprietario(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </td>
+                  </tr>
+
+                  {/* Linha 4: Gravação de conversas */}
+                  <tr className="hover:bg-emerald-50/30 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="py-2.5 px-3 sm:px-4">
+                      <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                        Gravação de conversas
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Salvar logs de atendimento (+48h)
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={gravarLogsCliente}
+                        onChange={(e) => setGravarLogsCliente(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </td>
+                    <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={gravarLogsProprietario}
+                        onChange={(e) => setGravarLogsProprietario(e.target.checked)}
                         className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
                       />
                     </td>

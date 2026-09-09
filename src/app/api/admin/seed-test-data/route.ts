@@ -65,10 +65,10 @@ export async function POST(req: NextRequest) {
 
       const { data: insertedProp, error: errProp } = await supabase
         .from('proprietarios')
-        .insert(dbProprietarios)
+        .upsert(dbProprietarios, { onConflict: 'id' })
         .select('id, nome, telefone, email');
 
-      if (errProp) console.warn('[Seed] Aviso insert proprietarios:', errProp.message);
+      if (errProp) console.warn('[Seed] Aviso upsert proprietarios:', errProp.message);
 
       const propList = insertedProp && insertedProp.length > 0 ? insertedProp : dbProprietarios;
 
@@ -122,9 +122,9 @@ export async function POST(req: NextRequest) {
         const batch = dbImoveis.slice(i, i + batchSize);
         const { data: imoData, error: errImo } = await supabase
           .from('imoveis')
-          .insert(batch)
+          .upsert(batch, { onConflict: 'codigo' })
           .select('id, codigo, titulo, tipo, finalidade, bairro, imagem_url, fotos_urls');
-        if (errImo) console.warn('[Seed] Aviso insert imoveis batch:', errImo.message);
+        if (errImo) console.error('[Seed] Erro upsert imoveis batch:', errImo.message);
         if (imoData) insertedImoList.push(...imoData);
       }
 
@@ -168,15 +168,15 @@ export async function POST(req: NextRequest) {
         const batch = dbClientes.slice(i, i + batchSize);
         const { data: cliData, error: errCli } = await supabase
           .from('clientes')
-          .insert(batch)
+          .upsert(batch, { onConflict: 'id' })
           .select('id, nome, telefone, email, etapa_crm');
-        if (errCli) console.warn('[Seed] Aviso insert clientes batch:', errCli.message);
+        if (errCli) console.error('[Seed] Erro upsert clientes batch:', errCli.message);
         if (cliData) insertedCliList.push(...cliData);
       }
 
       const cliList = insertedCliList.length > 0 ? insertedCliList : dbClientes;
 
-      // 5.4 Inserir Visitas (com imovel_id, imoveis_ids múltiplos, cliente_id e sem campos gravar_logs)
+      // 5.4 Inserir Visitas (com imovel_id, imoveis_ids múltiplos, cliente_id vinculados com IDs reais do banco)
       if (imoList.length > 0 && cliList.length > 0) {
         const dbVisitas = seedData.visitas.map((v, idx) => {
           const primaryImo = imoList[idx % imoList.length];
@@ -199,13 +199,22 @@ export async function POST(req: NextRequest) {
             pos_visita_agendado_para: v.pos_visita_agendado_para,
             status: v.status,
             notificar_confirmacao: v.notificar_confirmacao ?? true,
+            notificar_confirmacao_cliente: true,
+            notificar_confirmacao_proprietario: true,
             notificar_lembrete: v.notificar_lembrete ?? true,
+            notificar_lembrete_cliente: true,
+            notificar_lembrete_proprietario: true,
             notificar_pos_visita: v.notificar_pos_visita ?? true,
+            notificar_comprovacao_proprietario: true,
+            gravar_logs: true,
+            gravar_logs_cliente: true,
+            gravar_logs_proprietario: true,
             whatsapp_confirmacao_cliente: v.whatsapp_confirmacao_cliente,
             whatsapp_confirmacao_proprietario: v.whatsapp_confirmacao_proprietario,
             whatsapp_lembrete_cliente: v.whatsapp_lembrete_cliente,
             whatsapp_lembrete_proprietario: v.whatsapp_lembrete_proprietario,
             whatsapp_pos_visita_cliente: v.whatsapp_pos_visita_cliente,
+            whatsapp_comprovacao_proprietario: 'enviado',
             feedback_cliente: v.feedback_cliente,
             feedback_proprietario: v.feedback_proprietario,
             observacoes: v.observacoes,
@@ -219,8 +228,8 @@ export async function POST(req: NextRequest) {
 
         for (let b = 0; b < dbVisitas.length; b += 20) {
           const batch = dbVisitas.slice(b, b + 20);
-          const { error: errVis } = await supabase.from('visitas').insert(batch);
-          if (errVis) console.warn('[Seed] Aviso insert visitas batch:', errVis.message);
+          const { error: errVis } = await supabase.from('visitas').upsert(batch, { onConflict: 'id' });
+          if (errVis) console.error('[Seed] Erro upsert visitas batch:', errVis.message);
         }
       }
     } catch (dbInsertErr) {

@@ -64,6 +64,12 @@ export function EditarVisitaModal({ isOpen, onClose, visita, modo = 'editar' }: 
   const [notificarComprovacaoProprietario, setNotificarComprovacaoProprietario] = useState(
     visita.notificar_comprovacao_proprietario !== undefined ? visita.notificar_comprovacao_proprietario : true
   );
+  const [gravarLogsCliente, setGravarLogsCliente] = useState(
+    visita.gravar_logs_cliente !== undefined ? visita.gravar_logs_cliente : (visita.gravar_logs !== false)
+  );
+  const [gravarLogsProprietario, setGravarLogsProprietario] = useState(
+    visita.gravar_logs_proprietario !== undefined ? visita.gravar_logs_proprietario : (visita.gravar_logs !== false)
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -82,6 +88,8 @@ export function EditarVisitaModal({ isOpen, onClose, visita, modo = 'editar' }: 
       setNotificarLembreteProprietario(visita.notificar_lembrete_proprietario !== undefined ? visita.notificar_lembrete_proprietario : visita.notificar_lembrete !== false);
       setNotificarPosVisitaCliente(visita.notificar_pos_visita_cliente !== undefined ? visita.notificar_pos_visita_cliente : visita.notificar_pos_visita !== false);
       setNotificarComprovacaoProprietario(visita.notificar_comprovacao_proprietario !== undefined ? visita.notificar_comprovacao_proprietario : true);
+      setGravarLogsCliente(visita.gravar_logs_cliente !== undefined ? visita.gravar_logs_cliente : (visita.gravar_logs !== false));
+      setGravarLogsProprietario(visita.gravar_logs_proprietario !== undefined ? visita.gravar_logs_proprietario : (visita.gravar_logs !== false));
 
       if (modo === 'remarcar') {
         // Ao remarcar: força status para 'agendada' e limpa data/horário para nova escolha
@@ -163,6 +171,9 @@ export function EditarVisitaModal({ isOpen, onClose, visita, modo = 'editar' }: 
         notificar_pos_visita: notificarPosVisitaCliente,
         notificar_pos_visita_cliente: notificarPosVisitaCliente,
         notificar_comprovacao_proprietario: notificarComprovacaoProprietario,
+        gravar_logs: isAutomaticoAtivo ? (gravarLogsCliente || gravarLogsProprietario) : false,
+        gravar_logs_cliente: isAutomaticoAtivo ? gravarLogsCliente : false,
+        gravar_logs_proprietario: isAutomaticoAtivo ? gravarLogsProprietario : false,
       });
       onClose();
     } catch (err: any) {
@@ -466,6 +477,34 @@ export function EditarVisitaModal({ isOpen, onClose, visita, modo = 'editar' }: 
                         type="checkbox"
                         checked={notificarComprovacaoProprietario}
                         onChange={(e) => setNotificarComprovacaoProprietario(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </td>
+                  </tr>
+
+                  {/* Linha 4: Gravação de conversas */}
+                  <tr className="hover:bg-emerald-50/30 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="py-2.5 px-3 sm:px-4">
+                      <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                        Gravação de conversas
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Salvar logs de atendimento (+48h)
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={gravarLogsCliente}
+                        onChange={(e) => setGravarLogsCliente(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </td>
+                    <td className="py-2.5 px-3 sm:px-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={gravarLogsProprietario}
+                        onChange={(e) => setGravarLogsProprietario(e.target.checked)}
                         className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
                       />
                     </td>

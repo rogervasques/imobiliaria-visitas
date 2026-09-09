@@ -22,9 +22,38 @@ export interface TemplateContext {
   data: string;
   corretor_nome: string;
   corretor_telefone: string;
+  imobiliaria_nome?: string;
+  imobiliaria?: string;
+  nome_imobiliaria?: string;
   link_mapa?: string;
   link_curto_mapa?: string;
 }
+
+export const DEFAULT_WHATSAPP_TEMPLATES = {
+  template_confirmacao_cliente:
+    'Olá, {cliente_nome}! Confirmamos sua visita agendada para *{data_hora}* no imóvel *{imovel_titulo}*.\n\n📍 *Roteiro de Imóveis:*\n{roteiro_imoveis}\n\n📍 *Localização no Mapa:* {link_curto_mapa}\n\n• *Corretor responsável:* {corretor_nome} ({corretor_telefone})\n\nQualquer dúvida ou necessidade de ajuste, estamos à disposição.\n*{imobiliaria_nome}*',
+
+  template_confirmacao_proprietario:
+    'Olá, {proprietario_nome}! Informamos que a equipe da *{imobiliaria_nome}* agendou uma visita ao seu imóvel *{imovel_titulo}* ({endereco}) para *{data_hora}* com o cliente {cliente_nome}.\n\n📍 *Localização:* {link_curto_mapa}\n\n• *Corretor responsável:* {corretor_nome}\n\n*{imobiliaria_nome} - Gestão Imobiliária*',
+
+  template_lembrete_cliente:
+    '*Lembrete de Visita*\n\nOlá, {cliente_nome}! Lembramos que sua visita aos imóveis acontecerá hoje às *{horario}*.\n\n📍 *Roteiro:*\n{roteiro_imoveis}\n\n📍 *Como Chegar:* {link_curto_mapa}\n\n• *Corretor:* {corretor_nome} ({corretor_telefone})\n\nNos vemos em breve.\n*{imobiliaria_nome}*',
+
+  template_lembrete_proprietario:
+    '*Lembrete de Visita*\n\nOlá, {proprietario_nome}! A *{imobiliaria_nome}* lembra que a visita ao seu imóvel *{imovel_titulo}* com o cliente {cliente_nome} acontecerá às *{horario}*.\n\n• *Corretor responsável:* {corretor_nome}\n\n*{imobiliaria_nome}*',
+
+  template_comprovacao_proprietario:
+    'Olá, {proprietario_nome}! Confirmamos que a visita ao seu imóvel *{imovel_titulo}* foi realizada nesta data pelo corretor *{corretor_nome}*, acompanhado do(a) cliente *{cliente_nome}*.\n\nQualquer novidade sobre propostas ou retorno do cliente, entraremos em contato.\n*{imobiliaria_nome} - Gestão Imobiliária*',
+
+  template_pos_visita_cliente:
+    'Olá, {cliente_nome}! Esperamos que a visita de hoje tenha sido produtiva.\n\n• *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber sua avaliação: o que achou das opções visitadas? Algum imóvel despertou seu interesse para avançarmos com uma proposta?\n\nEstamos à disposição para esclarecer qualquer dúvida ou agendar novas opções.\n*{imobiliaria_nome}*',
+
+  template_compartilhar_imovel:
+    '*Opção de Imóvel Selecionada para Você*\n\n*{imovel_titulo}*\n• Código: *{imovel_codigo}*\n📍 Localização: {endereco}\n• Valor: *{valor}*\n• Características: {quartos} quartos | {banheiros} banheiros | {vagas} vagas\n\n🔗 *Acesse fotos completas e detalhes:*\n{link_imovel}\n\nCaso deseje agendar uma visita presencial, estamos à disposição.\n*{imobiliaria_nome}*',
+
+  template_imovel_compativel:
+    'Olá, {cliente_nome}! Encontramos uma opção de imóvel alinhada ao seu perfil de busca:\n\n*{imovel_titulo}*\n• Código: *{imovel_codigo}*\n📍 Localização: {endereco}\n• Valor: {valor}\n• Quartos: {quartos}\n\n🔗 *Veja fotos completas e todos os detalhes:*\n{link_imovel}\n\nFicamos à disposição para agendar uma visita.\n*{imobiliaria_nome}*',
+};
 
 /**
  * Monta o contexto de variáveis para interpolação nos templates a partir de uma Visita (síncrono)
@@ -76,6 +105,7 @@ export function buildTemplateContext(visita: Visita): TemplateContext {
     : '';
 
   const clienteNome = visita.cliente?.nome || 'Cliente';
+  const imobiliariaNome = (visita.imobiliaria || '').trim() || 'Imobiliária';
 
   return {
     cliente_nome: clienteNome,
@@ -95,6 +125,9 @@ export function buildTemplateContext(visita: Visita): TemplateContext {
     data: data,
     corretor_nome: visita.corretor_nome || 'Corretor',
     corretor_telefone: visita.corretor_telefone || '',
+    imobiliaria_nome: imobiliariaNome,
+    imobiliaria: imobiliariaNome,
+    nome_imobiliaria: imobiliariaNome,
     link_mapa: mapsSearchUrl,
     link_curto_mapa: mapsSearchUrl,
   };
@@ -164,6 +197,8 @@ export interface PropertyTemplateContext {
   corretor_nome?: string;
   corretor_telefone?: string;
   imobiliaria_nome?: string;
+  imobiliaria?: string;
+  nome_imobiliaria?: string;
 }
 
 /**
@@ -172,6 +207,8 @@ export interface PropertyTemplateContext {
 export function compilePropertyTemplate(template: string | undefined, ctx: PropertyTemplateContext): string {
   if (!template) return '';
   let compiled = template;
+
+  const imobNome = ctx.imobiliaria_nome || ctx.imobiliaria || ctx.nome_imobiliaria || '';
 
   const fullCtx: Record<string, string> = {
     nome: ctx.nome || ctx.cliente_nome || ctx.cliente || ctx.nome_cliente || '',
@@ -198,7 +235,9 @@ export function compilePropertyTemplate(template: string | undefined, ctx: Prope
     area: ctx.area !== undefined && ctx.area !== null ? String(ctx.area) : '',
     corretor_nome: ctx.corretor_nome || '',
     corretor_telefone: ctx.corretor_telefone || '',
-    imobiliaria_nome: ctx.imobiliaria_nome || '',
+    imobiliaria_nome: imobNome,
+    imobiliaria: imobNome,
+    nome_imobiliaria: imobNome,
   };
 
   for (const [key, value] of Object.entries(fullCtx)) {

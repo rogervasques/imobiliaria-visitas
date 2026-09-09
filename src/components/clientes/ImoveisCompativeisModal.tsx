@@ -21,6 +21,7 @@ import {
 import { formatCurrency, getWhatsAppDirectLink } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
+import { useTenant } from '@/context/TenantContext';
 import { compilePropertyTemplate } from '@/lib/whatsapp';
 import { mockConfigWhatsApp } from '@/lib/mockData';
 import { ImovelDetalhesModal } from '../imoveis/ImovelDetalhesModal';
@@ -44,6 +45,7 @@ export function ImoveisCompativeisModal({
 }: ImoveisCompativeisModalProps) {
   const { configWhatsApp } = useData();
   const { user } = useAuth();
+  const { currentTenant } = useTenant();
   const [imovelParaDetalhes, setImovelParaDetalhes] = useState<Imovel | null>(null);
 
   if (!cliente) return null;
@@ -160,7 +162,7 @@ export function ImoveisCompativeisModal({
                   link: linkImovel,
                   corretor_nome: user?.name || 'Corretor',
                   corretor_telefone: user?.telefone || '',
-                  imobiliaria_nome: imovel.imobiliaria || 'EasyMob',
+                  imobiliaria_nome: imovel.imobiliaria || currentTenant?.nome || 'Imobiliária',
                 });
 
                 const linkWa = getWhatsAppDirectLink(cliente.telefone, msgWhatsApp);

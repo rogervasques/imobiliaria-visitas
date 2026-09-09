@@ -155,10 +155,27 @@ export function generateTestSeedData(
   imobiliariaId?: string
 ) {
   const activeTenant = (imobiliariaNome || 'Lagom Imóveis').trim();
+  const words = activeTenant
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter(Boolean);
+
+  let rawPrefix = '';
+  if (words.length >= 2) {
+    rawPrefix = (words[0].slice(0, 2) + words[1].slice(0, 2)).toUpperCase();
+  } else if (words.length === 1) {
+    rawPrefix = words[0].slice(0, 4).toUpperCase();
+  } else {
+    rawPrefix = 'IMO';
+  }
+
+  const tenantPrefix = rawPrefix || 'IMO';
 
   // 1. Gera 30 Proprietários (focado em contato e tenant)
   const proprietarios: Proprietario[] = PROPRIETARIOS_VARGINHA.map((p, idx) => ({
-    id: `prop-${String(idx + 1).padStart(3, '0')}`,
+    id: `prop-${tenantPrefix.toLowerCase()}-${String(idx + 1).padStart(3, '0')}`,
     nome: p.nome,
     telefone: TELEFONE_PROPRIETARIOS_PADRAO,
     email: p.email,
@@ -170,8 +187,8 @@ export function generateTestSeedData(
   // 2. Gera 70 Imóveis em Varginha/MG com galeria de 5 a 7 fotos
   const imoveis: Imovel[] = [];
   for (let i = 0; i < 70; i++) {
-    const id = `imo-vg-${String(101 + i).padStart(3, '0')}`;
-    const codigo = `VG-${String(101 + i).padStart(3, '0')}`;
+    const id = `imo-${tenantPrefix.toLowerCase()}-${String(101 + i).padStart(3, '0')}`;
+    const codigo = `${tenantPrefix}-${String(101 + i).padStart(3, '0')}`;
     const modelo = MODELOS_VARGINHA[i % MODELOS_VARGINHA.length];
     const bairro = BAIRROS_VARGINHA[i % BAIRROS_VARGINHA.length];
     const proprietario = proprietarios[i % proprietarios.length];
@@ -271,13 +288,13 @@ export function generateTestSeedData(
     'proposta_negociacao', 'documentacao_credito', 'fechamento_contrato', 'venda_concluida'
   ];
 
-  const origensLead: OrigemLead[] = ['site', 'instagram', 'whatsapp', 'portal', 'indicacao'];
   const tempoParadaOpcoes = ['Hoje', 'Há 1 dia', 'Há 2 dias', 'Há 4 dias', 'Há 1 semana', 'Há 2 semanas'];
 
   const clientes: Cliente[] = CLIENTES_VARGINHA.map((nome, idx) => {
-    const id = `cli-vg-${String(idx + 1).padStart(3, '0')}`;
+    const id = `cli-${tenantPrefix.toLowerCase()}-${String(idx + 1).padStart(3, '0')}`;
     const email = `cliente${idx + 1}@teste.com`;
     const etapa = etapasCRM[idx % etapasCRM.length];
+    const origensLead: OrigemLead[] = ['site', 'instagram', 'whatsapp', 'portal', 'indicacao'];
     const origem = origensLead[idx % origensLead.length];
     const prioridade: 'alta' | 'media' | 'baixa' = idx % 3 === 0 ? 'alta' : idx % 3 === 1 ? 'media' : 'baixa';
     const tempoParada = tempoParadaOpcoes[idx % tempoParadaOpcoes.length];
@@ -297,19 +314,18 @@ export function generateTestSeedData(
 
     if (prefFinalidade === 'locacao') {
       const locVal = imovelAlvo.valor_locacao || 2500;
-      orcMin = Math.max(1000, Math.round((locVal * 0.8) / 100) * 100);
+      orcMin = Math.round((locVal * 0.8) / 100) * 100;
       orcMax = Math.round((locVal * 1.3) / 100) * 100;
-      faixaTexto = `R$ ${orcMin.toLocaleString('pt-BR')} a R$ ${orcMax.toLocaleString('pt-BR')} /mês`;
+      faixaTexto = `R$ ${orcMin.toLocaleString('pt-BR')} a R$ ${orcMax.toLocaleString('pt-BR')}/mês`;
     } else {
-      const vendaVal = imovelAlvo.valor_venda || 600000;
-      orcMin = Math.max(150000, Math.round((vendaVal * 0.8) / 10000) * 10000);
-      orcMax = Math.round((vendaVal * 1.25) / 10000) * 10000;
+      const venVal = imovelAlvo.valor_venda || 450000;
+      orcMin = Math.round((venVal * 0.85) / 10000) * 10000;
+      orcMax = Math.round((venVal * 1.25) / 10000) * 10000;
       faixaTexto = `R$ ${orcMin.toLocaleString('pt-BR')} a R$ ${orcMax.toLocaleString('pt-BR')}`;
     }
 
-    const tipoNome = prefTipo.charAt(0).toUpperCase() + prefTipo.slice(1);
-    const quartosTexto = prefQuartos > 0 ? `com ${prefQuartos}+ quartos` : '';
-    const perfilInteresse = `${tipoNome} ${quartosTexto} em ${imovelAlvo.bairro} (${prefFinalidade === 'locacao' ? 'Locação' : 'Compra'})`.trim();
+    const tipoNome = imovelAlvo.tipo === 'apartamento' ? 'Apartamento' : imovelAlvo.tipo === 'casa' ? 'Casa' : imovelAlvo.tipo === 'cobertura' ? 'Cobertura' : 'Imóvel';
+    const perfilInteresse = `${tipoNome} ${prefQuartos > 0 ? `${prefQuartos}q ` : ''}no ${imovelAlvo.bairro}`;
 
     return {
       id,
@@ -353,8 +369,8 @@ export function generateTestSeedData(
     const visitasNoDia = diaOffset === 0 ? 3 : (Math.abs(diaOffset) % 2 === 0 ? 2 : 1);
 
     for (let k = 0; k < visitasNoDia; k++) {
-      const id = `vis-vg-${String(visitaCount).padStart(4, '0')}`;
-      const codigo = `VIS-${String(visitaCount).padStart(4, '0')}`;
+      const id = `vis-${tenantPrefix.toLowerCase()}-${String(visitaCount).padStart(4, '0')}`;
+      const codigo = `VIS-${tenantPrefix}-${String(visitaCount).padStart(4, '0')}`;
       const slot = horarios[(k * 2 + (diaOffset + 15)) % horarios.length];
 
       const visitDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diaOffset, slot.h, slot.m, 0);

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
-import { Visita, Imovel, StatusDisparoWhatsApp, ConfiguracaoWhatsApp } from '@/types';
+import { Visita, Imovel, StatusDisparoWhatsApp, ConfiguracaoWhatsApp, LogMensagem } from '@/types';
 import { ImovelDetalhesModal } from '../imoveis/ImovelDetalhesModal';
 import { EditarVisitaModal } from './EditarVisitaModal';
 import {
@@ -17,17 +17,94 @@ import {
   Calendar,
   Pencil,
   Key,
+  FileDown,
+  ShieldCheck,
+  Volume2,
+  Image as ImageIcon,
+  Lock,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
 } from 'lucide-react';
 import { formatDateTime, formatPhone, getWhatsAppDirectLink, formatCurrency } from '@/lib/utils';
 import { getGoogleMapsSearchUrl } from '@/lib/maps';
-import { buildTemplateContext, compileTemplate } from '@/lib/whatsapp';
+import { buildTemplateContext, compileTemplate, DEFAULT_WHATSAPP_TEMPLATES } from '@/lib/whatsapp';
 import { mockConfigWhatsApp } from '@/lib/mockData';
+import { gerarRelatorioAtendimentoPdf, getVisitaLogs } from '@/lib/pdfDossieGenerator';
+import { useTenant } from '@/context/TenantContext';
+import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 
 interface VisitaDetalhesModalProps {
   visita: Visita | null;
   isOpen: boolean;
   onClose: () => void;
+}
+
+function LogItemCard({ log }: { log: LogMensagem }) {
+  return (
+    <div className="p-3 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-1.5 text-xs">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <span
+            className={
+              log.remetente_tipo === 'CLIENTE'
+                ? 'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                : log.remetente_tipo === 'CORRETOR'
+                ? 'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
+                : 'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+            }
+          >
+            {log.remetente_tipo}
+          </span>
+          {log.remetente_nome && (
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-[11px]">
+              {log.remetente_nome}
+            </span>
+          )}
+        </div>
+        <span className="text-[10px] text-slate-400 font-mono">
+          {new Date(log.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+        </span>
+      </div>
+
+      <p className="text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
+        {log.conteudo_texto}
+      </p>
+
+      {log.tipo_midia === 'audio' && log.midia_url && (
+        <div className="pt-1">
+          <a
+            href={log.midia_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 font-bold text-[11px] hover:underline"
+          >
+            <Volume2 className="w-3.5 h-3.5 text-amber-600" />
+            <span>[🔊 Áudio de Atendimento • Ouvir Gravação]</span>
+          </a>
+        </div>
+      )}
+
+      {log.tipo_midia === 'imagem' && log.midia_url && (
+        <div className="pt-1">
+          <a
+            href={log.midia_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 font-bold text-[11px] hover:underline"
+          >
+            <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+            <span>[🖼️ Foto da Visita/Imóvel • Ver Anexo]</span>
+          </a>
+        </div>
+      )}
+
+      <div className="text-[9px] font-mono text-slate-400 truncate pt-0.5">
+        Meta ID: {log.message_id}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -74,25 +151,22 @@ function getManualWhatsAppLink(
 
   switch (tipo) {
     case 'confirmacao_cliente':
-      template = configWhatsApp?.template_confirmacao_cliente || mockConfigWhatsApp.template_confirmacao_cliente;
+      template = configWhatsApp?.template_confirmacao_cliente || DEFAULT_WHATSAPP_TEMPLATES.template_confirmacao_cliente;
       break;
     case 'confirmacao_proprietario':
-      template = configWhatsApp?.template_confirmacao_proprietario || mockConfigWhatsApp.template_confirmacao_proprietario;
+      template = configWhatsApp?.template_confirmacao_proprietario || DEFAULT_WHATSAPP_TEMPLATES.template_confirmacao_proprietario;
       break;
     case 'lembrete_cliente':
-      template = configWhatsApp?.template_lembrete_cliente || mockConfigWhatsApp.template_lembrete_cliente;
+      template = configWhatsApp?.template_lembrete_cliente || DEFAULT_WHATSAPP_TEMPLATES.template_lembrete_cliente;
       break;
     case 'lembrete_proprietario':
-      template = configWhatsApp?.template_lembrete_proprietario || mockConfigWhatsApp.template_lembrete_proprietario;
+      template = configWhatsApp?.template_lembrete_proprietario || DEFAULT_WHATSAPP_TEMPLATES.template_lembrete_proprietario;
       break;
     case 'pos_visita_cliente':
-      template = configWhatsApp?.template_pos_visita_cliente || mockConfigWhatsApp.template_pos_visita_cliente;
+      template = configWhatsApp?.template_pos_visita_cliente || DEFAULT_WHATSAPP_TEMPLATES.template_pos_visita_cliente;
       break;
     case 'comprovacao_proprietario':
-      template =
-        configWhatsApp?.template_comprovacao_proprietario ||
-        mockConfigWhatsApp.template_comprovacao_proprietario ||
-        'Olá, {proprietario_nome}! Confirmamos que a visita ao seu imóvel *{imovel_titulo}* foi realizada com sucesso nesta data por intermédio do corretor *{corretor_nome}*, acompanhado do(a) cliente *{cliente_nome}*.';
+      template = configWhatsApp?.template_comprovacao_proprietario || DEFAULT_WHATSAPP_TEMPLATES.template_comprovacao_proprietario;
       break;
   }
 
@@ -262,6 +336,8 @@ function RecipientStatusRow({
 }
 
 export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesModalProps) {
+  const { currentTenant } = useTenant();
+  const { user } = useAuth();
   const { configWhatsApp, registrarLogSistema } = useData();
   const isAutomaticoAtivo = Boolean(
     configWhatsApp?.ativo !== false &&
@@ -269,6 +345,48 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
   );
   const [imovelSelecionado, setImovelSelecionado] = useState<Imovel | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [logs, setLogs] = useState<LogMensagem[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  // Estados dos Accordions (Ocultos por padrão)
+  const [openCliente, setOpenCliente] = useState(false);
+  const [openProprietario, setOpenProprietario] = useState(false);
+
+  // Busca os logs descriptografados em memória no servidor via API Route
+  const carregarLogsReais = useCallback(async () => {
+    if (!visita?.id) return;
+    setIsLoadingLogs(true);
+    try {
+      const res = await fetch(`/api/visitas/${visita.id}/logs`);
+      const data = await res.json();
+      if (data?.logs && Array.isArray(data.logs)) {
+        setLogs(data.logs);
+      } else {
+        setLogs(getVisitaLogs(visita));
+      }
+    } catch {
+      setLogs(getVisitaLogs(visita));
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  }, [visita]);
+
+  useEffect(() => {
+    if (isOpen && visita) {
+      carregarLogsReais();
+    }
+  }, [isOpen, visita, carregarLogsReais]);
+
+  const handleDownloadDossie = (filtro: 'cliente' | 'proprietario') => {
+    if (!visita) return;
+    gerarRelatorioAtendimentoPdf({
+      visita,
+      filtroDestinatario: filtro,
+      imobiliariaNome: currentTenant?.nome || visita.imobiliaria || 'EasyMob Imóveis',
+      corretorTelefone: user?.telefone || visita.corretor_telefone || '(35) 99887-7665',
+      instanciaOrigem: user?.instance_name || configWhatsApp.instancia_nome || 'easymob',
+    });
+  };
 
   const handleManualWhatsAppClick = (tipo: string, destinatario: string) => {
     if (!visita?.id) return;
@@ -283,6 +401,30 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
   };
 
   if (!visita) return null;
+
+  const logsCliente = logs.filter(
+    (l) =>
+      l.remetente_tipo === 'CLIENTE' ||
+      (l.remetente_tipo === 'SISTEMA' &&
+        !l.remetente_nome?.toLowerCase().includes('propriet') &&
+        !l.conteudo_texto?.toLowerCase().includes('ao seu imóvel') &&
+        !l.conteudo_texto?.toLowerCase().includes('proprietário')) ||
+      (l.remetente_tipo === 'CORRETOR' &&
+        !l.remetente_nome?.toLowerCase().includes('propriet') &&
+        !l.conteudo_texto?.toLowerCase().includes('ao seu imóvel'))
+  );
+
+  const logsProprietario = logs.filter(
+    (l) =>
+      l.remetente_tipo === 'PROPRIETARIO' ||
+      (l.remetente_tipo === 'SISTEMA' &&
+        (l.remetente_nome?.toLowerCase().includes('propriet') ||
+          l.conteudo_texto?.toLowerCase().includes('ao seu imóvel') ||
+          l.conteudo_texto?.toLowerCase().includes('proprietário'))) ||
+      (l.remetente_tipo === 'CORRETOR' &&
+        (l.remetente_nome?.toLowerCase().includes('propriet') ||
+          l.conteudo_texto?.toLowerCase().includes('ao seu imóvel')))
+  );
 
   const imoveisLista: Imovel[] = (visita.imoveis && visita.imoveis.length > 0)
     ? visita.imoveis
@@ -587,6 +729,178 @@ export function VisitaDetalhesModal({ visita, isOpen, onClose }: VisitaDetalhesM
                     isAutomaticoAtivo={isAutomaticoAtivo}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── SEÇÃO 4: HISTÓRICO DE MENSAGENS & RELATÓRIO DE ATENDIMENTO (ART. 727 CC) ── */}
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Histórico Auditável &amp; Relatório de Atendimento
+                </h4>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={carregarLogsReais}
+                  disabled={isLoadingLogs}
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"
+                  title="Atualizar Logs"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isLoadingLogs ? 'animate-spin text-emerald-600' : ''}`} />
+                  <span>Sincronizar</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Aviso Informativo de Criptografia e Retenção */}
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-start gap-2.5">
+              <Lock className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                <strong className="text-slate-900 dark:text-slate-100 font-bold">Criptografia de Ponta a Ponta (AES-256):</strong> O histórico de atendimento é gravado de forma segura e contínua desde o agendamento até 48 horas após a conclusão da visita para emissão do <strong className="text-emerald-700 dark:text-emerald-300 font-bold">Relatório de Atendimento em PDF (Art. 727 do Código Civil)</strong>.
+              </div>
+            </div>
+
+            {/* Accordions de Histórico */}
+            <div className="space-y-2.5">
+              {/* ── Accordion 1: Histórico WhatsApp — Cliente ── */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 overflow-hidden shadow-2xs">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setOpenCliente((prev) => !prev)}
+                  className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 truncate">
+                          👤 Histórico WhatsApp — Cliente {cliente?.nome ? `(${cliente.nome})` : ''}
+                        </h5>
+                        <span
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                            visita.gravar_logs_cliente !== false && visita.gravar_logs !== false
+                              ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
+                              : 'text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                          }`}
+                        >
+                          {visita.gravar_logs_cliente !== false && visita.gravar_logs !== false
+                            ? 'Gravação Ativa'
+                            : 'Gravação Desativada'}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                        {logsCliente.length} registro(s) auditáveis
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadDossie('cliente');
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold transition-colors cursor-pointer border border-emerald-200 dark:border-emerald-800"
+                      title="Exportar Relatório PDF do Cliente"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                      <span>Exportar PDF</span>
+                    </button>
+
+                    <div className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                      {openCliente ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
+                  </div>
+                </div>
+
+                {openCliente && (
+                  <div className="p-3.5 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5 bg-slate-50/50 dark:bg-slate-950/40">
+                    {logsCliente.length === 0 ? (
+                      <p className="text-xs text-slate-400 py-3 text-center">
+                        Nenhuma mensagem registrada com o cliente até o momento.
+                      </p>
+                    ) : (
+                      logsCliente.map((log) => <LogItemCard key={log.id} log={log} />)
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Accordion 2: Histórico WhatsApp — Proprietário ── */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 overflow-hidden shadow-2xs">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setOpenProprietario((prev) => !prev)}
+                  className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 truncate">
+                          🏠 Histórico WhatsApp — Proprietário {visita.imovel?.proprietario_nome ? `(${visita.imovel.proprietario_nome})` : ''}
+                        </h5>
+                        <span
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                            visita.gravar_logs_proprietario !== false && visita.gravar_logs !== false
+                              ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
+                              : 'text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                          }`}
+                        >
+                          {visita.gravar_logs_proprietario !== false && visita.gravar_logs !== false
+                            ? 'Gravação Ativa'
+                            : 'Gravação Desativada'}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                        {logsProprietario.length} registro(s) auditáveis
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadDossie('proprietario');
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold transition-colors cursor-pointer border border-emerald-200 dark:border-emerald-800"
+                      title="Exportar Relatório PDF do Proprietário"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                      <span>Exportar PDF</span>
+                    </button>
+
+                    <div className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                      {openProprietario ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
+                  </div>
+                </div>
+
+                {openProprietario && (
+                  <div className="p-3.5 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5 bg-slate-50/50 dark:bg-slate-950/40">
+                    {logsProprietario.length === 0 ? (
+                      <p className="text-xs text-slate-400 py-3 text-center">
+                        Nenhuma mensagem registrada com o proprietário até o momento.
+                      </p>
+                    ) : (
+                      logsProprietario.map((log) => <LogItemCard key={log.id} log={log} />)
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

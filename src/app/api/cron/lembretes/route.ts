@@ -14,26 +14,28 @@ export async function GET(req: NextRequest) {
     const limitePassadoPosInicio = new Date(agora.getTime() - 200 * 60 * 1000);
     const limitePassadoPosFim = new Date(agora.getTime() - 110 * 60 * 1000);
 
-    // 1. Busca configurações ativas
-    const { data: config } = await supabase
+    // 1. Busca todas as configurações de WhatsApp cadastradas no sistema
+    const { data: allConfigs } = await supabase
       .from('configuracoes_whatsapp')
-      .select('*')
-      .single();
+      .select('*');
 
-    if (!config || !config.ativo) {
-      return NextResponse.json({
-        success: false,
-        message: 'Automação de WhatsApp desativada nas configurações.',
-      });
-    }
+    const getConfigForVisita = (visita: Visita) => {
+      if (!allConfigs || allConfigs.length === 0) return null;
+      const visitTenant = (visita.imobiliaria || '').trim().toLowerCase();
+      const matched = allConfigs.find((c) =>
+        (c.imobiliaria_id && visita.imobiliaria_id && c.imobiliaria_id === visita.imobiliaria_id) ||
+        (c.imobiliaria && c.imobiliaria.trim().toLowerCase() === visitTenant)
+      );
+      return matched || allConfigs.find((c) => c.ativo !== false) || allConfigs[0];
+    };
 
     let enviados = 0;
     const logs: string[] = [];
 
     // Helper para descobrir a instância de WhatsApp da pessoa que criou a visita
-    const resolveVisitCreatorInstance = async (visita: Visita): Promise<string> => {
+    const resolveVisitCreatorInstance = async (visita: Visita, configForVisit: any): Promise<string> => {
       if (!visita.created_by_user_id) {
-        return config.instancia_nome || 'easymob';
+        return configForVisit?.instancia_nome || 'easymob';
       }
       try {
         const { data: creatorUser } = await supabase
@@ -77,11 +79,17 @@ export async function GET(req: NextRequest) {
           continue;
         }
 
+        const config = getConfigForVisita(visita);
+        if (!config || !config.ativo) {
+          logs.push(`[Automação Desativada] Lembrete 1h ignorado para visita ${visita.id}: automação desligada na imobiliária "${visita.imobiliaria || 'Padrão'}"`);
+          continue;
+        }
+
         const ctx = await buildTemplateContextAsync(visita);
-        const creatorInstance = await resolveVisitCreatorInstance(visita);
+        const creatorInstance = await resolveVisitCreatorInstance(visita, config);
 
         // Disparo para o Cliente
-        if (visita.cliente?.telefone) {
+        if (visita.cliente?.telefone && config.template_lembrete_cliente) {
           const msg = compileTemplate(config.template_lembrete_cliente, ctx);
           const res = await sendWhatsAppMessage({
             toPhone: visita.cliente.telefone,
@@ -110,7 +118,7 @@ export async function GET(req: NextRequest) {
         await delay(1500);
 
         // Disparo para o Proprietário
-        if (visita.imovel?.proprietario_telefone) {
+        if (visita.imovel?.proprietario_telefone && config.template_lembrete_proprietario) {
           const msg = compileTemplate(config.template_lembrete_proprietario, ctx);
           const res = await sendWhatsAppMessage({
             toPhone: visita.imovel.proprietario_telefone,
@@ -155,9 +163,14 @@ export async function GET(req: NextRequest) {
 
     if (visitasPosVisita && visitasPosVisita.length > 0) {
       for (const visita of visitasPosVisita as unknown as Visita[]) {
+        const config = getConfigForVisita(visita);
+        if (!config || !config.ativo) {
+          continue;
+        }
+
         if (visita.cliente?.telefone && config.template_pos_visita_cliente) {
           const ctx = await buildTemplateContextAsync(visita);
-          const creatorInstance = await resolveVisitCreatorInstance(visita);
+          const creatorInstance = await resolveVisitCreatorInstance(visita, config);
           const msg = compileTemplate(config.template_pos_visita_cliente, ctx);
           const res = await sendWhatsAppMessage({
             toPhone: visita.cliente.telefone,

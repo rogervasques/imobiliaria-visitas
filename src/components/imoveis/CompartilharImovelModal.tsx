@@ -20,6 +20,7 @@ import {
 import { formatCurrency, formatPhone, getWhatsAppDirectLink, cleanPhoneForWhatsApp } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
+import { useTenant } from '@/context/TenantContext';
 import { compilePropertyTemplate } from '@/lib/whatsapp';
 import { mockConfigWhatsApp } from '@/lib/mockData';
 
@@ -36,6 +37,7 @@ export function CompartilharImovelModal({
 }: CompartilharImovelModalProps) {
   const { clientes, configWhatsApp, showToast, registrarLogSistema } = useData();
   const { user } = useAuth();
+  const { currentTenant } = useTenant();
   const [clienteSelecionadoId, setClienteSelecionadoId] = useState<string>('');
   const [telefoneCliente, setTelefoneCliente] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -96,7 +98,7 @@ export function CompartilharImovelModal({
     link: publicUrl,
     corretor_nome: user?.name || 'Corretor',
     corretor_telefone: user?.telefone || '',
-    imobiliaria_nome: imovel.imobiliaria || 'EasyMob',
+    imobiliaria_nome: imovel.imobiliaria || currentTenant?.nome || 'Imobiliária',
   });
 
   const handleCopiarLink = async () => {

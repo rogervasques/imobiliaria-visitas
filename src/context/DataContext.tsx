@@ -24,7 +24,7 @@ import {
   mockVisitas,
 } from '@/lib/mockData';
 import { supabase, RATE_LIMIT_MESSAGE } from '@/lib/supabase';
-import { buildTemplateContext, buildTemplateContextAsync, compileTemplate, sendWhatsAppMessage, TemplateContext, delay } from '@/lib/whatsapp';
+import { buildTemplateContext, buildTemplateContextAsync, compileTemplate, sendWhatsAppMessage, TemplateContext, delay, DEFAULT_WHATSAPP_TEMPLATES } from '@/lib/whatsapp';
 import { useAuth } from './AuthContext';
 import { useTenant } from './TenantContext';
 import { generateInstanceName } from '@/lib/auth';
@@ -1303,7 +1303,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     if (deveEnviarCliente && visita.cliente?.telefone && isAutomatico) {
       const templatePos = configWhatsApp.template_pos_visita_cliente ||
-        '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*{corretor_nome}*';
+        DEFAULT_WHATSAPP_TEMPLATES.template_pos_visita_cliente;
 
       const msgCliente = compileTemplate(templatePos, ctx);
       const resCliente = await sendWhatsAppMessage({
@@ -1338,7 +1338,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const uniquePropsTelefones = new Set<string>();
 
       const templateComprovacao = configWhatsApp.template_comprovacao_proprietario ||
-        'Olá, {proprietario_nome}! Confirmamos que a visita ao seu imóvel *{imovel_titulo}* foi realizada com sucesso nesta data por intermédio do corretor *{corretor_nome}*, acompanhado do(a) cliente *{cliente_nome}*. Qualquer novidade sobre proposta, entraremos em contato!';
+        DEFAULT_WHATSAPP_TEMPLATES.template_comprovacao_proprietario;
 
       for (const im of imoveisVisita) {
         if (!im || !im.proprietario_telefone) continue;

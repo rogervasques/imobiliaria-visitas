@@ -97,16 +97,22 @@ CREATE TABLE IF NOT EXISTS configuracoes_whatsapp (
     instancia_nome VARCHAR(100),
     ativo BOOLEAN DEFAULT true,
     
-    -- Templates personalizáveis com tags dinâmicas ({cliente_nome}, {proprietario_nome}, {roteiro_imoveis}, {total_imoveis}, {imovel_titulo}, {endereco}, {data_hora}, {corretor_nome})
-    template_confirmacao_cliente TEXT DEFAULT 'Olá, {cliente_nome}! 👋 Confirmando nossa visita para *{data_hora}*.\n\n📍 *Roteiro de Imóveis:*\n{roteiro_imoveis}\n\n👤 *Corretor:* {corretor_nome} ({corretor_telefone})\n\nQualquer dúvida, conte com a *EasyMob*!',
+    -- Templates personalizáveis com tags dinâmicas ({cliente_nome}, {proprietario_nome}, {roteiro_imoveis}, {total_imoveis}, {imovel_titulo}, {endereco}, {data_hora}, {corretor_nome}, {imobiliaria_nome})
+    template_confirmacao_cliente TEXT DEFAULT 'Olá, {cliente_nome}! Confirmamos sua visita agendada para *{data_hora}* no imóvel *{imovel_titulo}*.\n\n📍 *Roteiro de Imóveis:*\n{roteiro_imoveis}\n\n📍 *Localização no Mapa:* {link_curto_mapa}\n\n• *Corretor responsável:* {corretor_nome} ({corretor_telefone})\n\nQualquer dúvida ou necessidade de ajuste, estamos à disposição.\n*{imobiliaria_nome}*',
     
-    template_confirmacao_proprietario TEXT DEFAULT 'Olá, {proprietario_nome}! Informamos que a equipe *EasyMob* agendou uma visita ao seu imóvel *{imovel_titulo}* ({endereco}) para *{data_hora}* com o cliente {cliente_nome}.\n\n👤 *Corretor:* {corretor_nome}\n*EasyMob - Gestão Imobiliária Inteligente*',
+    template_confirmacao_proprietario TEXT DEFAULT 'Olá, {proprietario_nome}! Informamos que a equipe da *{imobiliaria_nome}* agendou uma visita ao seu imóvel *{imovel_titulo}* ({endereco}) para *{data_hora}* com o cliente {cliente_nome}.\n\n📍 *Localização:* {link_curto_mapa}\n\n• *Corretor responsável:* {corretor_nome}\n\n*{imobiliaria_nome} - Gestão Imobiliária*',
     
-    template_lembrete_cliente TEXT DEFAULT '⏰ *Lembrete de Visita (em 1 hora)*\n\nOlá, {cliente_nome}! Lembramos que sua visita aos imóveis acontecerá hoje às *{horario}*.\n\n📍 *Roteiro:*\n{roteiro_imoveis}\n\n👤 *Corretor:* {corretor_nome} ({corretor_telefone})\n\nNos vemos em breve!\n*EasyMob*',
+    template_lembrete_cliente TEXT DEFAULT '*Lembrete de Visita*\n\nOlá, {cliente_nome}! Lembramos que sua visita aos imóveis acontecerá hoje às *{horario}*.\n\n📍 *Roteiro:*\n{roteiro_imoveis}\n\n📍 *Como Chegar:* {link_curto_mapa}\n\n• *Corretor:* {corretor_nome} ({corretor_telefone})\n\nNos vemos em breve.\n*{imobiliaria_nome}*',
     
-    template_lembrete_proprietario TEXT DEFAULT '⏰ *Lembrete de Visita (em 1 hora)*\n\nOlá, {proprietario_nome}! A *EasyMob* lembra que a visita ao seu imóvel *{imovel_titulo}* com o cliente {cliente_nome} acontecerá às *{horario}*.\n\n👤 *Corretor:* {corretor_nome}\n*EasyMob*',
+    template_lembrete_proprietario TEXT DEFAULT '*Lembrete de Visita*\n\nOlá, {proprietario_nome}! A *{imobiliaria_nome}* lembra que a visita ao seu imóvel *{imovel_titulo}* com o cliente {cliente_nome} acontecerá às *{horario}*.\n\n• *Corretor responsável:* {corretor_nome}\n\n*{imobiliaria_nome}*',
 
-    template_pos_visita_cliente TEXT DEFAULT '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*EasyMob - Gestão Imobiliária Inteligente*',
+    template_comprovacao_proprietario TEXT DEFAULT 'Olá, {proprietario_nome}! Confirmamos que a visita ao seu imóvel *{imovel_titulo}* foi realizada nesta data pelo corretor *{corretor_nome}*, acompanhado do(a) cliente *{cliente_nome}*.\n\nQualquer novidade sobre propostas ou retorno do cliente, entraremos em contato.\n*{imobiliaria_nome} - Gestão Imobiliária*',
+
+    template_pos_visita_cliente TEXT DEFAULT 'Olá, {cliente_nome}! Esperamos que a visita de hoje tenha sido produtiva.\n\n• *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber sua avaliação: o que achou das opções visitadas? Algum imóvel despertou seu interesse para avançarmos com uma proposta?\n\nEstamos à disposição para esclarecer qualquer dúvida ou agendar novas opções.\n*{imobiliaria_nome}*',
+    
+    template_compartilhar_imovel TEXT DEFAULT '*Opção de Imóvel Selecionada para Você*\n\n*{imovel_titulo}*\n• Código: *{imovel_codigo}*\n📍 Localização: {endereco}\n• Valor: *{valor}*\n• Características: {quartos} quartos | {banheiros} banheiros | {vagas} vagas\n\n🔗 *Acesse fotos completas e detalhes:*\n{link_imovel}\n\nCaso deseje agendar uma visita presencial, estamos à disposição.\n*{imobiliaria_nome}*',
+
+    template_imovel_compativel TEXT DEFAULT 'Olá, {cliente_nome}! Encontramos uma opção de imóvel alinhada ao seu perfil de busca:\n\n*{imovel_titulo}*\n• Código: *{imovel_codigo}*\n📍 Localização: {endereco}\n• Valor: {valor}\n• Quartos: {quartos}\n\n🔗 *Veja fotos completas e todos os detalhes:*\n{link_imovel}\n\nFicamos à disposição para agendar uma visita.\n*{imobiliaria_nome}*',
     
     criado_em TIMESTAMPTZ DEFAULT NOW(),
     atualizado_em TIMESTAMPTZ DEFAULT NOW()

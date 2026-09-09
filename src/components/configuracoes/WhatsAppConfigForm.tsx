@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { ProvedorWhatsApp } from '@/types';
-import { compileTemplate } from '@/lib/whatsapp';
+import { compileTemplate, DEFAULT_WHATSAPP_TEMPLATES } from '@/lib/whatsapp';
 import { useAuth } from '@/context/AuthContext';
 import { useTenant } from '@/context/TenantContext';
 import { generateInstanceName } from '@/lib/auth';
@@ -111,6 +111,23 @@ export function WhatsAppConfigForm() {
     if (configWhatsApp?.api_key && !configWhatsApp.api_key.includes('MINHA_CHAVE')) {
       setApiKey(configWhatsApp.api_key);
     }
+    setTemplateConfCliente(configWhatsApp?.template_confirmacao_cliente || DEFAULT_WHATSAPP_TEMPLATES.template_confirmacao_cliente);
+    setTemplateConfProp(configWhatsApp?.template_confirmacao_proprietario || DEFAULT_WHATSAPP_TEMPLATES.template_confirmacao_proprietario);
+    setTemplateLembCliente(configWhatsApp?.template_lembrete_cliente || DEFAULT_WHATSAPP_TEMPLATES.template_lembrete_cliente);
+    setTemplateLembProp(configWhatsApp?.template_lembrete_proprietario || DEFAULT_WHATSAPP_TEMPLATES.template_lembrete_proprietario);
+    setTemplateComprovacaoProp(configWhatsApp?.template_comprovacao_proprietario || DEFAULT_WHATSAPP_TEMPLATES.template_comprovacao_proprietario);
+    setTemplatePosVisita(configWhatsApp?.template_pos_visita_cliente || DEFAULT_WHATSAPP_TEMPLATES.template_pos_visita_cliente);
+    setTemplateCompartilharImovel(configWhatsApp?.template_compartilhar_imovel || DEFAULT_WHATSAPP_TEMPLATES.template_compartilhar_imovel);
+    setTemplateImovelCompativel(configWhatsApp?.template_imovel_compativel || DEFAULT_WHATSAPP_TEMPLATES.template_imovel_compativel);
+
+    setEnviarConfirmacaoCliente(configWhatsApp?.enviar_confirmacao_cliente !== false);
+    setEnviarConfirmacaoProprietario(configWhatsApp?.enviar_confirmacao_proprietario !== false);
+    setEnviarLembreteCliente(configWhatsApp?.enviar_lembrete_cliente !== false);
+    setEnviarLembreteProprietario(configWhatsApp?.enviar_lembrete_proprietario !== false);
+    setEnviarPosVisitaCliente(configWhatsApp?.enviar_pos_visita_cliente !== false);
+    setEnviarComprovacaoProprietario(configWhatsApp?.enviar_comprovacao_proprietario !== false);
+    setGravarLogsCliente(configWhatsApp?.gravar_logs_cliente !== false);
+    setGravarLogsProprietario(configWhatsApp?.gravar_logs_proprietario !== false);
   }, [configWhatsApp]);
 
   // Estados de Limpeza e Dupla Verificação
@@ -136,7 +153,7 @@ export function WhatsAppConfigForm() {
 
   // Estados de Teste de Envio
   const [testPhone, setTestPhone] = useState('');
-  const [testMessage, setTestMessage] = useState('Olá! Esta é uma mensagem de teste enviada pela EasyMob via Evolution API v2.');
+  const [testMessage, setTestMessage] = useState('Olá! Esta é uma mensagem de teste enviada via WhatsApp.');
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -154,25 +171,29 @@ export function WhatsAppConfigForm() {
   }, []);
 
   // Templates
-  const [templateConfCliente, setTemplateConfCliente] = useState(configWhatsApp.template_confirmacao_cliente);
-  const [templateConfProp, setTemplateConfProp] = useState(configWhatsApp.template_confirmacao_proprietario);
-  const [templateLembCliente, setTemplateLembCliente] = useState(configWhatsApp.template_lembrete_cliente);
-  const [templateLembProp, setTemplateLembProp] = useState(configWhatsApp.template_lembrete_proprietario);
+  const [templateConfCliente, setTemplateConfCliente] = useState(
+    configWhatsApp.template_confirmacao_cliente || DEFAULT_WHATSAPP_TEMPLATES.template_confirmacao_cliente
+  );
+  const [templateConfProp, setTemplateConfProp] = useState(
+    configWhatsApp.template_confirmacao_proprietario || DEFAULT_WHATSAPP_TEMPLATES.template_confirmacao_proprietario
+  );
+  const [templateLembCliente, setTemplateLembCliente] = useState(
+    configWhatsApp.template_lembrete_cliente || DEFAULT_WHATSAPP_TEMPLATES.template_lembrete_cliente
+  );
+  const [templateLembProp, setTemplateLembProp] = useState(
+    configWhatsApp.template_lembrete_proprietario || DEFAULT_WHATSAPP_TEMPLATES.template_lembrete_proprietario
+  );
   const [templateComprovacaoProp, setTemplateComprovacaoProp] = useState(
-    configWhatsApp.template_comprovacao_proprietario ||
-    'Olá, {proprietario_nome}! Confirmamos que a visita ao seu imóvel *{imovel_titulo}* foi realizada com sucesso nesta data por intermédio do corretor *{corretor_nome}*, acompanhado do(a) cliente *{cliente_nome}*. Qualquer novidade sobre proposta, entraremos em contato!'
+    configWhatsApp.template_comprovacao_proprietario || DEFAULT_WHATSAPP_TEMPLATES.template_comprovacao_proprietario
   );
   const [templatePosVisita, setTemplatePosVisita] = useState(
-    configWhatsApp.template_pos_visita_cliente ||
-    '✨ *Olá, {cliente_nome}! Tudo bem?*\n\nEsperamos que a visita de hoje tenha sido ótima!\n\n🏠 *Imóveis visitados:*\n{roteiro_imoveis}\n\nGostaríamos de saber: o que você achou dos imóveis? Algum deles chamou sua atenção ou despertou interesse para iniciarmos uma proposta?\n\nQualquer dúvida, estamos à sua inteira disposição!\n*EasyMob - Gestão Imobiliária Inteligente*'
+    configWhatsApp.template_pos_visita_cliente || DEFAULT_WHATSAPP_TEMPLATES.template_pos_visita_cliente
   );
   const [templateCompartilharImovel, setTemplateCompartilharImovel] = useState(
-    configWhatsApp.template_compartilhar_imovel ||
-    '🏢 *Olha este imóvel que separei para você!*\n\n*{imovel_titulo}*\n📌 Código: *{imovel_codigo}*\n📍 Localização: {endereco}\n💰 Valor: *{valor}*\n🛏️ {quartos} quartos | 🚿 {banheiros} banheiros | 🚗 {vagas} vagas\n\n👉 *Veja as fotos completas e todos os detalhes no link:*\n{link_imovel}\n\nSe você quiser agendar uma visita presencial, me avise por aqui! 🤝'
+    configWhatsApp.template_compartilhar_imovel || DEFAULT_WHATSAPP_TEMPLATES.template_compartilhar_imovel
   );
   const [templateImovelCompativel, setTemplateImovelCompativel] = useState(
-    configWhatsApp.template_imovel_compativel ||
-    'Olá, {cliente_nome}! Encontrei uma excelente opção que combina perfeitamente com seu perfil:\n\n🏡 *{imovel_titulo}*\n📌 Código: *{imovel_codigo}*\n📍 {endereco}\n💰 *Valor:* {valor}\n🛏️ {quartos} quartos\n\n👉 *Veja as fotos completas e detalhes:*\n{link_imovel}\n\nPodemos agendar uma visita? 🤝'
+    configWhatsApp.template_imovel_compativel || DEFAULT_WHATSAPP_TEMPLATES.template_imovel_compativel
   );
 
   // Preferências Globais de Notificações WhatsApp (Matriz)
@@ -193,6 +214,12 @@ export function WhatsAppConfigForm() {
   );
   const [enviarComprovacaoProprietario, setEnviarComprovacaoProprietario] = useState(
     configWhatsApp.enviar_comprovacao_proprietario !== false
+  );
+  const [gravarLogsCliente, setGravarLogsCliente] = useState(
+    configWhatsApp.gravar_logs_cliente !== false
+  );
+  const [gravarLogsProprietario, setGravarLogsProprietario] = useState(
+    configWhatsApp.gravar_logs_proprietario !== false
   );
 
   const [activeTab, setActiveTab] = useState<'api' | 'templates' | 'automacao'>('api');
@@ -473,6 +500,8 @@ export function WhatsAppConfigForm() {
         enviar_lembrete_proprietario: enviarLembreteProprietario,
         enviar_pos_visita_cliente: enviarPosVisitaCliente,
         enviar_comprovacao_proprietario: enviarComprovacaoProprietario,
+        gravar_logs_cliente: gravarLogsCliente,
+        gravar_logs_proprietario: gravarLogsProprietario,
         template_confirmacao_cliente: templateConfCliente,
         template_confirmacao_proprietario: templateConfProp,
         template_lembrete_cliente: templateLembCliente,
@@ -649,6 +678,8 @@ export function WhatsAppConfigForm() {
     area: '120m²',
     link_imovel: 'https://app.easymob.com.br/imovel/imo-1024',
     imobiliaria_nome: currentTenant?.nome || 'Lagom Imóveis',
+    imobiliaria: currentTenant?.nome || 'Lagom Imóveis',
+    nome_imobiliaria: currentTenant?.nome || 'Lagom Imóveis',
     roteiro_imoveis: '1. [Apartamento em Moema] - [Av. Paulista, 1500 - Bela Vista] | 2. [Casa em Pinheiros] - [R. dos Pinheiros, 400 - Pinheiros]',
     total_imoveis: '2',
     data_hora: '20/08/2026 às 14:30',
@@ -1162,6 +1193,34 @@ export function WhatsAppConfigForm() {
                                 type="checkbox"
                                 checked={enviarComprovacaoProprietario}
                                 onChange={(e) => setEnviarComprovacaoProprietario(e.target.checked)}
+                                className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                              />
+                            </td>
+                          </tr>
+
+                          {/* Linha 4: Gravação de histórico / Logs de conversa */}
+                          <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                            <td className="py-3 px-4">
+                              <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                                Gravação de histórico / Logs de conversa
+                              </div>
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                Retenção contínua (agendamento até +48h pós-visita para relatório auditável)
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-center align-middle">
+                              <input
+                                type="checkbox"
+                                checked={gravarLogsCliente}
+                                onChange={(e) => setGravarLogsCliente(e.target.checked)}
+                                className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                              />
+                            </td>
+                            <td className="py-3 px-4 text-center align-middle">
+                              <input
+                                type="checkbox"
+                                checked={gravarLogsProprietario}
+                                onChange={(e) => setGravarLogsProprietario(e.target.checked)}
                                 className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
                               />
                             </td>
