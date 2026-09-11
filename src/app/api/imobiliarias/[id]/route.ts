@@ -192,21 +192,25 @@ export async function DELETE(
 
     // 3. EXCLUSÃO EM CASCATA TOTAL (Ordem estrita para respeitar Foreign Keys)
     try {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
       // 3.1 Excluir Logs de WhatsApp relacionados às visitas da imobiliária
       try {
-        if (imoNome) {
-          const { data: visitasDaImob } = await supabase
-            .from('visitas')
-            .select('id')
-            .or(`imobiliaria.ilike.%${imoNome}%,observacoes.ilike.%[tenant:${imoNome}]%`);
-
-          if (visitasDaImob && visitasDaImob.length > 0) {
-            const visIds = visitasDaImob.map((v) => v.id);
-            const { error: errLogs } = await supabase
-              .from('whatsapp_logs')
-              .delete()
-              .in('visita_id', visIds);
-            if (!errLogs) cascadeSummary.whatsapp_logs = visIds.length;
+        if (imoNome || isUuid) {
+          let visIds: string[] = [];
+          if (imoNome) {
+            const { data: vByName } = await supabase.from('visitas').select('id').eq('imobiliaria', imoNome);
+            const { data: vByTag } = await supabase.from('visitas').select('id').ilike('observacoes', `%[tenant:${imoNome}]%`);
+            visIds = [...(vByName || []), ...(vByTag || [])].map((v) => v.id);
+          }
+          if (isUuid) {
+            const { data: vById } = await supabase.from('visitas').select('id').eq('imobiliaria_id', id);
+            visIds = [...visIds, ...(vById || []).map((v) => v.id)];
+          }
+          visIds = Array.from(new Set(visIds));
+          if (visIds.length > 0) {
+            await supabase.from('whatsapp_logs').delete().in('visita_id', visIds);
+            cascadeSummary.whatsapp_logs = visIds.length;
           }
         }
       } catch (eLogs) {
@@ -223,12 +227,13 @@ export async function DELETE(
       // 3.3 Excluir Visitas da Imobiliária
       try {
         if (imoNome) {
-          const { error: errVisitas } = await supabase
-            .from('visitas')
-            .delete()
-            .or(`imobiliaria.ilike.%${imoNome}%,observacoes.ilike.%[tenant:${imoNome}]%`);
-          if (!errVisitas) cascadeSummary.visitas++;
+          await supabase.from('visitas').delete().eq('imobiliaria', imoNome);
+          await supabase.from('visitas').delete().ilike('observacoes', `%[tenant:${imoNome}]%`);
         }
+        if (isUuid) {
+          await supabase.from('visitas').delete().eq('imobiliaria_id', id);
+        }
+        cascadeSummary.visitas++;
       } catch (eVis) {
         console.warn('[Cascade] Aviso ao excluir visitas:', eVis);
       }
@@ -236,12 +241,14 @@ export async function DELETE(
       // 3.4 Excluir Imóveis da Imobiliária
       try {
         if (imoNome) {
-          const { error: errImoveis } = await supabase
-            .from('imoveis')
-            .delete()
-            .or(`imobiliaria.ilike.%${imoNome}%,observacoes_chaves.ilike.%[tenant:${imoNome}]%`);
-          if (!errImoveis) cascadeSummary.imoveis++;
+          await supabase.from('imoveis').delete().eq('imobiliaria', imoNome);
+          await supabase.from('imoveis').delete().ilike('observacoes_chaves', `%[tenant:${imoNome}]%`);
+          await supabase.from('imoveis').delete().ilike('observacoes', `%[tenant:${imoNome}]%`);
         }
+        if (isUuid) {
+          await supabase.from('imoveis').delete().eq('imobiliaria_id', id);
+        }
+        cascadeSummary.imoveis++;
       } catch (eImo) {
         console.warn('[Cascade] Aviso ao excluir imoveis:', eImo);
       }
@@ -249,12 +256,13 @@ export async function DELETE(
       // 3.5 Excluir Clientes da Imobiliária
       try {
         if (imoNome) {
-          const { error: errClientes } = await supabase
-            .from('clientes')
-            .delete()
-            .or(`imobiliaria.ilike.%${imoNome}%,observacoes.ilike.%[tenant:${imoNome}]%`);
-          if (!errClientes) cascadeSummary.clientes++;
+          await supabase.from('clientes').delete().eq('imobiliaria', imoNome);
+          await supabase.from('clientes').delete().ilike('observacoes', `%[tenant:${imoNome}]%`);
         }
+        if (isUuid) {
+          await supabase.from('clientes').delete().eq('imobiliaria_id', id);
+        }
+        cascadeSummary.clientes++;
       } catch (eCli) {
         console.warn('[Cascade] Aviso ao excluir clientes:', eCli);
       }
@@ -262,11 +270,13 @@ export async function DELETE(
       // 3.6 Excluir Proprietários da Imobiliária
       try {
         if (imoNome) {
-          await supabase
-            .from('proprietarios')
-            .delete()
-            .or(`imobiliaria.ilike.%${imoNome}%,observacoes.ilike.%[tenant:${imoNome}]%`);
+          await supabase.from('proprietarios').delete().eq('imobiliaria', imoNome);
+          await supabase.from('proprietarios').delete().ilike('observacoes', `%[tenant:${imoNome}]%`);
         }
+        if (isUuid) {
+          await supabase.from('proprietarios').delete().eq('imobiliaria_id', id);
+        }
+        cascadeSummary.proprietarios++;
       } catch (eProp) {
         console.warn('[Cascade] Aviso ao excluir proprietarios:', eProp);
       }
@@ -274,12 +284,13 @@ export async function DELETE(
       // 3.7 Excluir Convites Pendentes da Imobiliária
       try {
         if (imoNome) {
-          const { error: errInv } = await supabase
-            .from('invites')
-            .delete()
-            .ilike('imobiliaria', `%${imoNome}%`);
-          if (!errInv) cascadeSummary.invites++;
+          await supabase.from('invites').delete().eq('imobiliaria', imoNome);
+          await supabase.from('invites').delete().ilike('imobiliaria', `%${imoNome}%`);
         }
+        if (isUuid) {
+          await supabase.from('invites').delete().eq('imobiliaria_id', id);
+        }
+        cascadeSummary.invites++;
       } catch (eInv) {
         console.warn('[Cascade] Aviso ao excluir invites:', eInv);
       }
@@ -306,7 +317,6 @@ export async function DELETE(
       }
 
       // 3.10 Excluir a própria Imobiliária
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
       if (isUuid) {
         await supabase.from('imobiliarias').delete().eq('id', id);
       }

@@ -207,6 +207,76 @@ export default function ImobiliariasPage() {
     return name.slice(0, 2).toUpperCase();
   };
 
+  // Contadores por Imobiliária garantindo sincronia 100% entre cards e métricas globais
+  const getTenantImoveisCount = React.useCallback(
+    (imo: Imobiliaria) => {
+      const isPrimeiraImobiliaria = imobiliarias[0]?.id === imo.id;
+      return (allImoveis || []).filter((i: Imovel) => {
+        if (i.imobiliaria_id && i.imobiliaria_id === imo.id) return true;
+        if (i.imobiliaria && i.imobiliaria.trim().toLowerCase() === imo.nome.trim().toLowerCase()) return true;
+        if (
+          isPrimeiraImobiliaria &&
+          (!i.imobiliaria ||
+            i.imobiliaria.toLowerCase() === 'easymob imóveis' ||
+            i.imobiliaria.toLowerCase() === 'easymob')
+        ) {
+          return true;
+        }
+        return false;
+      }).length;
+    },
+    [allImoveis, imobiliarias]
+  );
+
+  const getTenantVisitasCount = React.useCallback(
+    (imo: Imobiliaria) => {
+      const isPrimeiraImobiliaria = imobiliarias[0]?.id === imo.id;
+      return (allVisitas || []).filter((v: Visita) => {
+        if (v.imobiliaria_id && v.imobiliaria_id === imo.id) return true;
+        if (v.imobiliaria && v.imobiliaria.trim().toLowerCase() === imo.nome.trim().toLowerCase()) return true;
+        if (
+          isPrimeiraImobiliaria &&
+          (!v.imobiliaria ||
+            v.imobiliaria.toLowerCase() === 'easymob imóveis' ||
+            v.imobiliaria.toLowerCase() === 'easymob')
+        ) {
+          return true;
+        }
+        return false;
+      }).length;
+    },
+    [allVisitas, imobiliarias]
+  );
+
+  const getTenantUsersCount = React.useCallback(
+    (imo: Imobiliaria) => {
+      const isPrimeiraImobiliaria = imobiliarias[0]?.id === imo.id;
+      return (users || []).filter((u: Usuario) => {
+        if (u.imobiliaria_id && u.imobiliaria_id === imo.id) return true;
+        if (u.imobiliaria && u.imobiliaria.trim().toLowerCase() === imo.nome.trim().toLowerCase()) return true;
+        if (
+          isPrimeiraImobiliaria &&
+          (!u.imobiliaria ||
+            u.imobiliaria.toLowerCase() === 'easymob imóveis' ||
+            u.imobiliaria.toLowerCase() === 'easymob')
+        ) {
+          return true;
+        }
+        return false;
+      }).length;
+    },
+    [users, imobiliarias]
+  );
+
+  // Totais do Sistema: soma exata das imobiliárias cadastradas
+  const totalImoveisSistema = React.useMemo(() => {
+    return imobiliarias.reduce((acc, imo) => acc + getTenantImoveisCount(imo), 0);
+  }, [imobiliarias, getTenantImoveisCount]);
+
+  const totalVisitasSistema = React.useMemo(() => {
+    return imobiliarias.reduce((acc, imo) => acc + getTenantVisitasCount(imo), 0);
+  }, [imobiliarias, getTenantVisitasCount]);
+
   // Filtro de Busca
   const filteredImobiliarias = imobiliarias.filter((imo) => {
     const q = searchTerm.toLowerCase();
@@ -453,7 +523,7 @@ export default function ImobiliariasPage() {
             </div>
             <div>
               <div className="text-xl font-black text-slate-900 dark:text-slate-100">
-                {allImoveis.length}
+                {totalImoveisSistema}
               </div>
               <div className="text-[11px] font-medium text-slate-400">Imóveis no Sistema</div>
             </div>
@@ -467,7 +537,7 @@ export default function ImobiliariasPage() {
             </div>
             <div>
               <div className="text-xl font-black text-slate-900 dark:text-slate-100">
-                {allVisitas.length}
+                {totalVisitasSistema}
               </div>
               <div className="text-[11px] font-medium text-slate-400">Visitas Agendadas</div>
             </div>
@@ -527,49 +597,9 @@ export default function ImobiliariasPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredImobiliarias.map((imo) => {
           const isSelected = imo.nome.toLowerCase() === currentTenant?.nome?.toLowerCase();
-          const isPrimeiraImobiliaria = imobiliarias[0]?.id === imo.id;
-
-          const imoImoveisCount = (allImoveis || []).filter((i: Imovel) => {
-            if (i.imobiliaria_id && i.imobiliaria_id === imo.id) return true;
-            if (i.imobiliaria && i.imobiliaria.trim().toLowerCase() === imo.nome.trim().toLowerCase()) return true;
-            if (
-              isPrimeiraImobiliaria &&
-              (!i.imobiliaria ||
-                i.imobiliaria.toLowerCase() === 'easymob imóveis' ||
-                i.imobiliaria.toLowerCase() === 'easymob')
-            ) {
-              return true;
-            }
-            return false;
-          }).length;
-
-          const imoVisitasCount = (allVisitas || []).filter((v: Visita) => {
-            if (v.imobiliaria_id && v.imobiliaria_id === imo.id) return true;
-            if (v.imobiliaria && v.imobiliaria.trim().toLowerCase() === imo.nome.trim().toLowerCase()) return true;
-            if (
-              isPrimeiraImobiliaria &&
-              (!v.imobiliaria ||
-                v.imobiliaria.toLowerCase() === 'easymob imóveis' ||
-                v.imobiliaria.toLowerCase() === 'easymob')
-            ) {
-              return true;
-            }
-            return false;
-          }).length;
-
-          const imoUsersCount = (users || []).filter((u: Usuario) => {
-            if (u.imobiliaria_id && u.imobiliaria_id === imo.id) return true;
-            if (u.imobiliaria && u.imobiliaria.trim().toLowerCase() === imo.nome.trim().toLowerCase()) return true;
-            if (
-              isPrimeiraImobiliaria &&
-              (!u.imobiliaria ||
-                u.imobiliaria.toLowerCase() === 'easymob imóveis' ||
-                u.imobiliaria.toLowerCase() === 'easymob')
-            ) {
-              return true;
-            }
-            return false;
-          }).length;
+          const imoImoveisCount = getTenantImoveisCount(imo);
+          const imoVisitasCount = getTenantVisitasCount(imo);
+          const imoUsersCount = getTenantUsersCount(imo);
 
           return (
             <Card
