@@ -93,16 +93,24 @@ export function SlideToConfirm({
       const deltaX = clientX - startXRef.current;
       const newPos = Math.max(0, Math.min(1, deltaX / maxDistance));
       setSliderPosition(newPos);
+
+      // Gatilho ultra responsivo ao atingir 88% do percurso
+      if (newPos >= 0.88) {
+        setIsDragging(false);
+        setSliderPosition(1);
+        triggerHaptic(60);
+        onConfirm();
+      }
     },
-    [isDragging, disabled, isLoading, isConfirmed]
+    [isDragging, disabled, isLoading, isConfirmed, triggerHaptic, onConfirm]
   );
 
   const handleDragEnd = useCallback(() => {
     if (!isDragging || disabled || isLoading || isConfirmed) return;
     setIsDragging(false);
 
-    // Se arrastou mais de 80%, confirma!
-    if (sliderPosition >= 0.8) {
+    // Se soltou acima de 85%, confirma!
+    if (sliderPosition >= 0.85) {
       setSliderPosition(1);
       triggerHaptic(60);
       onConfirm();

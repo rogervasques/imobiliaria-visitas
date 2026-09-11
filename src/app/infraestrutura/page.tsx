@@ -322,12 +322,12 @@ export default function InfraestruturaPage() {
   const diskColor = getUsageColor(diskPercent);
 
   // Cálculos de cotas do Supabase
-  const dbSizeMB = data?.database.estimatedDbSizeMB || 1.63;
+  const dbSizeMB = data?.database.estimatedDbSizeMB ?? 32.5;
   const dbQuotaMB = data?.database.dbQuotaMB || 500;
   const dbPercent = Math.min(100, parseFloat(((dbSizeMB / dbQuotaMB) * 100).toFixed(1)));
   const dbColor = getUsageColor(dbPercent);
 
-  const storageMB = data?.database.estimatedStorageMB || 434.4;
+  const storageMB = data?.database.estimatedStorageMB ?? 0.0;
   const storageQuotaMB = data?.database.storageQuotaMB || 1024;
   const storagePercent = Math.min(100, parseFloat(((storageMB / storageQuotaMB) * 100).toFixed(1)));
   const storageColor = getUsageColor(storagePercent);

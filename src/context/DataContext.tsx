@@ -1284,125 +1284,151 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     // 48 horas contínuas de gravação de log após a conclusão
     const fimGravacaoLogs = new Date(agora.getTime() + 48 * 60 * 60 * 1000).toISOString();
 
-    const visitInstanceName =
-      (visita.created_by_user_id === user?.id ? user?.instance_name : null) ||
-      (visita.created_by_user_id ? generateInstanceName(visita.created_by_user_id) : configWhatsApp.instancia_nome || 'easymob');
-
-    let statusPosVisita = visita.whatsapp_pos_visita_cliente;
-    let statusComprovacao = visita.whatsapp_comprovacao_proprietario;
-
-    const ctx = await buildTemplateContextAsync(visita);
-
-    const isAutomatico = configWhatsApp.ativo && configWhatsApp.envio_automatico_ativo !== false;
-
-    // 1. Enviar mensagem pós-visita ao Cliente (Pedir feedback)
-    const deveEnviarCliente =
-      opcoes?.enviarPosVisitaCliente !== undefined
-        ? opcoes.enviarPosVisitaCliente
-        : configWhatsApp.enviar_pos_visita_cliente !== false;
-
-    if (deveEnviarCliente && visita.cliente?.telefone && isAutomatico) {
-      const templatePos = configWhatsApp.template_pos_visita_cliente ||
-        DEFAULT_WHATSAPP_TEMPLATES.template_pos_visita_cliente;
-
-      const msgCliente = compileTemplate(templatePos, ctx);
-      const resCliente = await sendWhatsAppMessage({
-        toPhone: visita.cliente.telefone,
-        message: msgCliente,
-        config: configWhatsApp,
-        instanceName: visitInstanceName,
-        logInfo: {
-          visitaId: visita.id,
-          tipoMensagem: 'pos_visita_cliente',
-          destinatarioNome: visita.cliente.nome,
-          tipoDestinatario: 'cliente',
-        },
-      });
-      statusPosVisita = resCliente.success ? 'enviado' : 'falha';
-      // Intervalo de segurança para fila de WhatsApp
-      await delay(1500);
-    }
-
-    // 2. Enviar mensagem de comprovação ao Proprietário
-    const deveEnviarProprietario =
-      opcoes?.enviarComprovacaoProprietario !== undefined
-        ? opcoes.enviarComprovacaoProprietario
-        : configWhatsApp.enviar_comprovacao_proprietario !== false;
-
-    if (deveEnviarProprietario && isAutomatico) {
-      const imoveisVisita = visita.imoveis && visita.imoveis.length > 0
-        ? visita.imoveis
-        : visita.imovel ? [visita.imovel] : [];
-
-      let propSuccessCount = 0;
-      const uniquePropsTelefones = new Set<string>();
-
-      const templateComprovacao = configWhatsApp.template_comprovacao_proprietario ||
-        DEFAULT_WHATSAPP_TEMPLATES.template_comprovacao_proprietario;
-
-      for (const im of imoveisVisita) {
-        if (!im || !im.proprietario_telefone) continue;
-        if (uniquePropsTelefones.has(im.proprietario_telefone.trim())) continue;
-        uniquePropsTelefones.add(im.proprietario_telefone.trim());
-
-        const propCtx: TemplateContext = {
-          ...ctx,
-          imovel_titulo: im.titulo,
-          imovel_codigo: im.codigo || '',
-          endereco: `${im.endereco}${im.numero ? `, ${im.numero}` : ''} - ${im.bairro}`,
-          proprietario_nome: im.proprietario_nome || 'Proprietário',
-          proprietario_telefone: im.proprietario_telefone,
-        };
-
-        const msgProp = compileTemplate(templateComprovacao, propCtx);
-
-        const resProp = await sendWhatsAppMessage({
-          toPhone: im.proprietario_telefone,
-          message: msgProp,
-          config: configWhatsApp,
-          instanceName: visitInstanceName,
-          logInfo: {
-            visitaId: visita.id,
-            tipoMensagem: 'comprovacao_proprietario',
-            destinatarioNome: im.proprietario_nome || 'Proprietário',
-            tipoDestinatario: 'proprietario',
-          },
-        });
-        if (resProp.success) propSuccessCount++;
-
-        // Intervalo de segurança entre proprietários
-        await delay(1500);
-      }
-      statusComprovacao = propSuccessCount > 0 ? 'enviado' : 'falha';
-    }
-
+    // 1. Atualização Otimista Imediata em Memória e Local Cache (0ms de latência percebida)
     const updates: Partial<Visita> = {
       status: 'concluida',
       fim_gravacao_logs_em: fimGravacaoLogs,
-      whatsapp_pos_visita_cliente: statusPosVisita,
-      whatsapp_comprovacao_proprietario: statusComprovacao,
       atualizado_em: agora.toISOString(),
     };
-
-    const dbPayload = sanitizeVisitaForDb(updates);
-    const { error: updateErr } = await supabase.from('visitas').update(dbPayload).eq('id', id);
-    if (updateErr) {
-      console.error('Erro no Supabase ao concluir visita:', updateErr);
-      throw new Error(`Falha ao concluir visita no banco: ${updateErr.message}`);
-    }
 
     const updated = allVisitas.map((v) => (v.id === id ? { ...v, ...updates } : v));
     setAllVisitas(updated);
     persistir('visitas', updated);
-
-    await registrarLogSistema('CONCLUIR_VISITA', 'visitas', id, {
-      cliente_nome: visita.cliente_nome || visita.cliente?.nome,
-      imovel_titulo: visita.imovel?.titulo,
-      data_hora_visita: visita.data_hora_visita,
-      concluido_em: agora.toISOString(),
-    });
-
     showToast('Visita concluída com sucesso! Histórico ativo por +48h.', 'success');
+
+    // 2. Persistência Principal no Banco de Dados (sem travar a UI)
+    const dbPayload = sanitizeVisitaForDb(updates);
+    supabase
+      .from('visitas')
+      .update(dbPayload)
+      .eq('id', id)
+      .then(({ error: updateErr }) => {
+        if (updateErr) {
+          console.error('Erro no Supabase ao concluir visita:', updateErr);
+        }
+      });
+
+    // 3. Disparo Totalmente Assíncrono em Segundo Plano (WhatsApp & Auditoria)
+    (async () => {
+      try {
+        const visitInstanceName =
+          (visita.created_by_user_id === user?.id ? user?.instance_name : null) ||
+          (visita.created_by_user_id ? generateInstanceName(visita.created_by_user_id) : configWhatsApp.instancia_nome || 'easymob');
+
+        let statusPosVisita = visita.whatsapp_pos_visita_cliente;
+        let statusComprovacao = visita.whatsapp_comprovacao_proprietario;
+
+        const ctx = await buildTemplateContextAsync(visita);
+        const isAutomatico = configWhatsApp.ativo && configWhatsApp.envio_automatico_ativo !== false;
+
+        // 3.1 Mensagem pós-visita ao Cliente
+        const deveEnviarCliente =
+          opcoes?.enviarPosVisitaCliente !== undefined
+            ? opcoes.enviarPosVisitaCliente
+            : configWhatsApp.enviar_pos_visita_cliente !== false;
+
+        if (deveEnviarCliente && visita.cliente?.telefone && isAutomatico) {
+          const templatePos =
+            configWhatsApp.template_pos_visita_cliente ||
+            DEFAULT_WHATSAPP_TEMPLATES.template_pos_visita_cliente;
+
+          const msgCliente = compileTemplate(templatePos, ctx);
+          const resCliente = await sendWhatsAppMessage({
+            toPhone: visita.cliente.telefone,
+            message: msgCliente,
+            config: configWhatsApp,
+            instanceName: visitInstanceName,
+            logInfo: {
+              visitaId: visita.id,
+              tipoMensagem: 'pos_visita_cliente',
+              destinatarioNome: visita.cliente.nome,
+              tipoDestinatario: 'cliente',
+            },
+          });
+          statusPosVisita = resCliente.success ? 'enviado' : 'falha';
+          await delay(1200);
+        }
+
+        // 3.2 Mensagem de comprovação ao Proprietário
+        const deveEnviarProprietario =
+          opcoes?.enviarComprovacaoProprietario !== undefined
+            ? opcoes.enviarComprovacaoProprietario
+            : configWhatsApp.enviar_comprovacao_proprietario !== false;
+
+        if (deveEnviarProprietario && isAutomatico) {
+          const imoveisVisita =
+            visita.imoveis && visita.imoveis.length > 0
+              ? visita.imoveis
+              : visita.imovel
+              ? [visita.imovel]
+              : [];
+
+          let propSuccessCount = 0;
+          const uniquePropsTelefones = new Set<string>();
+
+          const templateComprovacao =
+            configWhatsApp.template_comprovacao_proprietario ||
+            DEFAULT_WHATSAPP_TEMPLATES.template_comprovacao_proprietario;
+
+          for (const im of imoveisVisita) {
+            if (!im || !im.proprietario_telefone) continue;
+            if (uniquePropsTelefones.has(im.proprietario_telefone.trim())) continue;
+            uniquePropsTelefones.add(im.proprietario_telefone.trim());
+
+            const propCtx: TemplateContext = {
+              ...ctx,
+              imovel_titulo: im.titulo,
+              imovel_codigo: im.codigo || '',
+              endereco: `${im.endereco}${im.numero ? `, ${im.numero}` : ''} - ${im.bairro}`,
+              proprietario_nome: im.proprietario_nome || 'Proprietário',
+              proprietario_telefone: im.proprietario_telefone,
+            };
+
+            const msgProp = compileTemplate(templateComprovacao, propCtx);
+
+            const resProp = await sendWhatsAppMessage({
+              toPhone: im.proprietario_telefone,
+              message: msgProp,
+              config: configWhatsApp,
+              instanceName: visitInstanceName,
+              logInfo: {
+                visitaId: visita.id,
+                tipoMensagem: 'comprovacao_proprietario',
+                destinatarioNome: im.proprietario_nome || 'Proprietário',
+                tipoDestinatario: 'proprietario',
+              },
+            });
+            if (resProp.success) propSuccessCount++;
+            await delay(1200);
+          }
+          statusComprovacao = propSuccessCount > 0 ? 'enviado' : 'falha';
+        }
+
+        // Atualização de status de WhatsApp concluídos
+        if (
+          statusPosVisita !== visita.whatsapp_pos_visita_cliente ||
+          statusComprovacao !== visita.whatsapp_comprovacao_proprietario
+        ) {
+          const waUpdates = {
+            whatsapp_pos_visita_cliente: statusPosVisita,
+            whatsapp_comprovacao_proprietario: statusComprovacao,
+          };
+          await supabase.from('visitas').update(waUpdates).eq('id', id);
+          setAllVisitas((prev) =>
+            prev.map((v) => (v.id === id ? { ...v, ...waUpdates } : v))
+          );
+        }
+
+        await registrarLogSistema('CONCLUIR_VISITA', 'visitas', id, {
+          cliente_nome: visita.cliente_nome || visita.cliente?.nome,
+          imovel_titulo: visita.imovel?.titulo,
+          data_hora_visita: visita.data_hora_visita,
+          concluido_em: agora.toISOString(),
+        });
+      } catch (backgroundErr) {
+        console.error('Erro em rotina de background pós-conclusão:', backgroundErr);
+      }
+    })();
   };
 
   const atualizarStatusVisita = async (id: string, novoStatus: StatusVisita) => {
@@ -1421,25 +1447,30 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       updates.fim_gravacao_logs_em = fimGravacaoLogs;
     }
 
-    const dbPayload = sanitizeVisitaForDb(updates);
-    const { error: updateErr } = await supabase.from('visitas').update(dbPayload).eq('id', id);
-    if (updateErr) {
-      console.error('Erro no Supabase ao atualizar status da visita:', updateErr);
-      throw new Error(`Falha ao atualizar status no banco: ${updateErr.message}`);
-    }
-
+    // 1. Atualização Otimista Imediata
     const updated = allVisitas.map((v) => (v.id === id ? { ...v, ...updates } : v));
     setAllVisitas(updated);
     persistir('visitas', updated);
+    showToast(`Status da visita alterado para "${novoStatus.toUpperCase()}"`, 'info');
 
-    await registrarLogSistema('ALTERAR_STATUS_VISITA', 'visitas', id, {
+    // 2. Persistência Assíncrona
+    const dbPayload = sanitizeVisitaForDb(updates);
+    supabase
+      .from('visitas')
+      .update(dbPayload)
+      .eq('id', id)
+      .then(({ error: updateErr }) => {
+        if (updateErr) {
+          console.error('Erro no Supabase ao atualizar status da visita:', updateErr);
+        }
+      });
+
+    registrarLogSistema('ALTERAR_STATUS_VISITA', 'visitas', id, {
       cliente_nome: visita?.cliente_nome || visita?.cliente?.nome,
       imovel_titulo: visita?.imovel?.titulo,
       status_anterior: visita?.status,
       status_novo: novoStatus,
-    });
-
-    showToast(`Status da visita alterado para "${novoStatus.toUpperCase()}"`, 'info');
+    }).catch(() => {});
   };
 
   const atualizarVisita = async (id: string, dados: Partial<Visita>) => {

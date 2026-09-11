@@ -188,6 +188,8 @@ export default function RelatoriosPage() {
       },
       desempenhoCorretores,
       atividadeImoveis: rankingImoveis,
+      visitas: visitasFiltradas,
+      filename: `relatorio_analitico_${periodo}.xlsx`,
     });
   };
 
@@ -216,6 +218,76 @@ export default function RelatoriosPage() {
           Exportar Relatório Consolidado (.xlsx)
         </Button>
       </div>
+
+      {/* ── Filtro Global Superior por Período (Visível em todas as Abas) ── */}
+      <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Filtrar Período Analítico
+              </span>
+            </div>
+
+            {/* Botões Rápidos de Período */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { key: 'este_mes', label: 'Este Mês' },
+                { key: 'mes_passado', label: 'Mês Passado' },
+                { key: 'ultimos_30_dias', label: 'Últimos 30 Dias' },
+                { key: 'este_ano', label: 'Este Ano' },
+                { key: 'todos', label: 'Todo o Histórico' },
+                { key: 'custom', label: 'Personalizado' },
+              ].map((opt) => {
+                const isSelected = periodo === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => setPeriodo(opt.key as PeriodoOption)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Inputs de Data para Período Personalizado */}
+            {periodo === 'custom' && (
+              <div className="flex items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-1 text-xs">
+                  <span className="text-slate-400 font-bold">De:</span>
+                  <input
+                    type="date"
+                    value={dataInicio}
+                    onChange={(e) => setDataInicio(e.target.value)}
+                    className="px-2.5 py-1 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+                <div className="flex items-center gap-1 text-xs">
+                  <span className="text-slate-400 font-bold">Até:</span>
+                  <input
+                    type="date"
+                    value={dataFim}
+                    onChange={(e) => setDataFim(e.target.value)}
+                    className="px-2.5 py-1 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="text-[11px] text-slate-400 font-semibold pt-1 border-t border-slate-100 dark:border-slate-800">
+            Exibindo dados consolidados de: <strong className="text-slate-700 dark:text-slate-300">{periodoLabel}</strong>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ── 1. Criação das Abas Principais (Navegação Superior) ── */}
       <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 w-fit">
@@ -252,75 +324,6 @@ export default function RelatoriosPage() {
       {/* ── 2. Conteúdo da Aba "Dashboard Analítico" ── */}
       {activeTab === 'dashboard' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* ── Filtro Global por Período ── */}
-          <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                    Filtrar Período Analítico
-                  </span>
-                </div>
-
-                {/* Botões Rápidos de Período */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {[
-                    { key: 'este_mes', label: 'Este Mês' },
-                    { key: 'mes_passado', label: 'Mês Passado' },
-                    { key: 'ultimos_30_dias', label: 'Últimos 30 Dias' },
-                    { key: 'este_ano', label: 'Este Ano' },
-                    { key: 'todos', label: 'Todo o Histórico' },
-                    { key: 'custom', label: 'Personalizado' },
-                  ].map((opt) => {
-                    const isSelected = periodo === opt.key;
-                    return (
-                      <button
-                        key={opt.key}
-                        type="button"
-                        onClick={() => setPeriodo(opt.key as PeriodoOption)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-emerald-600 text-white shadow-xs'
-                            : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Inputs de Data para Período Personalizado */}
-                {periodo === 'custom' && (
-                  <div className="flex items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-1 text-xs">
-                      <span className="text-slate-400 font-bold">De:</span>
-                      <input
-                        type="date"
-                        value={dataInicio}
-                        onChange={(e) => setDataInicio(e.target.value)}
-                        className="px-2.5 py-1 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1 text-xs">
-                      <span className="text-slate-400 font-bold">Até:</span>
-                      <input
-                        type="date"
-                        value={dataFim}
-                        onChange={(e) => setDataFim(e.target.value)}
-                        className="px-2.5 py-1 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="text-[11px] text-slate-400 font-semibold pt-1 border-t border-slate-100 dark:border-slate-800">
-                Exibindo dados consolidados de: <strong className="text-slate-700 dark:text-slate-300">{periodoLabel}</strong>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* ── Cards de Métricas Principais: Pílulas Compactas no Mobile (< 768px) e Cards no Desktop (>= 768px) ── */}
           {/* 1. Mobile (< 768px): 5 Pílulas 100% Visíveis */}

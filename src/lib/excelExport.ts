@@ -173,6 +173,7 @@ export function exportarRelatorioAnaliticoExcel({
   resumo,
   desempenhoCorretores,
   atividadeImoveis,
+  visitas,
   filename = 'relatorio_gerencial_easymob.xlsx',
 }: {
   periodoLabel: string;
@@ -201,6 +202,7 @@ export function exportarRelatorioAnaliticoExcel({
     clientesDistintos: number;
     status: string;
   }[];
+  visitas?: Visita[];
   filename?: string;
 }) {
   const workbook = XLSX.utils.book_new();
@@ -245,6 +247,33 @@ export function exportarRelatorioAnaliticoExcel({
   const wsImoveis = XLSX.utils.json_to_sheet(imoveisDados);
   wsImoveis['!cols'] = autoFitColumns(imoveisDados);
   XLSX.utils.book_append_sheet(workbook, wsImoveis, 'Atividade Imóveis');
+
+  // 4. Aba Visitas do Período (se fornecidas)
+  if (visitas && visitas.length > 0) {
+    const visitasDados = visitas.map((v) => {
+      const imoveisArray = v.imoveis && v.imoveis.length > 0 ? v.imoveis : v.imovel ? [v.imovel] : [];
+      const titulos = imoveisArray.map((im) => im.titulo || im.codigo).join(' | ');
+      const enderecos = imoveisArray.map((im) => `${im.endereco}, ${im.numero || 'S/N'} - ${im.bairro}`).join(' | ');
+
+      return {
+        'Data e Hora': formatDateTime(v.data_hora_visita),
+        'Status': v.status.toUpperCase(),
+        'Cliente': v.cliente?.nome || '—',
+        'Telefone Cliente': v.cliente?.telefone ? formatPhone(v.cliente.telefone) : '—',
+        'Corretor': v.corretor_nome || v.created_by_user_nome || '—',
+        'Imóvel(is)': titulos || '—',
+        'Endereço(s)': enderecos || '—',
+        'WhatsApp Confirmação': v.whatsapp_confirmacao_cliente || 'pendente',
+        'WhatsApp Lembrete 1h': v.whatsapp_lembrete_cliente || 'pendente',
+        'WhatsApp Pós-Visita': v.whatsapp_pos_visita_cliente || 'pendente',
+        'Histórico Gravado': v.gravar_logs !== false ? 'Sim' : 'Não',
+        'Observações': v.observacoes || '',
+      };
+    });
+    const wsVisitas = XLSX.utils.json_to_sheet(visitasDados);
+    wsVisitas['!cols'] = autoFitColumns(visitasDados);
+    XLSX.utils.book_append_sheet(workbook, wsVisitas, 'Visitas do Período');
+  }
 
   XLSX.writeFile(workbook, filename);
 }

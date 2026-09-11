@@ -64,7 +64,17 @@ function LogItemCard({ log }: { log: LogMensagem }) {
           )}
         </div>
         <span className="text-[10px] text-slate-400 font-mono">
-          {new Date(log.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          {(() => {
+            try {
+              const d = new Date(log.timestamp);
+              if (isNaN(d.getTime())) return log.timestamp;
+              const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+              const timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+              return `${dateStr} às ${timeStr}`;
+            } catch {
+              return log.timestamp;
+            }
+          })()}
         </span>
       </div>
 

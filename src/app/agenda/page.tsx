@@ -481,11 +481,11 @@ export default function AgendaPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-3 h-3 rounded-full bg-emerald-500 border border-emerald-400 shrink-0" />
+                    <div className="w-3 h-3 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
                     <span className="font-semibold">Agendada</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    <div className="w-3 h-3 rounded-full bg-purple-500 border border-purple-400 shrink-0" />
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 border border-emerald-400 shrink-0" />
                     <span className="font-semibold">Realizada</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">

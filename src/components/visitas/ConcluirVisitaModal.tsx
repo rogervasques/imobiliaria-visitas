@@ -101,37 +101,32 @@ export function ConcluirVisitaModal({
     triggerHaptic(40);
   };
 
-  // Execução da Confirmação (Slider no mobile ou Botão no Desktop)
-  const handleExecuteDesfecho = async () => {
-    if (!visita || isSubmitting || isConfirmed) return;
+  // Execução da Confirmação com Optimistic UI (Fechamento Imediato sem travas)
+  const handleExecuteDesfecho = () => {
+    if (!visita || isSubmitting) return;
 
-    setIsSubmitting(true);
     triggerHaptic(60);
+    const action = selectedAction;
 
-    try {
-      if (selectedAction === 'realizada') {
-        await concluirVisita(visita.id);
-      } else if (selectedAction === 'nao_compareceu') {
-        await atualizarStatusVisita(visita.id, 'nao_compareceu');
-      } else if (selectedAction === 'cancelada') {
-        await atualizarStatusVisita(visita.id, 'cancelada');
-      } else if (selectedAction === 'remarcar') {
-        setIsConfirmed(true);
-        setTimeout(() => {
-          onClose();
-          onRemarcar?.(visita);
-        }, 250);
-        return;
-      }
+    // Fecha o modal imediatamente para zero latência percebida
+    onClose();
+    onSuccess?.();
 
-      setIsConfirmed(true);
-      setTimeout(() => {
-        onSuccess?.();
-        onClose();
-      }, 350);
-    } catch (err) {
-      console.error('Erro ao salvar desfecho da visita:', err);
-      setIsSubmitting(false);
+    // Execução assíncrona desacoplada
+    if (action === 'realizada') {
+      concluirVisita(visita.id).catch((err) =>
+        console.error('Erro ao concluir visita:', err)
+      );
+    } else if (action === 'nao_compareceu') {
+      atualizarStatusVisita(visita.id, 'nao_compareceu').catch((err) =>
+        console.error('Erro ao definir não compareceu:', err)
+      );
+    } else if (action === 'cancelada') {
+      atualizarStatusVisita(visita.id, 'cancelada').catch((err) =>
+        console.error('Erro ao cancelar visita:', err)
+      );
+    } else if (action === 'remarcar') {
+      onRemarcar?.(visita);
     }
   };
 
@@ -459,17 +454,19 @@ export function ConcluirVisitaModal({
               </button>
             </div>
 
-            {/* 2. Modo Mobile: Slider de Confirmação Interativo */}
-            <div className="block sm:hidden">
-              <SlideToConfirm
-                onConfirm={handleExecuteDesfecho}
-                isLoading={isSubmitting}
-                isConfirmed={isConfirmed}
-                colorScheme={actionConfig.colorScheme}
-                label={actionConfig.sliderLabel}
-                loadingLabel="Gravando..."
-                confirmedLabel="Confirmado!"
-              />
+            {/* 2. Modo Mobile: Slider de Confirmação Interativo e Ergonômico */}
+            <div className="block sm:hidden px-2 pt-0.5">
+              <div className="max-w-[320px] mx-auto">
+                <SlideToConfirm
+                  onConfirm={handleExecuteDesfecho}
+                  isLoading={isSubmitting}
+                  isConfirmed={isConfirmed}
+                  colorScheme={actionConfig.colorScheme}
+                  label={actionConfig.sliderLabel}
+                  loadingLabel="Confirmando..."
+                  confirmedLabel="Confirmado!"
+                />
+              </div>
             </div>
           </div>
         </div>
