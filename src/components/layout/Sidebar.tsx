@@ -362,11 +362,6 @@ export function Sidebar() {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
-
-          {/* Marca d'água discreta EasyMob no rodapé da Sidebar */}
-          <div className="pt-2 flex items-center justify-center border-t border-slate-100 dark:border-slate-800/80">
-            <EasyMobLogo variant="watermark" />
-          </div>
         </div>
       </aside>
 

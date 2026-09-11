@@ -28,24 +28,24 @@ import { ConcluirVisitaModal } from '@/components/visitas/ConcluirVisitaModal';
 const STATUS_CFG: Record<StatusVisita, { label: string; dot: string; dotPure: string; badge: string; line: string }> = {
   agendada: {
     label: 'Agendada',
+    dot: 'bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-950',
+    dotPure: 'bg-purple-500',
+    badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+    line: 'border-l-purple-500',
+  },
+  concluida: {
+    label: 'Realizada',
     dot: 'bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-950',
     dotPure: 'bg-emerald-500',
     badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
     line: 'border-l-emerald-500',
   },
-  concluida: {
-    label: 'Realizada',
-    dot: 'bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-950',
-    dotPure: 'bg-purple-500',
-    badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800',
-    line: 'border-l-purple-500',
-  },
   reagendada: {
     label: 'Realizada',
-    dot: 'bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-950',
-    dotPure: 'bg-purple-500',
-    badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800',
-    line: 'border-l-purple-500',
+    dot: 'bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-950',
+    dotPure: 'bg-emerald-500',
+    badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    line: 'border-l-emerald-500',
   },
   nao_compareceu: {
     label: 'Não Compareceu',
@@ -152,10 +152,10 @@ function MiniCalendario({
 
   // Dots de status únicos por dia
   const dotColors: Record<StatusVisita, string> = {
-    agendada: 'bg-emerald-500',
-    concluida: 'bg-purple-500',
+    agendada: 'bg-purple-500',
+    concluida: 'bg-emerald-500',
     cancelada: 'bg-rose-500',
-    reagendada: 'bg-purple-400',
+    reagendada: 'bg-emerald-400',
     nao_compareceu: 'bg-amber-400',
   };
 
@@ -226,8 +226,8 @@ function MiniCalendario({
       {/* Legenda */}
       <div className="px-3 pb-3 flex flex-wrap gap-2">
         {[
-          { color: 'bg-emerald-500', label: 'Agendada' },
-          { color: 'bg-purple-500', label: 'Realizada' },
+          { color: 'bg-purple-500', label: 'Agendada' },
+          { color: 'bg-emerald-500', label: 'Realizada' },
           { color: 'bg-amber-400', label: 'Não Compareceu' },
           { color: 'bg-rose-500', label: 'Cancelada' },
         ].map(({ color, label }) => (
@@ -386,9 +386,9 @@ function TimelineCard({
             <span
               className={`text-xs sm:text-sm font-extrabold uppercase tracking-wider ${
                 visita.status === 'agendada'
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : visita.status === 'concluida' || visita.status === 'reagendada'
                   ? 'text-purple-600 dark:text-purple-400'
+                  : visita.status === 'concluida' || visita.status === 'reagendada'
+                  ? 'text-emerald-600 dark:text-emerald-400'
                   : visita.status === 'nao_compareceu'
                   ? 'text-amber-600 dark:text-amber-400'
                   : 'text-rose-600 dark:text-rose-400'
@@ -658,8 +658,8 @@ export default function DashboardHojePage() {
   // Cards-filtro de métricas
   const metricCards = [
     { key: null, label: 'Total no Dia', value: metricasDia.total, color: 'slate', active: filterStatus === null },
-    { key: 'agendada' as StatusVisita, label: 'Agendadas', value: metricasDia.agendadas, color: 'emerald', active: filterStatus === 'agendada' },
-    { key: 'concluida' as StatusVisita, label: 'Realizadas', value: metricasDia.concluidas, color: 'purple', active: filterStatus === 'concluida' || filterStatus === 'reagendada' },
+    { key: 'agendada' as StatusVisita, label: 'Agendadas', value: metricasDia.agendadas, color: 'purple', active: filterStatus === 'agendada' },
+    { key: 'concluida' as StatusVisita, label: 'Realizadas', value: metricasDia.concluidas, color: 'emerald', active: filterStatus === 'concluida' || filterStatus === 'reagendada' },
     { key: 'nao_compareceu' as StatusVisita, label: 'Não Compareceu', value: metricasDia.nao_compareceu, color: 'amber', active: filterStatus === 'nao_compareceu' },
     { key: 'cancelada' as StatusVisita, label: 'Canceladas', value: metricasDia.canceladas, color: 'rose', active: filterStatus === 'cancelada' },
   ];
@@ -712,8 +712,8 @@ export default function DashboardHojePage() {
               activeMobileBg: 'bg-slate-200 dark:bg-slate-700 border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-50',
             },
             emerald: {
-              icon: <CalendarCheck2 className="w-4 h-4" />,
-              iconMini: <CalendarCheck2 className="w-3.5 h-3.5" />,
+              icon: <CheckCircle2 className="w-4 h-4" />,
+              iconMini: <CheckCircle2 className="w-3.5 h-3.5" />,
               iconBg: 'bg-emerald-50 dark:bg-emerald-950/60',
               iconColor: 'text-emerald-600 dark:text-emerald-400',
               numColor: 'text-emerald-700 dark:text-emerald-300',
@@ -736,8 +736,8 @@ export default function DashboardHojePage() {
               activeMobileBg: 'bg-amber-100 dark:bg-amber-900/90 border-amber-500 text-amber-900 dark:text-amber-100',
             },
             purple: {
-              icon: <CheckCircle2 className="w-4 h-4" />,
-              iconMini: <CheckCircle2 className="w-3.5 h-3.5" />,
+              icon: <CalendarCheck2 className="w-4 h-4" />,
+              iconMini: <CalendarCheck2 className="w-3.5 h-3.5" />,
               iconBg: 'bg-purple-50 dark:bg-purple-950/60',
               iconColor: 'text-purple-600 dark:text-purple-400',
               numColor: 'text-purple-700 dark:text-purple-300',

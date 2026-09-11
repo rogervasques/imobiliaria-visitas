@@ -55,9 +55,9 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
     StatusVisita,
     { label: string; variant: 'warning' | 'success' | 'danger' | 'purple' | 'default'; dotColor: string }
   > = {
-    agendada: { label: 'Agendada', variant: 'success', dotColor: 'bg-emerald-500 border-emerald-400' },
-    concluida: { label: 'Realizada', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
-    reagendada: { label: 'Realizada', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
+    agendada: { label: 'Agendada', variant: 'purple', dotColor: 'bg-purple-500 border-purple-400' },
+    concluida: { label: 'Realizada', variant: 'success', dotColor: 'bg-emerald-500 border-emerald-400' },
+    reagendada: { label: 'Realizada', variant: 'success', dotColor: 'bg-emerald-500 border-emerald-400' },
     cancelada: { label: 'Cancelada', variant: 'danger', dotColor: 'bg-rose-500 border-rose-400' },
     nao_compareceu: { label: 'Não Compareceu', variant: 'warning', dotColor: 'bg-amber-400 border-amber-500' },
   };
@@ -127,9 +127,9 @@ export function VisitCard({ visita, onEdit }: VisitCardProps) {
             <span
               className={`text-xs sm:text-sm font-extrabold uppercase tracking-wider ${
                 visita.status === 'agendada'
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : visita.status === 'concluida' || visita.status === 'reagendada'
                   ? 'text-purple-600 dark:text-purple-400'
+                  : visita.status === 'concluida' || visita.status === 'reagendada'
+                  ? 'text-emerald-600 dark:text-emerald-400'
                   : visita.status === 'nao_compareceu'
                   ? 'text-amber-600 dark:text-amber-400'
                   : 'text-rose-600 dark:text-rose-400'
