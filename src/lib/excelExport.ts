@@ -1,32 +1,82 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { Imovel, Cliente, Proprietario, Visita } from '@/types';
 import { formatCurrency, formatDateTime, formatPhone } from './utils';
 
 /**
- * Utilitário para ajustar a largura automática das colunas em uma planilha XLSX
+ * Utilitário interno para salvar e disparar o download de um Workbook do ExcelJS no navegador
  */
-function autoFitColumns(rows: Record<string, any>[]): { wch: number }[] {
-  if (rows.length === 0) return [];
-  const keys = Object.keys(rows[0]);
-  return keys.map((key) => {
-    let maxLen = key.length;
-    for (const row of rows) {
-      const val = row[key];
-      if (val !== undefined && val !== null) {
-        const strVal = String(val);
-        if (strVal.length > maxLen) {
-          maxLen = strVal.length;
-        }
-      }
-    }
-    return { wch: Math.min(Math.max(maxLen + 3, 10), 60) };
+async function downloadWorkbook(workbook: ExcelJS.Workbook, filename: string) {
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  window.URL.revokeObjectURL(url);
+}
+
+/**
+ * Adiciona uma planilha formatada ao Workbook com cabeçalho estilizado e larguras automáticas
+ */
+function addStyledWorksheet(
+  workbook: ExcelJS.Workbook,
+  sheetName: string,
+  rows: Record<string, any>[],
+  headerColor = '10B981' // Emerald padrão
+) {
+  const worksheet = workbook.addWorksheet(sheetName);
+  if (rows.length === 0) return worksheet;
+
+  const headers = Object.keys(rows[0]);
+  worksheet.columns = headers.map((key) => ({
+    header: key,
+    key,
+  }));
+
+  // Adiciona as linhas
+  rows.forEach((row) => {
+    worksheet.addRow(row);
+  });
+
+  // Estilização do Cabeçalho (Linha 1)
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 26;
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Segoe UI' };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: `FF${headerColor}` },
+    };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  });
+
+  // Estilização das Linhas de Dados e Auto-Fit de Colunas
+  worksheet.columns.forEach((column) => {
+    let maxLen = column.header ? String(column.header).length : 10;
+    column.eachCell?.({ includeEmpty: false }, (cell, rowNumber) => {
+      if (rowNumber > 1) {
+        cell.font = { size: 10, name: 'Segoe UI' };
+        cell.alignment = { vertical: 'middle' };
+      }
+      const valStr = cell.value ? String(cell.value) : '';
+      if (valStr.length > maxLen) {
+        maxLen = valStr.length;
+      }
+    });
+    column.width = Math.min(Math.max(maxLen + 4, 12), 65);
+  });
+
+  return worksheet;
 }
 
 /**
  * 1. Exporta a lista de Imóveis para XLSX
  */
-export function exportarImoveisExcel(imoveis: Imovel[], filename = 'imoveis_easymob.xlsx') {
+export async function exportarImoveisExcel(imoveis: Imovel[], filename = 'imoveis_easymob.xlsx') {
   const dados = imoveis.map((im) => {
     const fotos = im.fotos_urls && im.fotos_urls.length > 0 ? im.fotos_urls : im.imagem_url ? [im.imagem_url] : [];
 
@@ -63,18 +113,18 @@ export function exportarImoveisExcel(imoveis: Imovel[], filename = 'imoveis_easy
     };
   });
 
-  const worksheet = XLSX.utils.json_to_sheet(dados);
-  worksheet['!cols'] = autoFitColumns(dados);
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'EasyMob';
+  workbook.created = new Date();
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Imóveis');
-  XLSX.writeFile(workbook, filename);
+  addStyledWorksheet(workbook, 'Imóveis', dados, '10B981');
+  await downloadWorkbook(workbook, filename);
 }
 
 /**
  * 2. Exporta a lista de Clientes para XLSX
  */
-export function exportarClientesExcel(clientes: Cliente[], filename = 'clientes_easymob.xlsx') {
+export async function exportarClientesExcel(clientes: Cliente[], filename = 'clientes_easymob.xlsx') {
   const dados = clientes.map((c) => ({
     'Nome Completo': c.nome,
     'Telefone / WhatsApp': formatPhone(c.telefone),
@@ -87,18 +137,18 @@ export function exportarClientesExcel(clientes: Cliente[], filename = 'clientes_
     'Data de Cadastro': c.criado_em ? formatDateTime(c.criado_em) : '—',
   }));
 
-  const worksheet = XLSX.utils.json_to_sheet(dados);
-  worksheet['!cols'] = autoFitColumns(dados);
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'EasyMob';
+  workbook.created = new Date();
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Clientes');
-  XLSX.writeFile(workbook, filename);
+  addStyledWorksheet(workbook, 'Clientes', dados, '0284C7');
+  await downloadWorkbook(workbook, filename);
 }
 
 /**
  * 3. Exporta a lista de Proprietários para XLSX
  */
-export function exportarProprietariosExcel(
+export async function exportarProprietariosExcel(
   proprietarios: Proprietario[],
   imoveis: Imovel[] = [],
   filename = 'proprietarios_easymob.xlsx'
@@ -123,18 +173,18 @@ export function exportarProprietariosExcel(
     };
   });
 
-  const worksheet = XLSX.utils.json_to_sheet(dados);
-  worksheet['!cols'] = autoFitColumns(dados);
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'EasyMob';
+  workbook.created = new Date();
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Proprietários');
-  XLSX.writeFile(workbook, filename);
+  addStyledWorksheet(workbook, 'Proprietários', dados, 'D97706');
+  await downloadWorkbook(workbook, filename);
 }
 
 /**
  * 4. Exporta a lista de Visitas para XLSX
  */
-export function exportarVisitasExcel(visitas: Visita[], filename = 'visitas_agenda_easymob.xlsx') {
+export async function exportarVisitasExcel(visitas: Visita[], filename = 'visitas_agenda_easymob.xlsx') {
   const dados = visitas.map((v) => {
     const imoveis = v.imoveis && v.imoveis.length > 0 ? v.imoveis : v.imovel ? [v.imovel] : [];
     const titulos = imoveis.map((im) => `[${im.codigo || 'S/C'}] ${im.titulo}`).join(' | ');
@@ -157,18 +207,18 @@ export function exportarVisitasExcel(visitas: Visita[], filename = 'visitas_agen
     };
   });
 
-  const worksheet = XLSX.utils.json_to_sheet(dados);
-  worksheet['!cols'] = autoFitColumns(dados);
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'EasyMob';
+  workbook.created = new Date();
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Visitas');
-  XLSX.writeFile(workbook, filename);
+  addStyledWorksheet(workbook, 'Visitas', dados, '7C3AED');
+  await downloadWorkbook(workbook, filename);
 }
 
 /**
  * 5. Exporta Relatório Analítico Consolidado (com múltiplas abas)
  */
-export function exportarRelatorioAnaliticoExcel({
+export async function exportarRelatorioAnaliticoExcel({
   periodoLabel,
   resumo,
   desempenhoCorretores,
@@ -205,9 +255,11 @@ export function exportarRelatorioAnaliticoExcel({
   visitas?: Visita[];
   filename?: string;
 }) {
-  const workbook = XLSX.utils.book_new();
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'EasyMob';
+  workbook.created = new Date();
 
-  // 1. Aba Resumo
+  // 1. Aba Resumo Geral
   const resumoDados = [
     { 'Métrica': 'Período Selecionado', 'Valor': periodoLabel },
     { 'Métrica': 'Total de Visitas Registradas', 'Valor': resumo.totalVisitas },
@@ -217,9 +269,7 @@ export function exportarRelatorioAnaliticoExcel({
     { 'Métrica': 'Visitas Canceladas', 'Valor': resumo.canceladas },
     { 'Métrica': 'Taxa de Conversão Global', 'Valor': `${resumo.taxaSucesso}%` },
   ];
-  const wsResumo = XLSX.utils.json_to_sheet(resumoDados);
-  wsResumo['!cols'] = autoFitColumns(resumoDados);
-  XLSX.utils.book_append_sheet(workbook, wsResumo, 'Resumo Geral');
+  addStyledWorksheet(workbook, 'Resumo Geral', resumoDados, '10B981');
 
   // 2. Aba Desempenho Corretores
   const corretoresDados = desempenhoCorretores.map((c) => ({
@@ -231,9 +281,7 @@ export function exportarRelatorioAnaliticoExcel({
     'Canceladas': c.canceladas,
     'Taxa de Conversão': `${c.taxaConversao}%`,
   }));
-  const wsCorretores = XLSX.utils.json_to_sheet(corretoresDados);
-  wsCorretores['!cols'] = autoFitColumns(corretoresDados);
-  XLSX.utils.book_append_sheet(workbook, wsCorretores, 'Desempenho Corretores');
+  addStyledWorksheet(workbook, 'Desempenho Corretores', corretoresDados, '7C3AED');
 
   // 3. Aba Atividade Imóveis
   const imoveisDados = atividadeImoveis.map((im) => ({
@@ -244,9 +292,7 @@ export function exportarRelatorioAnaliticoExcel({
     'Clientes Distintos': im.clientesDistintos,
     'Status Atual': im.status.toUpperCase(),
   }));
-  const wsImoveis = XLSX.utils.json_to_sheet(imoveisDados);
-  wsImoveis['!cols'] = autoFitColumns(imoveisDados);
-  XLSX.utils.book_append_sheet(workbook, wsImoveis, 'Atividade Imóveis');
+  addStyledWorksheet(workbook, 'Atividade Imóveis', imoveisDados, '0284C7');
 
   // 4. Aba Visitas do Período (se fornecidas)
   if (visitas && visitas.length > 0) {
@@ -270,10 +316,8 @@ export function exportarRelatorioAnaliticoExcel({
         'Observações': v.observacoes || '',
       };
     });
-    const wsVisitas = XLSX.utils.json_to_sheet(visitasDados);
-    wsVisitas['!cols'] = autoFitColumns(visitasDados);
-    XLSX.utils.book_append_sheet(workbook, wsVisitas, 'Visitas do Período');
+    addStyledWorksheet(workbook, 'Visitas do Período', visitasDados, '059669');
   }
 
-  XLSX.writeFile(workbook, filename);
+  await downloadWorkbook(workbook, filename);
 }

@@ -1,9 +1,68 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+
+/**
+ * Utilitário interno para salvar e disparar o download de um modelo XLSX no navegador
+ */
+async function downloadTemplate(
+  filename: string,
+  sheetName: string,
+  headers: Record<string, any>[],
+  columnWidths?: number[],
+  headerColor = '10B981'
+) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'EasyMob';
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet(sheetName);
+  const headerKeys = Object.keys(headers[0]);
+
+  worksheet.columns = headerKeys.map((key, idx) => ({
+    header: key,
+    key,
+    width: columnWidths && columnWidths[idx] ? columnWidths[idx] : 20,
+  }));
+
+  headers.forEach((h) => {
+    worksheet.addRow(h);
+  });
+
+  // Estilização do cabeçalho
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 25;
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Segoe UI' };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: `FF${headerColor}` },
+    };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  });
+
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber > 1) {
+      row.font = { size: 10, name: 'Segoe UI' };
+      row.alignment = { vertical: 'middle' };
+    }
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
 
 /**
  * Gera e dispara o download do arquivo modelo de Clientes em formato .xlsx
  */
-export function downloadModeloClientesXLSX() {
+export async function downloadModeloClientesXLSX() {
   const headers = [
     {
       'Nome': 'Carlos Eduardo Silva',
@@ -31,27 +90,14 @@ export function downloadModeloClientesXLSX() {
     },
   ];
 
-  const worksheet = XLSX.utils.json_to_sheet(headers);
-  
-  // Ajuste de largura das colunas
-  worksheet['!cols'] = [
-    { wch: 25 }, // Nome
-    { wch: 18 }, // Telefone
-    { wch: 28 }, // E-mail
-    { wch: 45 }, // Perfil de Interesse
-    { wch: 20 }, // Faixa de Orçamento
-    { wch: 45 }, // Observações
-  ];
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Modelo Clientes');
-  XLSX.writeFile(workbook, 'modelo_importacao_clientes_easymob.xlsx');
+  const columnWidths = [25, 18, 28, 45, 20, 45];
+  await downloadTemplate('modelo_importacao_clientes_easymob.xlsx', 'Modelo Clientes', headers, columnWidths, '0284C7');
 }
 
 /**
  * Gera e dispara o download do arquivo modelo de Proprietários em formato .xlsx
  */
-export function downloadModeloProprietariosXLSX() {
+export async function downloadModeloProprietariosXLSX() {
   const headers = [
     {
       'Nome': 'Patrícia Prado Nogueira',
@@ -82,27 +128,14 @@ export function downloadModeloProprietariosXLSX() {
     },
   ];
 
-  const worksheet = XLSX.utils.json_to_sheet(headers);
-  
-  worksheet['!cols'] = [
-    { wch: 30 }, // Nome
-    { wch: 18 }, // Telefone
-    { wch: 30 }, // E-mail
-    { wch: 18 }, // Documento
-    { wch: 28 }, // Chave PIX
-    { wch: 25 }, // Banco
-    { wch: 45 }, // Observações
-  ];
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Modelo Proprietários');
-  XLSX.writeFile(workbook, 'modelo_importacao_proprietarios_easymob.xlsx');
+  const columnWidths = [30, 18, 30, 18, 28, 25, 45];
+  await downloadTemplate('modelo_importacao_proprietarios_easymob.xlsx', 'Modelo Proprietários', headers, columnWidths, 'D97706');
 }
 
 /**
  * Gera e dispara o download do arquivo modelo de Imóveis em formato .xlsx
  */
-export function downloadModeloImoveisXLSX() {
+export async function downloadModeloImoveisXLSX() {
   const headers = [
     {
       'Código': 'AP-1028',
@@ -162,53 +195,106 @@ export function downloadModeloImoveisXLSX() {
     }
   ];
 
-  const worksheet = XLSX.utils.json_to_sheet(headers);
-  
-  worksheet['!cols'] = [
-    { wch: 12 }, // Código
-    { wch: 35 }, // Título
-    { wch: 15 }, // Tipo
-    { wch: 14 }, // Finalidade
-    { wch: 28 }, // Endereço
-    { wch: 10 }, // Número
-    { wch: 15 }, // Complemento
-    { wch: 20 }, // Bairro
-    { wch: 18 }, // Cidade
-    { wch: 8 },  // Estado
-    { wch: 12 }, // CEP
-    { wch: 15 }, // Valor Venda
-    { wch: 15 }, // Valor Locação
-    { wch: 16 }, // Valor Condomínio
-    { wch: 14 }, // Valor IPTU
-    { wch: 10 }, // Quartos
-    { wch: 10 }, // Suítes
-    { wch: 10 }, // Banheiros
-    { wch: 10 }, // Vagas
-    { wch: 12 }, // Área Útil
-    { wch: 12 }, // Área Total
-    { wch: 40 }, // Descrição
-    { wch: 45 }, // URLs das Fotos
-    { wch: 28 }, // Nome do Proprietário
-    { wch: 20 }, // Telefone do Proprietário
-    { wch: 30 }, // Observações Chaves
+  const columnWidths = [
+    12, 35, 15, 14, 28, 10, 15, 20, 18, 8, 12, 15, 15, 16, 14, 10, 10, 10, 10, 12, 12, 40, 45, 28, 20, 30
   ];
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Modelo Imóveis');
-  XLSX.writeFile(workbook, 'modelo_importacao_imoveis_easymob.xlsx');
+  await downloadTemplate('modelo_importacao_imoveis_easymob.xlsx', 'Modelo Imóveis', headers, columnWidths, '10B981');
 }
 
 /**
- * Converte um arquivo Excel ou CSV enviado pelo usuário para um array de objetos JSON
+ * Converte um arquivo Excel (.xlsx, .xls) ou CSV enviado pelo usuário para um array de objetos JSON
  */
 export async function parseExcelOrCsvFile(file: File): Promise<Record<string, any>[]> {
+  const fileName = file.name.toLowerCase();
+
+  // Tratamento específico para CSV
+  if (fileName.endsWith('.csv')) {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    if (lines.length === 0) return [];
+
+    const delimiter = lines[0].includes(';') ? ';' : ',';
+    const parseCsvLine = (line: string) => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === delimiter && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    const headers = parseCsvLine(lines[0]);
+    const rows: Record<string, any>[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCsvLine(lines[i]);
+      const rowData: Record<string, any> = {};
+      let hasData = false;
+      headers.forEach((header, idx) => {
+        const val = values[idx] !== undefined ? values[idx] : '';
+        rowData[header] = val;
+        if (val !== '') hasData = true;
+      });
+      if (hasData) rows.push(rowData);
+    }
+    return rows;
+  }
+
+  // Leitura de planilhas Excel (.xlsx) com ExcelJS
   const data = await file.arrayBuffer();
-  const workbook = XLSX.read(data, { type: 'array' });
-  const firstSheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[firstSheetName];
-  
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(data);
+  const worksheet = workbook.worksheets[0];
+
   if (!worksheet) return [];
-  
-  const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-  return rawRows;
+
+  const rows: Record<string, any>[] = [];
+  const headerRow = worksheet.getRow(1);
+  const headers: string[] = [];
+
+  headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+    headers[colNumber] = cell.text ? cell.text.trim() : `Coluna_${colNumber}`;
+  });
+
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return; // Pula a linha do cabeçalho
+    const rowData: Record<string, any> = {};
+    let hasData = false;
+
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      const header = headers[colNumber];
+      if (header) {
+        let val: any = cell.value;
+        if (val !== null && typeof val === 'object') {
+          if ('result' in val) {
+            val = val.result;
+          } else if ('text' in val) {
+            val = val.text;
+          } else if ('richText' in val && Array.isArray(val.richText)) {
+            val = val.richText.map((t: any) => t.text).join('');
+          }
+        }
+        const strVal = val !== null && val !== undefined ? String(val).trim() : '';
+        rowData[header] = strVal;
+        if (strVal !== '') hasData = true;
+      }
+    });
+
+    if (hasData) {
+      rows.push(rowData);
+    }
+  });
+
+  return rows;
 }
+
